@@ -22,12 +22,6 @@ public class ComplaintEntity extends BaseEntity {
     @Column(name = "evidences_paths")
     private List<String> evidencesPaths;
 
-    @Column(name = "org_unit_id")
-    private Long orgUnitId;
-
-    @Column(name = "manager_id")
-    private Long managerId;
-
     @ManyToOne
     @JoinColumn(name = "customer_site_id")
     private CustomerSite customerSite;

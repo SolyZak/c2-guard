@@ -3,14 +3,14 @@ package com.eden.eden_crm_sec_crm_back.dto.response;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class Complaint {
-    private Integer id;
+    private Long id;
+    private Long operationSiteId;
     private String operationSiteName;
-    private Long customerSiteId;
-    private String customerName;
     private LocalDateTime creationDate;
-    private Long orgUnitId;
-    private Long managerId;
+    private String description;
+    private List<String> images;
 }

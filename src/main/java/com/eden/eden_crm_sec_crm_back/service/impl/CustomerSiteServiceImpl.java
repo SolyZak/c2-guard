@@ -40,8 +40,7 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
     public void updateCustomerSite(Long id, UpdateCustomerSiteRequestDto requestDto) {
         Customer customer = customerService.getLoggedInCustomer();
 
-        CustomerSite site = customerSiteRepository.findByIdAndCustomerId(id, customer.getId())
-                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("not-found"), HttpStatus.NOT_FOUND));
+        CustomerSite site = findOne(id, customer.getId());
 
         customerSiteMapper.updateEntityFromDto(requestDto, site);
         customerSiteRepository.save(site);
@@ -58,12 +57,17 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
     public String deleteSiteForCustomer(Long id) {
         Customer customer = customerService.getLoggedInCustomer();
 
-        CustomerSite site = customerSiteRepository.findByIdAndCustomerId(id, customer.getId())
-                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("not-found"), HttpStatus.NOT_FOUND));
+        CustomerSite site = findOne(id, customer.getId());
 
         // todo need to check if there is any related data to this operation site
         customerSiteRepository.delete(site);
 
         return MessageUtil.getMessage("customer-site.deleted");
+    }
+
+    @Override
+    public CustomerSite findOne(Long id, Long customerId) {
+        return customerSiteRepository.findByIdAndCustomerId(id, customerId)
+                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("not-found"), HttpStatus.NOT_FOUND));
     }
 }

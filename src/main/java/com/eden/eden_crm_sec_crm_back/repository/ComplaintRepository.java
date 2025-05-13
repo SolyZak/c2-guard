@@ -8,8 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ComplaintRepository extends JpaRepository<ComplaintEntity, Integer> {
@@ -17,34 +16,5 @@ public interface ComplaintRepository extends JpaRepository<ComplaintEntity, Inte
     @Query("SELECT c FROM ComplaintEntity c WHERE c.deleted = false AND customer.id = :customerId")
     Page<ComplaintEntity> findByCustomer(@Param("customerId") Long customerId, Pageable pageable);
 
-    @Query("SELECT c " +
-            "FROM ComplaintEntity c " +
-            "WHERE c.deleted = false " +
-            "AND customer.id = :customerId " +
-            "AND (CAST(:from AS DATE) IS NULL OR c.createdDate >= :from)" +
-            "AND (CAST(:to AS DATE) IS NULL OR c.createdDate <= :to)" +
-            "AND (:operationSiteIds IS NULL OR c.customerSite.id IN :operationSiteIds)")
-    Page<ComplaintEntity> getReport(@Param("customerId") Long customerId,
-                                    @Param("from") LocalDateTime from,
-                                    @Param("to") LocalDateTime to,
-                                    @Param("operationSiteIds") List<Long> operationSiteIds,
-                                    Pageable pageable);
-
-    @Query("SELECT c " +
-            "FROM ComplaintEntity c " +
-            "WHERE c.deleted = false " +
-            "AND (:customerIds IS NULL OR customer.id IN :customerIds) " +
-            "AND (CAST(:from AS DATE) IS NULL OR c.createdDate >= :from) " +
-            "AND (CAST(:to AS DATE) IS NULL OR c.createdDate <= :to) " +
-            "AND (:operationSiteIds IS NULL OR c.customerSite.id IN :operationSiteIds) " +
-            "AND (:orgUnitIds IS NULL OR c.orgUnitId IN :orgUnitIds) " +
-            "AND (:managerIds IS NULL OR c.managerId IN :managerIds)" +
-            "ORDER BY c.id DESC")
-    Page<ComplaintEntity> getOrgUnitReport(@Param("customerIds") List<Long> customerIds,
-                                           @Param("from") LocalDateTime from,
-                                           @Param("to") LocalDateTime to,
-                                           @Param("operationSiteIds") List<Long> operationSiteIds,
-                                           @Param("orgUnitIds") List<Long> orgUnitIds,
-                                           @Param("managerIds") List<Long> managerIds,
-                                           Pageable pageable);
+    Optional<ComplaintEntity> findByIdAndCustomerId(Long id, Long customerId);
 }
