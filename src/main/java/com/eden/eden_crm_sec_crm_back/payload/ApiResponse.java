@@ -32,8 +32,8 @@ public class ApiResponse<T> {
         return status(HttpStatus.OK, payload, null);
     }
 
-    public static <T> ApiResponse<T> error(T payload) {
-        return status(HttpStatus.BAD_REQUEST, payload, null);
+    public static <T> ApiResponse<T> error(T payload, HttpStatus status) {
+        return status(status, payload, null);
     }
 
     public static <T> ApiResponse<T> unprocessableEntity(T payload) {

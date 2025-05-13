@@ -31,8 +31,8 @@ public class GlobalException {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<String>> handleBusinessException(BusinessException ex) {
-        ApiResponse<String> errorResponse = ApiResponse.error(ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        ApiResponse<String> errorResponse = ApiResponse.error(ex.getMessage(), ex.getHttpStatus());
+        return new ResponseEntity<>(errorResponse, ex.getHttpStatus());
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -45,7 +45,7 @@ public class GlobalException {
                 LocalDateTime.now().toString()
         );
 
-        ApiResponse<ApiException> errorResponse = ApiResponse.error(apiException);
+        ApiResponse<ApiException> errorResponse = ApiResponse.error(apiException, apiException.getHttpStatus());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }

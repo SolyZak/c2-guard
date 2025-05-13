@@ -1,0 +1,17 @@
+package com.eden.eden_crm_sec_crm_back.mapper;
+
+import com.eden.eden_crm_sec_crm_back.dto.request.CustomerSiteRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerSiteRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
+import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+
+@Mapper(componentModel = "spring")
+public interface CustomerSiteMapper {
+    CustomerSite toEntity(CustomerSiteRequestDto dto);
+
+    CustomerSiteResponseDto fromEntity(CustomerSite entity);
+
+    void updateEntityFromDto(UpdateCustomerSiteRequestDto dto, @MappingTarget CustomerSite entity);
+}

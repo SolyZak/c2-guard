@@ -124,6 +124,12 @@ public class CustomerServiceImpl implements CustomerService {
 //        }
     }
 
+    @Override
+    public Customer getLoggedInCustomer() {
+        return repository.findById(1L)// todo this must be replaced by info from token
+                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
+    }
+
     private void isEmailExists(String email) {
         Optional<Customer> emailExists = repository.findFirstByEmail(email);
         if (emailExists.isPresent()) {

@@ -19,6 +19,7 @@ import java.util.List;
 @RequestMapping(path = "/customers")
 @RequiredArgsConstructor
 public class CustomersController {
+    // HINT: this controller must be used by eden users
     private final CustomerService customerService;
 
     @PostMapping

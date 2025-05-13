@@ -9,9 +9,6 @@ import java.util.List;
 public interface CustomerSiteService {
     CustomerSiteResponseDto addCustomerSite(CustomerSiteRequestDto requestDto);
     void updateCustomerSite(Long id, UpdateCustomerSiteRequestDto requestDto);
-    void enableSite(Long siteId);
-    List<CustomerSiteResponseDto> getSiteByCustomer(Long customerId, boolean activeOnly);
-    List<CustomerSiteResponseDto> getNotActiveSites(Long customerId);
-    List<CustomerSiteResponseDto> getSites();
-    List<CustomerSiteResponseDto> getSitesByIds(List<Long> ids);
+    List<CustomerSiteResponseDto> getSitesForCustomer();
+    String deleteSiteForCustomer(Long id);
 }
