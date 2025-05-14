@@ -1,6 +1,6 @@
-package com.eden.eden_crm_sec_crm_back.payload;
+package com.eden.eden_crm_sec_crm_back.base.util;
 
-import com.eden.eden_crm_sec_crm_back.exception.ApiException;
+import com.eden.eden_crm_sec_crm_back.base.exception.ApiException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -67,4 +67,6 @@ public class ApiResponse<T> {
     private static <T> ApiResponse<T> status(HttpStatus status, T payload, String serviceTime) {
         return new ApiResponse<>(true, null, status.value(), payload, serviceTime);
     }
+
+
 }

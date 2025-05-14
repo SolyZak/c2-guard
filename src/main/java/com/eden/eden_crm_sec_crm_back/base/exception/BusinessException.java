@@ -1,4 +1,4 @@
-package com.eden.eden_crm_sec_crm_back.exception;
+package com.eden.eden_crm_sec_crm_back.base.exception;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -13,4 +13,17 @@ public class BusinessException extends RuntimeException {
         super(message);
         this.httpStatus = httpStatus;
     }
+
+    public BusinessException(String message, HttpStatus httpStatus, String[] params) {
+        super(message);
+        this.httpStatus = httpStatus;
+        this.params = params;
+    }
+
+    public BusinessException(String message) {
+        super(message);
+        this.httpStatus = HttpStatus.BAD_REQUEST;
+    }
+
+
 }
