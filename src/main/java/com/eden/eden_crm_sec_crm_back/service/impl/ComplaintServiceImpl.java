@@ -68,6 +68,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setDescription(request.getDescription());
         complaint.setEvidencesPaths(uploadEvidences(request.getImages()));
         complaintRepository.save(complaint);
+        // todo need a way for make this complain related to a security company for easy tracking from sec. comp. portal
         return MessageUtil.getMessage("complaint.created");
     }
 
