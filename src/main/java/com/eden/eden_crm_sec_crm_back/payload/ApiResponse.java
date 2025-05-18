@@ -31,33 +31,12 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> ok(T payload) {
         return status(HttpStatus.OK, payload, null);
     }
-    public static <T> ApiResponse<T> ok() {
-        return status(HttpStatus.OK, null, null);
-    }
-    public static <T> ApiResponse<T> created(T payload) {
-        return status(HttpStatus.CREATED, payload, null);
-    }
 
-    public static <T> ApiResponse<T> accepted(T payload) {
-        return status(HttpStatus.ACCEPTED, payload, null);
-    }
-
-    public static <T> ApiResponse<T> ok(T payload, String serviceTime) {
-        return status(HttpStatus.OK, payload, serviceTime);
-    }
-
-    public static <T> ApiResponse<T> created(T payload, String serviceTime) {
-        return status(HttpStatus.CREATED, payload, serviceTime);
-    }
-    public static <T> ApiResponse<T> accepted(T payload, String serviceTime) {
-        return status(HttpStatus.ACCEPTED, payload, serviceTime);
-    }
-
-    public static <T> ApiResponse<T> noContent() {
-        return status(HttpStatus.NO_CONTENT, null, null);
-    }
     public static <T> ApiResponse<T> error(T payload) {
         return status(HttpStatus.BAD_REQUEST, payload, null);
+    }
+    public static <T> ApiResponse<T> error(T payload, HttpStatus status) {
+        return status(status, payload, null);
     }
 
     public static <T> ApiResponse<T> unprocessableEntity(T payload) {
@@ -67,4 +46,6 @@ public class ApiResponse<T> {
     private static <T> ApiResponse<T> status(HttpStatus status, T payload, String serviceTime) {
         return new ApiResponse<>(true, null, status.value(), payload, serviceTime);
     }
+
+
 }

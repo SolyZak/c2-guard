@@ -71,4 +71,10 @@ public class CustomersController {
         customerService.enableCustomer(id);
         return ApiResponse.ok(MessageUtil.getMessage("customer.enabled"));
     }
+
+    @GetMapping("/test")
+    public ApiResponse test() {
+        System.out.printf(">>>>>>>>>>>>>>>>>>>>>>>>>");
+        return ApiResponse.ok("Test endpoint working");
+    }
 }
