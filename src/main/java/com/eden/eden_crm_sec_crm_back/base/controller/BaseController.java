@@ -10,19 +10,14 @@ import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.base.util.PaginationDto;
 import com.eden.eden_crm_sec_crm_back.base.service.BaseService;
+import com.eden.eden_crm_sec_crm_back.dto.CustomerAgreementDTO;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 
 @MappedSuperclass
@@ -77,6 +72,8 @@ public abstract class BaseController <T extends BaseEntity<ID>, DTO extends Base
         return ApiResponse.ok(result == null ? null : result.getId());
     }
 
+
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Find by id", description = "to retrieve element by id")
     public ApiResponse<?> deleteById(@PathVariable(name = "id") ID id) {
@@ -84,4 +81,4 @@ public abstract class BaseController <T extends BaseEntity<ID>, DTO extends Base
         return ApiResponse.ok(null);
     }
 
-}
+ }

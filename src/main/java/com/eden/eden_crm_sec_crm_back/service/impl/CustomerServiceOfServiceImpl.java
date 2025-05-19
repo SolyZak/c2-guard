@@ -2,6 +2,8 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
 import com.eden.eden_crm_sec_crm_back.base.service.impl.BaseServiceImpl;
+import com.eden.eden_crm_sec_crm_back.dto.CustomerServiceDetailsDTO;
+import com.eden.eden_crm_sec_crm_back.dto.lookup.ServiceDetailsCustomDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerServiceService;
@@ -9,10 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class CustomerServiceServiceImpl extends BaseServiceImpl<CustomerService, Long> implements CustomerServiceService {
+public class CustomerServiceOfServiceImpl extends BaseServiceImpl<CustomerService, Long> implements CustomerServiceService {
 
     private final CustomerServiceRepository customerServiceRepository;
     @Override
@@ -28,5 +33,19 @@ public class CustomerServiceServiceImpl extends BaseServiceImpl<CustomerService,
             entity.getServiceDetails().forEach(detail -> detail.setCustomerService(entity));
         }
         return super.insert(entity);
+    }
+
+    @Override
+    public List<CustomerServiceDetailsDTO> getAllCustomerServices() {
+        List<CustomerService> customerServices = customerServiceRepository.findAll();
+
+        return customerServices.stream().map(service ->
+                new CustomerServiceDetailsDTO(
+                        service.getServiceName(),
+                        service.getServiceDetails().stream()
+                                .map(details -> new ServiceDetailsCustomDto(details.getHours(), details.getDays()))
+                                .collect(Collectors.toList())
+                )
+        ).collect(Collectors.toList());
     }
 }

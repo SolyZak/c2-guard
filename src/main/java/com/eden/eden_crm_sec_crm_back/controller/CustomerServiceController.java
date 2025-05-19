@@ -4,6 +4,7 @@ import com.eden.eden_crm_sec_crm_back.base.controller.BaseController;
 import com.eden.eden_crm_sec_crm_back.base.mapper.BaseMapper;
 import com.eden.eden_crm_sec_crm_back.base.service.BaseService;
 import com.eden.eden_crm_sec_crm_back.dto.CustomerServiceDTO;
+import com.eden.eden_crm_sec_crm_back.dto.CustomerServiceDetailsDTO;
 import com.eden.eden_crm_sec_crm_back.enums.ActivityEnum;
 import com.eden.eden_crm_sec_crm_back.enums.UnitEnum;
 import com.eden.eden_crm_sec_crm_back.mapper.CustomerServiceMapper;
@@ -66,5 +67,9 @@ public class CustomerServiceController extends BaseController<CustomerService, C
         return Arrays.stream(UnitEnum.values())
                 .map(UnitEnum::getNameAr)
                 .collect(Collectors.toList());
+    }
+    @GetMapping("/all-services-details")
+    public List<CustomerServiceDetailsDTO> getAllCustomerServices() {
+        return customerServiceService.getAllCustomerServices();
     }
 }

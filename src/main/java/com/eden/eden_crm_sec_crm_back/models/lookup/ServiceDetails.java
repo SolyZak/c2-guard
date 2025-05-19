@@ -11,8 +11,8 @@ import lombok.*;
 @Getter
 public class ServiceDetails extends BaseEntity<Long> {
 
-    private Integer hours;
-    private Integer days;
+    private Long hours;
+    private Long days;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_service_id")
     private CustomerService customerService;
