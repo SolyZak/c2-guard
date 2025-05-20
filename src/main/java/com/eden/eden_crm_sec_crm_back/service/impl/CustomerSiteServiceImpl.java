@@ -54,6 +54,11 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
     }
 
     @Override
+    public List<CustomerSiteResponseDto> getSitesForCustomer(Long customerId) {
+        return customerSiteRepository.findByCustomerId(customerId).stream().map(customerSiteMapper::fromEntity).toList();
+    }
+
+    @Override
     public String deleteSiteForCustomer(Long id) {
         Customer customer = customerService.getLoggedInCustomer();
 

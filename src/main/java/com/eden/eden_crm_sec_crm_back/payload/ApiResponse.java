@@ -43,6 +43,10 @@ public class ApiResponse<T> {
         return status(HttpStatus.UNPROCESSABLE_ENTITY, payload, LocalDateTime.now().toString());
     }
 
+    public static ApiResponse<String> badRequest(String message) {
+        return status(HttpStatus.BAD_REQUEST, message, LocalDateTime.now().toString());
+    }
+
     private static <T> ApiResponse<T> status(HttpStatus status, T payload, String serviceTime) {
         return new ApiResponse<>(true, null, status.value(), payload, serviceTime);
     }

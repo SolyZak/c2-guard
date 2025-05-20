@@ -35,6 +35,11 @@ public class CustomerSitesController {
         return ApiResponse.ok(customerSiteService.getSitesForCustomer());
     }
 
+    @GetMapping("{id}/all")
+    ApiResponse<List<CustomerSiteResponseDto>> myCustomerSites(@PathVariable("id") Long customerId) {
+        return ApiResponse.ok(customerSiteService.getSitesForCustomer());
+    }
+
     @DeleteMapping("/{id}")
     ApiResponse<String> deleteCustomerSite(@PathVariable Long id) {
         return ApiResponse.ok(customerSiteService.deleteSiteForCustomer(id));
