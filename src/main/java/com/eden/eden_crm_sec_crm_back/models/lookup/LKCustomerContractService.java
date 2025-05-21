@@ -1,17 +1,17 @@
 package com.eden.eden_crm_sec_crm_back.models.lookup;
 
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
-import com.eden.eden_crm_sec_crm_back.models.CustomerAgreement;
+import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "customer_agreement_service")
+@Table(name = "customer_contract_service")
 @Setter
 @Getter
-public class LKCustomerAgreementService extends BaseEntity<Long> {
+public class LKCustomerContractService extends BaseEntity<Long> {
 
     private Long quantity;
     private Long unitPrice;
@@ -19,7 +19,7 @@ public class LKCustomerAgreementService extends BaseEntity<Long> {
     @JoinColumn(name = "customer_service_id")
     private CustomerService customerService;
     @ManyToOne
-    @JoinColumn(name = "customer_agreement_id", nullable = false)
-    private CustomerAgreement agreement;
+    @JoinColumn(name = "customer_contract_id", nullable = false)
+    private CustomerContract customerContract;
 
 }

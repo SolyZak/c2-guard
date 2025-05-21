@@ -20,11 +20,11 @@ import java.util.stream.Collectors;
 public class CustomerServiceOfServiceImpl extends BaseServiceImpl<CustomerService, Long> implements CustomerServiceService {
 
     private final CustomerServiceRepository customerServiceRepository;
+
     @Override
     protected BaseRepository<CustomerService, Long> getRepository() {
         return customerServiceRepository;
     }
-
 
 
     @Override
@@ -35,17 +35,11 @@ public class CustomerServiceOfServiceImpl extends BaseServiceImpl<CustomerServic
         return super.insert(entity);
     }
 
+
     @Override
     public List<CustomerServiceDetailsDTO> getAllCustomerServices() {
         List<CustomerService> customerServices = customerServiceRepository.findAll();
 
-        return customerServices.stream().map(service ->
-                new CustomerServiceDetailsDTO(
-                        service.getServiceName(),
-                        service.getServiceDetails().stream()
-                                .map(details -> new ServiceDetailsCustomDto(details.getHours(), details.getDays()))
-                                .collect(Collectors.toList())
-                )
-        ).collect(Collectors.toList());
+        return customerServices.stream().map(service -> new CustomerServiceDetailsDTO(service.getId(), service.getServiceName(), service.getServiceDetails().stream().map(details -> new ServiceDetailsCustomDto(details.getId(), details.getHours(), details.getDays())).collect(Collectors.toList()))).collect(Collectors.toList());
     }
 }

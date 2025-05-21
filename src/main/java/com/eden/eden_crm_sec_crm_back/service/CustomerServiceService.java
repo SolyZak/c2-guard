@@ -6,5 +6,5 @@ import com.eden.eden_crm_sec_crm_back.models.CustomerService;
 import java.util.List;
 
 public interface CustomerServiceService extends BaseService<CustomerService, Long> {
-    public List<CustomerServiceDetailsDTO> getAllCustomerServices();
+     List<CustomerServiceDetailsDTO> getAllCustomerServices();
 }

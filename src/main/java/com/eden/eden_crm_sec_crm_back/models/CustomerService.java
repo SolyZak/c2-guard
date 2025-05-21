@@ -20,14 +20,9 @@ public class CustomerService extends BaseEntity<Long> {
     private UnitEnum unit;
     @ElementCollection(targetClass = ActivityEnum.class)
     @Enumerated(EnumType.STRING)
-    @CollectionTable(
-            name = "service_activities",
-            joinColumns = @JoinColumn(name = "service_id")
-    )
+    @CollectionTable(name = "customer_service_activities", joinColumns = @JoinColumn(name = "customer_service_id"))
     private Set<ActivityEnum> activities = new HashSet<>();
     private boolean multiSite;
     @OneToMany(mappedBy = "customerService", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ServiceDetails> serviceDetails = new ArrayList<>();
-
-
 }

@@ -15,7 +15,13 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties
-public class ServiceDetailsCustomDto   implements Serializable {
+public class ServiceDetailsCustomDto extends BaseDto<Long>  implements Serializable {
     private Long hours;
     private Long days;
+
+    public ServiceDetailsCustomDto(Long id, Long hours, Long days) {
+        this.setId(id); // from BaseDto
+        this.hours = hours;
+        this.days = days;
+    }
 }
