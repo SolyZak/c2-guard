@@ -11,6 +11,7 @@ public interface CustomerSiteService {
     CustomerSiteResponseDto addCustomerSite(CustomerSiteRequestDto requestDto);
     void updateCustomerSite(Long id, UpdateCustomerSiteRequestDto requestDto);
     List<CustomerSiteResponseDto> getSitesForCustomer();
+    List<CustomerSiteResponseDto> getSitesForCustomer(Long customerId);
     String deleteSiteForCustomer(Long id);
     CustomerSite findOne(Long id, Long customerId);
 }
