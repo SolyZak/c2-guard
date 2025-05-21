@@ -10,7 +10,6 @@ import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.base.util.PaginationDto;
 import com.eden.eden_crm_sec_crm_back.base.service.BaseService;
-import com.eden.eden_crm_sec_crm_back.dto.CustomerAgreementDTO;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
