@@ -52,7 +52,7 @@ public class LKCustomerContractServiceOfServiceImpl extends BaseServiceImpl<LKCu
                             entity.getId(),
                             entity.getQuantity(),
                             entity.getUnitPrice(),
-                            serviceDTO,
+                            serviceDTO.getId(),
                             entity.getCustomerContract().getId()
                     );
                 })
