@@ -11,8 +11,10 @@ import java.util.List;
 @Repository
 public interface SiteDistributionRepository extends BaseRepository<SiteDistribution, Long> {
 
-    @Query("SELECT w.siteDistribution FROM WorkSiteDistributionLocation w WHERE w.site.id = :contractId")
-    List<SiteDistribution> findByCustomerContractSite_Id(@Param("contractId") Long contractId);
+    @Query("SELECT DISTINCT s.siteDistribution " +
+            "FROM LKCustomerContractOperationService s " +
+            "WHERE s.workSiteDistributionLocation.site.id = :siteId")
+    List<SiteDistribution> findByCustomerContractSite_Id(@Param("siteId") Long siteId);
 
 
 }

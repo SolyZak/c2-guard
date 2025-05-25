@@ -10,14 +10,13 @@ import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface WorkSiteDistributionLocationMapper extends BaseMapper<WorkSiteDistributionLocation, WorkSiteDistributionLocationDto> {
-
     @Override
     @Mapping(source = "site.id", target = "siteId")
     WorkSiteDistributionLocationDto map(WorkSiteDistributionLocation entity);
 
     @Override
     @Mapping(target = "site", source = "siteId", qualifiedByName = "mapSiteId")
-    WorkSiteDistributionLocation unMap(WorkSiteDistributionLocationDto dto); // <<< FIXED
+    WorkSiteDistributionLocation unMap(WorkSiteDistributionLocationDto dto);
 
     @Named("mapSiteId")
     default CustomerSite mapSiteId(Long siteId) {

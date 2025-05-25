@@ -27,6 +27,7 @@ public class SiteDistributionServiceImpl extends BaseServiceImpl<SiteDistributio
         if (entity.getOperationServices() != null) {
             entity.getOperationServices().forEach(op -> op.setSiteDistribution(entity));
         }
+
         return super.insert(entity);
     }
 }

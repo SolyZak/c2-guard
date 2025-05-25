@@ -20,11 +20,12 @@ import java.util.Set;
 @NoArgsConstructor
 @Table(name = "site_distribution")
 public class SiteDistribution extends BaseEntity<Long> {
-    @OneToOne(mappedBy = "siteDistribution", cascade = CascadeType.ALL, orphanRemoval = true)
-    private WorkSiteDistributionLocation location;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_service_id", nullable = false)
-    private LKCustomerContractService  lkCustomerContractService;
+    private LKCustomerContractService lkCustomerContractService;
+
     @OneToMany(mappedBy = "siteDistribution", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LKCustomerContractOperationService> operationServices = new ArrayList<>();
 }

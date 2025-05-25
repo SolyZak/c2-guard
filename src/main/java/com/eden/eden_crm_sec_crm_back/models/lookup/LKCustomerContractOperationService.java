@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.models.lookup;
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import com.eden.eden_crm_sec_crm_back.models.WorkSiteDistributionLocation;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,4 +26,8 @@ public class LKCustomerContractOperationService extends BaseEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "contract_site_distribution_id", nullable = false)
     private SiteDistribution  siteDistribution;
+    @ManyToOne
+    @JoinColumn(name = "work_site_distribution_location_id", nullable = false)
+    private WorkSiteDistributionLocation  workSiteDistributionLocation;
+
 }
