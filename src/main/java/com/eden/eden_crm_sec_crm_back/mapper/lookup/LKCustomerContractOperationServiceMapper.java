@@ -13,9 +13,24 @@ import org.mapstruct.Named;
 @Mapper(componentModel = "spring")
 public interface LKCustomerContractOperationServiceMapper extends BaseMapper<LKCustomerContractOperationService, LKCustomerContractOperationServiceDto> {
     @Override
+    @Mapping(source = "workSiteDistributionLocation.id", target = "workSiteDistributionLocationId")
     LKCustomerContractOperationServiceDto map(LKCustomerContractOperationService entity);
 
     @Override
-    @Mapping(target = "workSiteDistributionLocation", ignore = true) // Handle manually
+    @Mapping(target = "workSiteDistributionLocation", source = "workSiteDistributionLocationId", qualifiedByName = "mapLocationId")
     LKCustomerContractOperationService unMap(LKCustomerContractOperationServiceDto dto);
+
+    @Named("mapLocationId")
+    default WorkSiteDistributionLocation mapLocationId(Long id) {
+        if (id == null) return null;
+        WorkSiteDistributionLocation location = new WorkSiteDistributionLocation();
+        location.setId(id);
+        return location;
+    }
+//    @Override
+//    LKCustomerContractOperationServiceDto map(LKCustomerContractOperationService entity);
+//
+//    @Override
+//    @Mapping(target = "workSiteDistributionLocation", ignore = true) // Handle manually
+//    LKCustomerContractOperationService unMap(LKCustomerContractOperationServiceDto dto);
 }

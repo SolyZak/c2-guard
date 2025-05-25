@@ -29,5 +29,4 @@ public class LKCustomerContractOperationService extends BaseEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "work_site_distribution_location_id", nullable = false)
     private WorkSiteDistributionLocation  workSiteDistributionLocation;
-
 }

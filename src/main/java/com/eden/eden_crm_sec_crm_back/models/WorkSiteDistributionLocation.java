@@ -25,5 +25,4 @@ public class WorkSiteDistributionLocation extends BaseEntity<Long> {
     @CollectionTable(name = "site_distribution_activities", joinColumns = @JoinColumn(name = "site_distribution_id"))
     private Set<ActivityEnum> activities = new HashSet<>();
 
-
 }

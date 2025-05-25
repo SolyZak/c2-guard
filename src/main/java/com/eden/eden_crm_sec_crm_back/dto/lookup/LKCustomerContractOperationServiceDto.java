@@ -31,6 +31,7 @@ public class LKCustomerContractOperationServiceDto extends BaseDto<Long> impleme
     private LocalTime fromTime;
     @JsonDeserialize(using = LocalTimeDeserializer.class)
     private LocalTime toTime;
+    private Long workSiteDistributionLocationId;
 //    private Long siteDistributionId;
 
 }
