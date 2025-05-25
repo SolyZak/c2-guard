@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.models.lookup;
 
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
+import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,5 +22,7 @@ public class LKCustomerContractOperationService extends BaseEntity<Long> {
     private Set<WeekDaysEnum> days = new HashSet<>();
     private LocalTime fromTime;
     private LocalTime toTime;
-
+    @ManyToOne
+    @JoinColumn(name = "contract_site_distribution_id", nullable = false)
+    private SiteDistribution  siteDistribution;
 }

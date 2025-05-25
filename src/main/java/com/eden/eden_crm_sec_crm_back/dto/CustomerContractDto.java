@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.dto;
 import com.eden.eden_crm_sec_crm_back.base.dto.BaseDto;
 import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.enums.CurrencyEnum;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -30,6 +31,5 @@ public class CustomerContractDto extends BaseDto<Long> implements Serializable {
     private Long securityCompanyId;
     @Enumerated(EnumType.STRING)
     private CurrencyEnum currency;
-//    private List<Long> agreementServicesIds;
-    private LKCustomerContractServiceDto lkCustomerContractServiceDto;
+    private List<LKCustomerContractServiceDto>  lkCustomerContractServiceDto;
 }
