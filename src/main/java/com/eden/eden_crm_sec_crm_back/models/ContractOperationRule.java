@@ -28,4 +28,5 @@ public class ContractOperationRule extends BaseEntity<Long> {
     private Integer checkOutAfterMinutes;
     @Enumerated(EnumType.STRING)
     private PresenceMode presenceMode;
+
 }

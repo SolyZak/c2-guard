@@ -22,8 +22,9 @@ public class CustomerContract extends BaseEntity<Long> {
     private Long securityCompanyId;
     @Enumerated(EnumType.STRING)
     private CurrencyEnum currency;
-
-    @OneToMany(mappedBy = "customerContract", cascade = CascadeType.MERGE,orphanRemoval = true)
-    private List<LKCustomerContractService>  customerContractServices = new ArrayList<>();
+    @OneToOne(mappedBy = "customerAgreement", fetch = FetchType.LAZY)
+    private ContractOperationRule customerAgreement;
+    @OneToMany(mappedBy = "customerContract", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
+    private List<LKCustomerContractService> customerContractServices = new ArrayList<>();
 
 }

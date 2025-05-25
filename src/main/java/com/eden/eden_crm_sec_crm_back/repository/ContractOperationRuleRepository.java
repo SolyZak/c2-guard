@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ContractOperationRuleRepository extends BaseRepository<ContractOperationRule, Long> {
+    ContractOperationRule findByCustomerAgreementId(Long customerAgreementId);
 }

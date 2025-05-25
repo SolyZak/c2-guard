@@ -3,7 +3,9 @@ package com.eden.eden_crm_sec_crm_back.controller;
 import com.eden.eden_crm_sec_crm_back.base.controller.BaseController;
 import com.eden.eden_crm_sec_crm_back.base.mapper.BaseMapper;
 import com.eden.eden_crm_sec_crm_back.base.service.BaseService;
+import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.dto.CustomerContractCustomDto;
+import com.eden.eden_crm_sec_crm_back.dto.CustomerContractDetailsDto;
 import com.eden.eden_crm_sec_crm_back.dto.CustomerContractDto;
 import com.eden.eden_crm_sec_crm_back.mapper.CustomerContractMapper;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
@@ -38,6 +40,11 @@ public class CustomerContractController extends BaseController<CustomerContract,
     @GetMapping("/all-agreements-details")
     public List<CustomerContractCustomDto> getAllCustomerAgreement() {
         return customerContractService.getAllCustomerAgreements();
+    }
+    @GetMapping("/{id}/contract-details")
+    public ApiResponse<CustomerContractDetailsDto> getCustomerContractDetails(@PathVariable("id") Long id) {
+        CustomerContractDetailsDto dto = customerContractService.getCustomerContractDetails(id);
+        return ApiResponse.ok(dto);
     }
 
 

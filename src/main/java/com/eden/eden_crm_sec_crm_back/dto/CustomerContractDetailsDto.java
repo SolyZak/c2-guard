@@ -13,6 +13,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Setter
@@ -20,16 +21,16 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties
-public class CustomerContractDto extends BaseDto<Long> implements Serializable {
+public class CustomerContractDetailsDto extends BaseDto<Long> implements Serializable {
 
     private String agreementNumber;
     private String agreementName;
-    private String status;
     private LocalDate startAgreementDate;
     private LocalDate endAgreementDate;
     private Long securityCompanyId;
     @Enumerated(EnumType.STRING)
     private CurrencyEnum currency;
-//    private List<Long> agreementServicesIds;
-    private LKCustomerContractServiceDto lkCustomerContractServiceDto;
+    private ContractOperationRuleDTO contractOperationRuleDTO;
+    private List<CustomerServiceDTO> serviceDTOList = new ArrayList<>();
+    private List<SiteDistributionCustomDto> siteDistributionCustomDto = new ArrayList<>();
 }

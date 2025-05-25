@@ -2,6 +2,8 @@ package com.eden.eden_crm_sec_crm_back.dto;
 
 import com.eden.eden_crm_sec_crm_back.base.dto.BaseDto;
 import com.eden.eden_crm_sec_crm_back.enums.PresenceMode;
+import com.eden.eden_crm_sec_crm_back.models.ContractOperationRule;
+import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -28,4 +30,5 @@ public class ContractOperationRuleDTO extends BaseDto<Long> implements Serializa
     private Integer checkOutAfterMinutes;
     @Enumerated(EnumType.STRING)
     private PresenceMode presenceMode;
+//    private CustomerContract customerContractId;
 }

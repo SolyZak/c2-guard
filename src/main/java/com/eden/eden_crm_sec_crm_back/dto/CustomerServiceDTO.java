@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.dto;
 
 import com.eden.eden_crm_sec_crm_back.base.dto.BaseDto;
+import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.lookup.ServiceDetailsDto;
 import com.eden.eden_crm_sec_crm_back.enums.ActivityEnum;
 import com.eden.eden_crm_sec_crm_back.enums.UnitEnum;
@@ -28,4 +29,5 @@ public class CustomerServiceDTO extends BaseDto<Long> implements Serializable {
     private Set<ActivityEnum> activities;
     private boolean multiSite;
     private List<ServiceDetailsDto> serviceDetails;
+
 }

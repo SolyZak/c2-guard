@@ -27,4 +27,5 @@ public interface ContractOperationRuleMapper extends BaseMapper<ContractOperatio
         agreement.setId(id);
         return agreement;
     }
+
 }

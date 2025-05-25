@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.models;
 
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.enums.ActivityEnum;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,7 +26,11 @@ public class SiteDistribution extends BaseEntity<Long> {
     @CollectionTable(name = "site_distribution_activities", joinColumns = @JoinColumn(name = "site_distribution_id"))
     private Set<ActivityEnum> activities = new HashSet<>();
 
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "contract_id", nullable = false)
+//    private CustomerContract customerContract;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contract_id", nullable = false)
-    private CustomerContract customerContract;
+    @JoinColumn(name = "customer_service_id", nullable = false)
+    private LKCustomerContractService  lkCustomerContractService;
 }
