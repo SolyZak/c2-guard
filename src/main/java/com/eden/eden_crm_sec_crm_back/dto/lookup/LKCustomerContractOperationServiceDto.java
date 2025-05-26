@@ -2,10 +2,8 @@ package com.eden.eden_crm_sec_crm_back.dto.lookup;
 
 
 import com.eden.eden_crm_sec_crm_back.base.dto.BaseDto;
-import com.eden.eden_crm_sec_crm_back.dto.WorkSiteDistributionLocationDto;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.payload.LocalTimeDeserializer;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.EnumType;
@@ -32,5 +30,6 @@ public class LKCustomerContractOperationServiceDto extends BaseDto<Long> impleme
     private LocalTime fromTime;
     @JsonDeserialize(using = LocalTimeDeserializer.class)
     private LocalTime toTime;
-    private WorkSiteDistributionLocationDto workSiteDistributionLocation;
+    private Long siteDistributionId;
+
 }

@@ -20,8 +20,18 @@ import java.util.Set;
 @NoArgsConstructor
 @Table(name = "site_distribution")
 public class SiteDistribution extends BaseEntity<Long> {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_site_id")
+    private CustomerSite site;
 
-
+    @ElementCollection(targetClass = ActivityEnum.class)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(
+            name = "site_distribution_activities",
+            joinColumns = @JoinColumn(name = "site_distribution_id", referencedColumnName = "id"),
+            foreignKey = @ForeignKey(name = "fk_site_distribution_id") // ensure this points to SiteDistribution
+    )
+    private Set<ActivityEnum> activities = new HashSet<>();
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_service_id", nullable = false)
     private LKCustomerContractService lkCustomerContractService;
