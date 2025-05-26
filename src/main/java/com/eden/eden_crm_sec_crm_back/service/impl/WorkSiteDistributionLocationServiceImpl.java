@@ -21,4 +21,8 @@ public class WorkSiteDistributionLocationServiceImpl extends BaseServiceImpl<Wor
         return siteDistributionLocationRepository;
     }
 
+    @Override
+    public WorkSiteDistributionLocation insert(WorkSiteDistributionLocation entity) {
+        return super.insert(entity);
+    }
 }

@@ -24,4 +24,8 @@ public class LKCustomerContractOperationServiceOfServiceImpl extends BaseService
         return lkCustomerContractOperationServiceRepository;
     }
 
+    @Override
+    public LKCustomerContractOperationService insert(LKCustomerContractOperationService entity) {
+        return super.insert(entity);
+    }
 }

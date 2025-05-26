@@ -22,6 +22,8 @@ import java.util.Set;
 public class WorkSiteDistributionLocationDto extends BaseDto<Long> implements Serializable {
 
     private Long siteId;
+    private Long siteDistributionId;
     @Enumerated(EnumType.STRING)
     private Set<ActivityEnum> activities;
+
  }
