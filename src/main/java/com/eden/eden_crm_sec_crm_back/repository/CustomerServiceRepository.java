@@ -13,5 +13,8 @@ public interface CustomerServiceRepository extends BaseRepository<CustomerServic
     @Query("SELECT l.customerService FROM LKCustomerContractService l WHERE l.customerContract.id = :contractId")
     List<CustomerService> findCustomerServicesByContractId(@Param("contractId") Long contractId);
 
-
+    @Query("SELECT DISTINCT cs FROM CustomerService cs " +
+            "LEFT JOIN FETCH cs.serviceDetails " +
+            "WHERE cs.id IN :serviceIds")
+    List<CustomerService> findByIdInWithDetails(@Param("serviceIds") List<Long> serviceIds);
 }

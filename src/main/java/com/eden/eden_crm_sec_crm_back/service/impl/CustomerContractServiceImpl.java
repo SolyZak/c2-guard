@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
 import com.eden.eden_crm_sec_crm_back.base.service.impl.BaseServiceImpl;
 import com.eden.eden_crm_sec_crm_back.dto.*;
+import com.eden.eden_crm_sec_crm_back.dto.lookup.ServiceDetailsCustomDto;
 import com.eden.eden_crm_sec_crm_back.mapper.*;
 import com.eden.eden_crm_sec_crm_back.mapper.lookup.LKCustomerContractServiceMapper;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationRule;
@@ -20,7 +21,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +37,7 @@ public class CustomerContractServiceImpl extends BaseServiceImpl<CustomerContrac
     private final SiteDistributionRepository siteDistributionRepository;
     private final CustomerContractDetailsMapper customerContractMapper;
     private final LKCustomerContractServiceMapper lkCustomerContractServiceMapper;
+    private final CustomerServiceRepository customerServiceRepository;
 
 
     @Override
@@ -97,5 +100,56 @@ public class CustomerContractServiceImpl extends BaseServiceImpl<CustomerContrac
         return dto;
     }
 
+
+    public List<CustomerServiceDetailsDTO> getServicesForContract(String agreementNumber) {
+        // First query: Get contract with its services
+        CustomerContract contract = customerContractRepository
+                .findByAgreementNumberWithServices(agreementNumber)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Contract with agreement number %s not found", agreementNumber)));
+
+        // Extract service IDs for second query
+        List<Long> serviceIds = contract.getCustomerContractServices().stream()
+                .map(ccs -> ccs.getCustomerService().getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (serviceIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Second query: Get all services with their details
+        List<CustomerService> servicesWithDetails = customerServiceRepository
+                .findByIdInWithDetails(serviceIds);
+
+        // Create a map for quick lookup
+        Map<Long, CustomerService> serviceMap = servicesWithDetails.stream()
+                .collect(Collectors.toMap(CustomerService::getId, Function.identity()));
+
+        // Map to DTOs
+        return contract.getCustomerContractServices().stream()
+                .map(ccs -> {
+                    CustomerService service = serviceMap.get(ccs.getCustomerService().getId());
+                    return mapToServiceDetailsDTO(service);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private CustomerServiceDetailsDTO mapToServiceDetailsDTO(CustomerService service) {
+        if (service == null) {
+            return null;
+        }
+
+        List<ServiceDetailsCustomDto> details = service.getServiceDetails().stream()
+                .map(d -> new ServiceDetailsCustomDto(d.getId(), d.getHours(), d.getDays()))
+                .collect(Collectors.toList());
+
+        return new CustomerServiceDetailsDTO(
+                service.getId(),
+                service.getServiceName(),
+                details
+        );
+    }
 
 }

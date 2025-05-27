@@ -25,5 +25,4 @@ public class CustomerService extends BaseEntity<Long> {
     private boolean multiSite;
     @OneToMany(mappedBy = "customerService", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ServiceDetails> serviceDetails = new ArrayList<>();
-
 }

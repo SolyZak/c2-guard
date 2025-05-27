@@ -20,9 +20,12 @@ public class CustomerServiceDetailsDTO extends BaseDto<Long> implements Serializ
 
     private String serviceName;
     private List<ServiceDetailsCustomDto> serviceDetails;
+
     public CustomerServiceDetailsDTO(Long id, String serviceName, List<ServiceDetailsCustomDto> serviceDetails) {
         this.setId(id); // from BaseDto
         this.serviceName = serviceName;
         this.serviceDetails = serviceDetails;
     }
+
+
 }
