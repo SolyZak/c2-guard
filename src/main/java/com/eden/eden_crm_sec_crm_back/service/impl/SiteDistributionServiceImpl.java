@@ -2,15 +2,19 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
 import com.eden.eden_crm_sec_crm_back.base.service.impl.BaseServiceImpl;
+import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.SiteDistributionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +28,13 @@ public class SiteDistributionServiceImpl extends BaseServiceImpl<SiteDistributio
 
     private final LKCustomerContractOperationServiceRepository lkCustomerContractOperationServiceRepository;
     private final SiteDistributionRepository siteDistributionRepository;
+    private final CustomerContractRepository customerContractRepository;
 
     @Override
     protected BaseRepository<SiteDistribution, Long> getRepository() {
         return siteDistributionRepository;
     }
+
     @Transactional
     public SiteDistribution insert(SiteDistribution entity) {
         validateAgainstContractAndService(entity);
@@ -40,15 +46,14 @@ public class SiteDistributionServiceImpl extends BaseServiceImpl<SiteDistributio
             savedDistribution.setActivities(new HashSet<>(entity.getActivities()));
             savedDistribution = siteDistributionRepository.saveAndFlush(savedDistribution);
         }
-
         if (entity.getOperationServices() != null && !entity.getOperationServices().isEmpty()) {
             List<LKCustomerContractOperationService> savedServices = new ArrayList<>();
             for (LKCustomerContractOperationService service : entity.getOperationServices()) {
-                 service.setSiteDistribution(savedDistribution);
+                service.setSiteDistribution(savedDistribution);
 
                 // Initialize empty collections if needed
                 if (service.getDays() == null) {
-                    service.setDays(new HashSet<>());
+                    throw new BusinessException("Service days must be specified", HttpStatus.BAD_REQUEST);
                 }
 
                 LKCustomerContractOperationService savedService =
@@ -57,7 +62,7 @@ public class SiteDistributionServiceImpl extends BaseServiceImpl<SiteDistributio
             }
             savedDistribution.setOperationServices(savedServices);
         }
-
+        updateContractStatusToReady(savedDistribution);
         return siteDistributionRepository.saveAndFlush(savedDistribution);
     }
 
@@ -93,6 +98,18 @@ public class SiteDistributionServiceImpl extends BaseServiceImpl<SiteDistributio
         if (totalOperationDays > allowedDays) {
             throw new IllegalArgumentException("Total operation days (" + totalOperationDays +
                     ") exceed allowed service days (" + allowedDays + ").");
+        }
+    }
+
+
+    private void updateContractStatusToReady(SiteDistribution siteDistribution) {
+        LKCustomerContractService contractService = siteDistribution.getLkCustomerContractService();
+        if (contractService != null) {
+            CustomerContract contract = contractService.getCustomerContract();
+            if (contract != null && !"READY".equals(contract.getStatus())) {
+                contract.setStatus("READY");
+                customerContractRepository.save(contract);
+            }
         }
     }
 
