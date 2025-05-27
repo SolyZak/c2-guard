@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "customers")
 @Data
@@ -43,4 +46,7 @@ public class Customer extends BaseEntity {
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
     private boolean active = false;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CustomerService> customerServices = new ArrayList<>();
 }

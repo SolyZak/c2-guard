@@ -9,11 +9,14 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CustomerServiceMapper extends BaseMapper<CustomerService, CustomerServiceDTO> {
+
     @Override
-    @Mapping(target = "serviceDetails", source = "serviceDetails")
+    @Mapping(source = "customer.id", target = "customerId")
+    @Mapping(source = "serviceDetails", target = "serviceDetails")
     CustomerServiceDTO map(CustomerService entity);
 
     @Override
+    @Mapping(target = "customer.id", source = "customerId")
     @Mapping(target = "serviceDetails", source = "serviceDetails")
     CustomerService unMap(CustomerServiceDTO dto);
 }

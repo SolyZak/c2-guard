@@ -1,13 +1,17 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
+import com.eden.eden_crm_sec_crm_back.base.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
 import com.eden.eden_crm_sec_crm_back.base.service.impl.BaseServiceImpl;
 import com.eden.eden_crm_sec_crm_back.dto.CustomerServiceDetailsDTO;
 import com.eden.eden_crm_sec_crm_back.dto.lookup.ServiceDetailsCustomDto;
+import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerServiceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,7 @@ import java.util.stream.Collectors;
 public class CustomerServiceOfServiceImpl extends BaseServiceImpl<CustomerService, Long> implements CustomerServiceService {
 
     private final CustomerServiceRepository customerServiceRepository;
+    private final CustomerRepository customerRepository;
 
     @Override
     protected BaseRepository<CustomerService, Long> getRepository() {
@@ -29,6 +34,14 @@ public class CustomerServiceOfServiceImpl extends BaseServiceImpl<CustomerServic
 
     @Override
     public CustomerService insert(CustomerService entity) {
+        if (entity.getCustomer() == null || entity.getCustomer().getId() == null) {
+            throw new BusinessException("Customer ID must be provided", HttpStatus.BAD_REQUEST);
+        }
+
+        Customer customer = customerRepository.findById(entity.getCustomer().getId())
+                .orElseThrow(() -> new BusinessException("Customer not found", HttpStatus.NOT_FOUND));
+        entity.setCustomer(customer);
+
         if (entity.getServiceDetails() != null && !entity.getServiceDetails().isEmpty()) {
             entity.getServiceDetails().forEach(detail -> detail.setCustomerService(entity));
         }

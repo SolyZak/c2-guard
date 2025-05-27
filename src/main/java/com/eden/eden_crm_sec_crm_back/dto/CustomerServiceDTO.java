@@ -29,5 +29,5 @@ public class CustomerServiceDTO extends BaseDto<Long> implements Serializable {
     private Set<ActivityEnum> activities;
     private boolean multiSite;
     private List<ServiceDetailsDto> serviceDetails;
-
+    private Long customerId;
 }
