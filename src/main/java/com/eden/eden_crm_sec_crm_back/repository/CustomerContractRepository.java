@@ -26,4 +26,12 @@ public interface CustomerContractRepository extends BaseRepository<CustomerContr
 //            "WHERE cc.agreementNumber = :agreementNumber")
 //    Optional<CustomerContract> findByAgreementNumberWithServices(@Param("agreementNumber") String agreementNumber);
 
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "WHERE cc.id = :id " +
+            "AND cc.customer.id = :customerId")
+    Optional<CustomerContract> findByIdAndCustomerId(
+            @Param("id") Long id,
+            @Param("customerId") Long customerId
+    );
+
 }

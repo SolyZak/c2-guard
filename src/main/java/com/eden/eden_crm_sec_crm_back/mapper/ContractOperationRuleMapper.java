@@ -12,12 +12,8 @@ import org.mapstruct.Mapping;
 public interface ContractOperationRuleMapper extends BaseMapper<ContractOperationRule, ContractOperationRuleDTO> {
 
     @Override
-    @Mapping(source = "customerAgreement.id", target = "customerAgreementId")
+    @Mapping(source = "customerAgreement.id", target = "contractId")
     ContractOperationRuleDTO map(ContractOperationRule entity);
-
-    @Override
-    @Mapping(source = "customerAgreementId", target = "customerAgreement")
-    ContractOperationRule unMap(ContractOperationRuleDTO dto);
 
     default CustomerContract map(Long id) {
         if (id == null) {

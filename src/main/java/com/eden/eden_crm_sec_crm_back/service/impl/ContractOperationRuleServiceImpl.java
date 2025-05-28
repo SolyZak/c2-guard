@@ -1,24 +1,45 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
-import com.eden.eden_crm_sec_crm_back.base.service.impl.BaseServiceImpl;
+import com.eden.eden_crm_sec_crm_back.dto.ContractOperationRuleDTO;
+import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationRule;
+import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.repository.ContractOperationRuleRepository;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.service.ContractOperationRuleService;
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
-public class ContractOperationRuleServiceImpl extends BaseServiceImpl<ContractOperationRule, Long> implements ContractOperationRuleService {
+public class ContractOperationRuleServiceImpl implements ContractOperationRuleService {
     private final ContractOperationRuleRepository contractOperationRuleRepository;
-
+    private final CustomerContractRepository contractRepository;
 
     @Override
-    protected BaseRepository<ContractOperationRule, Long> getRepository() {
-        return contractOperationRuleRepository;
-    }
+    public String changeContractRule(ContractOperationRuleDTO dto) {
+        CustomerContract contract = contractRepository.findByIdAndCustomerId(Utils.getLoggedInCustomerId(), dto.getContractId())
+                .orElseThrow(
+                        () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contractId")}), HttpStatus.NOT_FOUND)
+                );
+        Optional<ContractOperationRule> contractOperationRuleExists = contractOperationRuleRepository.findContractRule(dto.getContractId());
+        ContractOperationRule contractOperationRule = contractOperationRuleExists.orElseGet(ContractOperationRule::new);
 
+        contractOperationRule.setCustomerAgreement(contract);
+        contractOperationRule.setAllowCheckInBefore(dto.isAllowCheckInBefore());
+        contractOperationRule.setCheckInBeforeMinutes(dto.getCheckInBeforeMinutes());
+        contractOperationRule.setAllowCheckInAfter(dto.isAllowCheckInAfter());
+        contractOperationRule.setCheckInAfterMinutes(dto.getCheckInAfterMinutes());
+        contractOperationRule.setAllowCheckOutAfter(dto.isAllowCheckOutAfter());
+        contractOperationRule.setCheckOutAfterMinutes(dto.getCheckOutAfterMinutes());
+        contractOperationRule.setPresenceMode(dto.getPresenceMode());
+        contractOperationRuleRepository.save(contractOperationRule);
+
+        return MessageUtil.getMessage("contract-operation-rule.changed");
+    }
 }

@@ -26,4 +26,8 @@ public class CustomerContract extends BaseEntity<Long> {
     private ContractOperationRule customerAgreement;
     @OneToMany(mappedBy = "customerContract", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<LKCustomerContractService> customerContractServices = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
 }
