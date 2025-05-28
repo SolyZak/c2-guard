@@ -19,15 +19,15 @@ import java.io.Serializable;
 public class LKCustomerContractServiceDto extends BaseDto<Long> implements Serializable {
     private Long quantity;
     private Long unitPrice;
-    private Long customerServiceId;
+    private Long serviceDetailsId;
     private Long customerContractId;
 
     public LKCustomerContractServiceDto(Long id, Long quantity, Long unitPrice,
-                                        Long customerServiceId, Long customerContractId) {
+                                        Long serviceDetailsId, Long customerContractId) {
         this.setId(id);
         this.quantity = quantity;
         this.unitPrice = unitPrice;
-        this.customerServiceId = customerServiceId;
+        this.serviceDetailsId = serviceDetailsId;
         this.customerContractId = customerContractId;
     }
 }

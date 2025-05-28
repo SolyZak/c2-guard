@@ -10,11 +10,13 @@ import java.util.List;
 
 @Repository
 public interface LKCustomerContractServiceRepository extends BaseRepository<LKCustomerContractService, Long> {
+
     @Query("SELECT s FROM LKCustomerContractService s " +
-            "WHERE s.customerService.id = :serviceId " +
+            "WHERE s.customerService.customerService.id = :serviceId " +
             "AND s.customerContract.id = :customerContractId")
     List<LKCustomerContractService> getByServiceAndAgreement(
             @Param("serviceId") Long serviceId,
             @Param("customerContractId") Long customerContractId);
+
 
 }

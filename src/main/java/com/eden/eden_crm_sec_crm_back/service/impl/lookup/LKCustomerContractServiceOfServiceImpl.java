@@ -35,7 +35,7 @@ public class LKCustomerContractServiceOfServiceImpl extends BaseServiceImpl<LKCu
 
         return entities.stream()
                 .map(entity -> {
-                    CustomerService service = entity.getCustomerService();
+                    CustomerService service = entity.getCustomerService().getCustomerService();
                     CustomerServiceDetailsDTO serviceDTO = new CustomerServiceDetailsDTO(
                             service.getId(),
                             service.getServiceName(),

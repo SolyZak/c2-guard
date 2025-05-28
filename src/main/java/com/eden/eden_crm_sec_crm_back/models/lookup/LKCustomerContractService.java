@@ -15,9 +15,10 @@ public class LKCustomerContractService extends BaseEntity<Long> {
 
     private Long quantity;
     private Long unitPrice;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_service_id")
-    private CustomerService customerService;
+    @JoinColumn(name = "service_details_id") // Changed column name
+    private ServiceDetails customerService;
     @ManyToOne
     @JoinColumn(name = "customer_contract_id", nullable = false)
     private CustomerContract customerContract;

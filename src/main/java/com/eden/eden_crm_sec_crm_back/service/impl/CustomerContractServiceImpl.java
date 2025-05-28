@@ -82,7 +82,7 @@ public class CustomerContractServiceImpl extends BaseServiceImpl<CustomerContrac
         }
         List<CustomerServiceDTO> serviceDTOs = contract.getCustomerContractServices().stream()
                 .map(link -> {
-                    CustomerService service = link.getCustomerService();
+                    CustomerService service = link.getCustomerService().getCustomerService();
                     CustomerServiceDTO serviceDto = customerServiceMapper.map(service);
                     return serviceDto;
                 })

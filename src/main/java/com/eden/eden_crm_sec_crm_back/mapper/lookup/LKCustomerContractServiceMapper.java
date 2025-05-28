@@ -5,6 +5,7 @@ import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
+import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -12,22 +13,23 @@ import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface LKCustomerContractServiceMapper extends BaseMapper<LKCustomerContractService, LKCustomerContractServiceDto> {
+
     @Override
-    @Mapping(source = "customerService.id", target = "customerServiceId")
+    @Mapping(source = "customerService.id", target = "serviceDetailsId") // Now refers to ServiceDetails
     @Mapping(source = "customerContract.id", target = "customerContractId")
     LKCustomerContractServiceDto map(LKCustomerContractService entity);
 
     @Override
-    @Mapping(source = "customerServiceId", target = "customerService", qualifiedByName = "idToCustomerService")
+    @Mapping(source = "serviceDetailsId", target = "customerService", qualifiedByName = "idToServiceDetails")
     @Mapping(source = "customerContractId", target = "customerContract", qualifiedByName = "idToContract")
     LKCustomerContractService unMap(LKCustomerContractServiceDto dto);
 
-    @Named("idToCustomerService")
-    default CustomerService idToCustomerService(Long id) {
+    @Named("idToServiceDetails")
+    default ServiceDetails idToServiceDetails(Long id) {
         if (id == null) return null;
-        CustomerService service = new CustomerService();
-        service.setId(id);
-        return service;
+        ServiceDetails details = new ServiceDetails();
+        details.setId(id);
+        return details;
     }
 
     @Named("idToContract")

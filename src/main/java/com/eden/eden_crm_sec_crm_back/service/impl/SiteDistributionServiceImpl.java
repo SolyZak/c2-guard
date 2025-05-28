@@ -72,7 +72,7 @@ public class SiteDistributionServiceImpl extends BaseServiceImpl<SiteDistributio
             throw new IllegalArgumentException("Contract service or customer service is missing.");
         }
 
-        CustomerService customerService = contractService.getCustomerService();
+        CustomerService customerService = contractService.getCustomerService().getCustomerService();
         List<ServiceDetails> serviceDetails = customerService.getServiceDetails();
         Long contractQuantity = contractService.getQuantity() != null ? contractService.getQuantity() : 0L;
 
