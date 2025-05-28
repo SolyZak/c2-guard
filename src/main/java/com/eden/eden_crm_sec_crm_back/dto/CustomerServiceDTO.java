@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Setter
@@ -30,4 +31,5 @@ public class CustomerServiceDTO extends BaseDto<Long> implements Serializable {
     private boolean multiSite;
     private List<ServiceDetailsDto> serviceDetails;
     private Long customerId;
+    private LocalDateTime createdDate;
 }
