@@ -2,6 +2,8 @@ package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -17,4 +19,16 @@ public interface CustomerServiceRepository extends BaseRepository<CustomerServic
             "LEFT JOIN FETCH cs.serviceDetails " +
             "WHERE cs.id IN :serviceIds")
     List<CustomerService> findByIdInWithDetails(@Param("serviceIds") List<Long> serviceIds);
+
+    @Query("SELECT s FROM CustomerService s " +
+            "LEFT JOIN FETCH s.serviceDetails " +
+            "WHERE s.customer.id = :customerId " +
+            "AND (s.isDeleted IS NULL OR s.isDeleted = 0)")
+    Page<CustomerService> servicesByCustomer(Long customerId, Pageable pageable);
+
+    @Query("SELECT s FROM CustomerService s " +
+            "LEFT JOIN FETCH s.serviceDetails " +
+            "WHERE s.customer.id = :customerId " +
+            "AND (s.isDeleted IS NULL OR s.isDeleted = 0)")
+    List<CustomerService> servicesByCustomer(Long customerId);
 }

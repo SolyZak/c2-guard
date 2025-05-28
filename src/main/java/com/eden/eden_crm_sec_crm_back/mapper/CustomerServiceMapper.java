@@ -1,22 +1,39 @@
 package com.eden.eden_crm_sec_crm_back.mapper;
 
-import com.eden.eden_crm_sec_crm_back.base.mapper.BaseMapper;
 import com.eden.eden_crm_sec_crm_back.dto.CustomerServiceDTO;
+import com.eden.eden_crm_sec_crm_back.dto.request.AddServiceDetailsDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.AddServiceDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ServiceDataDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ServiceDetailsDataDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ServiceDetailsDropdownDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
+import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 
 @Mapper(componentModel = "spring")
-public interface CustomerServiceMapper extends BaseMapper<CustomerService, CustomerServiceDTO> {
+public interface CustomerServiceMapper {
+    @Mapping(target = "serviceName", source = "name")
+    CustomerService toEntity(AddServiceDto dto);
 
-    @Override
-    @Mapping(source = "customer.id", target = "customerId")
-    @Mapping(source = "serviceDetails", target = "serviceDetails")
-    CustomerServiceDTO map(CustomerService entity);
+    @Mapping(target = "customerService", source = "s")
+    ServiceDetails toEntity(AddServiceDetailsDto dto, CustomerService s);
 
-    @Override
-    @Mapping(target = "customer.id", source = "customerId")
+    @Mapping(target = "name", source = "serviceName")
     @Mapping(target = "serviceDetails", source = "serviceDetails")
-    CustomerService unMap(CustomerServiceDTO dto);
+    ServiceDataDto toServiceDataDto(CustomerService entity);
+
+    List<ServiceDetailsDataDto> mapServiceDetails(List<ServiceDetails> details);
+
+    ServiceDetailsDataDto toServiceDetailsDataDto(ServiceDetails e);
+
+    @Mapping(target = "serviceName", source = "e.customerService.serviceName")
+    @Mapping(target = "serviceId", source = "e.customerService.id")
+    ServiceDetailsDropdownDto toServiceDetailsDropdownDto(ServiceDetails e);
+
+    @Mapping(target = "customerId", source = "s.customer.id")
+    CustomerServiceDTO map(CustomerService s);
 }

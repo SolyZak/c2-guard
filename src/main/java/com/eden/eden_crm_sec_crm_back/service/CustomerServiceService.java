@@ -1,10 +1,14 @@
 package com.eden.eden_crm_sec_crm_back.service;
-import com.eden.eden_crm_sec_crm_back.base.service.BaseService;
-import com.eden.eden_crm_sec_crm_back.dto.CustomerServiceDetailsDTO;
-import com.eden.eden_crm_sec_crm_back.models.CustomerService;
+
+import com.eden.eden_crm_sec_crm_back.dto.request.AddServiceDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ServiceDataDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ServiceDetailsDropdownDto;
+import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 
 import java.util.List;
 
-public interface CustomerServiceService extends BaseService<CustomerService, Long> {
-     List<CustomerServiceDetailsDTO> getAllCustomerServices();
+public interface CustomerServiceService {
+     PaginateResponse<ServiceDataDto> paginateMyServices(Integer page, Integer size);
+     List<ServiceDetailsDropdownDto> allMyServiceDetails();
+     String create(AddServiceDto dto);
 }
