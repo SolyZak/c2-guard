@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
 import com.eden.eden_crm_sec_crm_back.base.service.impl.BaseServiceImpl;
+import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerService;
@@ -106,8 +107,8 @@ public class SiteDistributionServiceImpl extends BaseServiceImpl<SiteDistributio
         LKCustomerContractService contractService = siteDistribution.getLkCustomerContractService();
         if (contractService != null) {
             CustomerContract contract = contractService.getCustomerContract();
-            if (contract != null && !"READY".equals(contract.getStatus())) {
-                contract.setStatus("READY");
+            if (contract != null && !ContractStatus.ON_DISTRIBUTE.equals(contract.getStatus())) {
+                contract.setStatus(ContractStatus.ON_DISTRIBUTE);
                 customerContractRepository.save(contract);
             }
         }

@@ -2,12 +2,17 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
+import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping(path = "/customers/contracts")
@@ -22,5 +27,17 @@ public class CustomerContractController {
     @PostMapping
     public ApiResponse<String> createAgreement(@RequestBody @Valid AddContractDto dto) {
         return ApiResponse.ok(customerContractService.createAgreement(dto));
+    }
+
+    @Operation(summary = "Paginate Contracts API")
+    @GetMapping
+    public ApiResponse<PaginateResponse<ContractRowDto>> paginateMyContracts(
+            @RequestParam(required = false, name = "search") String search,
+            @RequestParam(required = false, name = "page", defaultValue = "0") int page,
+            @RequestParam(required = false, name = "size", defaultValue = "10") int size,
+            @RequestParam(required = false, name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false, name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return ApiResponse.ok(customerContractService.paginateMyContracts(search, from, to, page, size));
     }
 }

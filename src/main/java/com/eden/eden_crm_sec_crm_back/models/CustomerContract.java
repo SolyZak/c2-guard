@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
+import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,13 +14,23 @@ import java.util.*;
 @Setter
 @Getter
 public class CustomerContract extends BaseEntity<Long> {
+    @Column(name = "agreement_number")
     private String agreementNumber;
+
+    @Column(name = "agreement_name")
     private String agreementName;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private ContractStatus status;
+
     private LocalDate startAgreementDate;
     private LocalDate endAgreementDate;
     private Long securityCompanyId;
+    private String securityCompanyName;
+
     private Long currency;
+    private String currencyName;
+    private String currencyCode;
 
     @OneToOne(mappedBy = "customerAgreement", fetch = FetchType.LAZY)
     private ContractOperationRule customerAgreement;
