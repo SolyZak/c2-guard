@@ -1,18 +1,9 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
-import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface SiteDistributionRepository extends BaseRepository<SiteDistribution, Long> {
-
-    @Query("SELECT DISTINCT sd FROM SiteDistribution sd WHERE sd.site.id = :siteId")
-    List<SiteDistribution> findByCustomerContractSite_Id(@Param("siteId") Long siteId);
-
-
+public interface SiteDistributionRepository extends JpaRepository<SiteDistribution, Long> {
 }

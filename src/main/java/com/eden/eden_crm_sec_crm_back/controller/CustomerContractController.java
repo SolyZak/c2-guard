@@ -5,7 +5,6 @@ import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
-import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,7 +60,7 @@ public class CustomerContractController {
 
     @Operation(summary = "Distribute A Contract Service & Operation Site API")
     @PutMapping("/{id}/distribute")
-    public ApiResponse<CustomerContract> contractDistribute(
+    public ApiResponse<String> contractDistribute(
             @PathVariable("id") Long contractId,
             @RequestBody @Valid SiteDistributionDto dto
         ) {
