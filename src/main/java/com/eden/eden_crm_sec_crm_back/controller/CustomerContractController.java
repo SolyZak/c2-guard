@@ -1,60 +1,26 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
-import com.eden.eden_crm_sec_crm_back.base.controller.BaseController;
-import com.eden.eden_crm_sec_crm_back.base.mapper.BaseMapper;
-import com.eden.eden_crm_sec_crm_back.base.service.BaseService;
 import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
-import com.eden.eden_crm_sec_crm_back.dto.CustomerContractCustomDto;
-import com.eden.eden_crm_sec_crm_back.dto.CustomerContractDetailsDto;
-import com.eden.eden_crm_sec_crm_back.dto.CustomerContractDto;
-import com.eden.eden_crm_sec_crm_back.dto.CustomerServiceDetailsDTO;
-import com.eden.eden_crm_sec_crm_back.mapper.CustomerContractMapper;
-import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
+import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 
 @RestController
 @RequestMapping(path = "/customers/contracts")
 @RequiredArgsConstructor
-@Slf4j
-public class CustomerContractController extends BaseController<CustomerContract, CustomerContractDto, Long> {
-
+@Tag(
+        name = "Customer Contract API",
+        description = "This part is for customer portal, will provide the needed for contracts API")
+public class CustomerContractController {
     private final CustomerContractService customerContractService;
-    private final CustomerContractMapper customerContractMapper;
 
-    @Override
-    protected BaseService<CustomerContract, Long> getService() {
-        log.info("Getting service");
-        return customerContractService;
+    @Operation(summary = "Create Contract API")
+    @PostMapping
+    public ApiResponse<String> createAgreement(@RequestBody @Valid AddContractDto dto) {
+        return ApiResponse.ok(customerContractService.createAgreement(dto));
     }
-
-    @Override
-    protected BaseMapper<CustomerContract, CustomerContractDto> getMapper() {
-        log.info("Getting mapper");
-        return customerContractMapper;
-    }
-    @GetMapping("/all-agreements-details")
-    public List<CustomerContractCustomDto> getAllCustomerAgreement() {
-        return customerContractService.getAllCustomerAgreements();
-    }
-    @GetMapping("/{id}/contract-details")
-    public ApiResponse<CustomerContractDetailsDto> getCustomerContractDetails(@PathVariable("id") Long id) {
-        CustomerContractDetailsDto dto = customerContractService.getCustomerContractDetails(id);
-        return ApiResponse.ok(dto);
-    }
-    @GetMapping("/{agreementNumber}/services")
-    public ApiResponse<List<CustomerServiceDetailsDTO>> getContractServices(
-            @PathVariable String agreementNumber) {
-
-        List<CustomerServiceDetailsDTO> services = customerContractService
-                .getServicesForContract(agreementNumber);
-
-        return ApiResponse.ok(services);
-    }
-
 }

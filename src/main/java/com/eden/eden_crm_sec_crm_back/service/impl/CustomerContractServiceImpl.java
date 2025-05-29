@@ -1,25 +1,18 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.base.repository.BaseRepository;
-import com.eden.eden_crm_sec_crm_back.base.service.impl.BaseServiceImpl;
-import com.eden.eden_crm_sec_crm_back.dto.*;
-import com.eden.eden_crm_sec_crm_back.dto.lookup.ServiceDetailsCustomDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.mapper.*;
-import com.eden.eden_crm_sec_crm_back.mapper.lookup.LKCustomerContractServiceMapper;
-import com.eden.eden_crm_sec_crm_back.models.ContractOperationRule;
-import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
-import com.eden.eden_crm_sec_crm_back.models.CustomerService;
-import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import com.eden.eden_crm_sec_crm_back.models.*;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
-import com.eden.eden_crm_sec_crm_back.repository.ContractOperationRuleRepository;
+import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
-import com.eden.eden_crm_sec_crm_back.repository.CustomerServiceRepository;
-import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
+import com.eden.eden_crm_sec_crm_back.repository.lookup.ServiceDetailsRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
-import jakarta.persistence.EntityNotFoundException;
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
@@ -27,129 +20,38 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
-public class CustomerContractServiceImpl extends BaseServiceImpl<CustomerContract, Long> implements CustomerContractService {
+public class CustomerContractServiceImpl implements CustomerContractService {
     private final CustomerContractRepository customerContractRepository;
-    private final ContractOperationRuleRepository contractOperationRuleRepository;
-    private final ContractOperationRuleMapper contractOperationRuleMapper;
-    private final CustomerServiceMapper customerServiceMapper;
-    private final SiteDistributionCustomMapper siteDistributionMapper;
-    private final SiteDistributionRepository siteDistributionRepository;
-    private final CustomerContractDetailsMapper customerContractMapper;
-    private final LKCustomerContractServiceMapper lkCustomerContractServiceMapper;
-    private final CustomerServiceRepository customerServiceRepository;
-
+    private final com.eden.eden_crm_sec_crm_back.service.CustomerService customerService;
+    private final CustomerContractMapper contractMapper;
+    private final ServiceDetailsRepository serviceDetailsRepository;
 
     @Override
-    protected BaseRepository<CustomerContract, Long> getRepository() {
-        return customerContractRepository;
-    }
+    @Transactional
+    public String createAgreement(AddContractDto dto) {
+        Customer customer = customerService.getLoggedInCustomer();
+        CustomerContract contract = contractMapper.toEntity(dto);
+        contract.setCustomer(customer);
 
-    @Override
-    public CustomerContract insert(CustomerContract entity) {
-        if (entity.getStatus() == null) {
-            entity.setStatus("NEW");
-        }
-        if (entity.getCustomerContractServices() != null) {
-            for (LKCustomerContractService service : entity.getCustomerContractServices()) {
-                service.setCustomerContract(entity);
+        List<LKCustomerContractService> contractServices = new ArrayList<>();
+        Map<Long, ServiceDetails> serviceDetailsMap = serviceDetailsRepository
+                .findAllById(dto.getServices().stream()
+                        .map(AddContractServiceDto::getServiceDetailsId)
+                        .collect(Collectors.toList()))
+                .stream()
+                .collect(Collectors.toMap(ServiceDetails::getId, Function.identity()));
+        dto.getServices().forEach(serviceDetailDto -> {
+            ServiceDetails serviceDetails = serviceDetailsMap.get(serviceDetailDto.getServiceDetailsId());
+            if (serviceDetails != null) {
+                LKCustomerContractService contractService = contractMapper.toEntity(serviceDetailDto);
+                contractService.setCustomerService(serviceDetails);
+                contractService.setCustomerContract(contract);
+                contractServices.add(contractService);
             }
-        }
-        return customerContractRepository.save(entity);
+        });
+
+        contract.setCustomerContractServices(contractServices);
+        customerContractRepository.save(contract);
+        return MessageUtil.getMessage("entity.created", new Object[]{MessageUtil.getMessage("contract")});
     }
-
-    @Override
-    public List<CustomerContractCustomDto> getAllCustomerAgreements() {
-        List<CustomerContract> agreementsList = customerContractRepository.findAll();
-        return agreementsList.stream()
-                .map(agreement -> new CustomerContractCustomDto(
-                        agreement.getAgreementNumber(),
-                        agreement.getAgreementName()))
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public CustomerContractDetailsDto getCustomerContractDetails(Long contractId) {
-
-        CustomerContract contract = customerContractRepository.findById(contractId)
-                .orElseThrow(() -> new EntityNotFoundException("CustomerContract not found"));
-
-         CustomerContractDetailsDto dto = customerContractMapper.map(contract);
-
-        ContractOperationRule rule = contractOperationRuleRepository.findByCustomerAgreementId(contractId);
-        if (rule != null) {
-            dto.setContractOperationRuleDTO(contractOperationRuleMapper.map(rule));
-        }
-        List<CustomerServiceDTO> serviceDTOs = contract.getCustomerContractServices().stream()
-                .map(link -> {
-                    CustomerService service = link.getCustomerService().getCustomerService();
-                    CustomerServiceDTO serviceDto = customerServiceMapper.map(service);
-                    return serviceDto;
-                })
-                .collect(Collectors.toList());
-        dto.setServiceDTOList(serviceDTOs);
-
-        // Map site distributions
-        List<SiteDistribution> distributions = siteDistributionRepository.findByCustomerContractSite_Id(contractId);
-        List<SiteDistributionCustomDto> siteDtos = distributions.stream()
-                .map(siteDistributionMapper::map)
-                .collect(Collectors.toList());
-
-        dto.setSiteDistributionCustomDto(siteDtos);
-
-        return dto;
-    }
-
-
-    public List<CustomerServiceDetailsDTO> getServicesForContract(String agreementNumber) {
-        // First query: Get contract with its services
-        CustomerContract contract = customerContractRepository
-                .findByAgreementNumberWithServices(agreementNumber)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        String.format("Contract with agreement number %s not found", agreementNumber)));
-
-        // Extract service IDs for second query
-        List<Long> serviceIds = contract.getCustomerContractServices().stream()
-                .map(ccs -> ccs.getCustomerService().getId())
-                .distinct()
-                .collect(Collectors.toList());
-
-        if (serviceIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Second query: Get all services with their details
-        List<CustomerService> servicesWithDetails = customerServiceRepository
-                .findByIdInWithDetails(serviceIds);
-
-        // Create a map for quick lookup
-        Map<Long, CustomerService> serviceMap = servicesWithDetails.stream()
-                .collect(Collectors.toMap(CustomerService::getId, Function.identity()));
-
-        // Map to DTOs
-        return contract.getCustomerContractServices().stream()
-                .map(ccs -> {
-                    CustomerService service = serviceMap.get(ccs.getCustomerService().getId());
-                    return mapToServiceDetailsDTO(service);
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
-    private CustomerServiceDetailsDTO mapToServiceDetailsDTO(CustomerService service) {
-        if (service == null) {
-            return null;
-        }
-
-        List<ServiceDetailsCustomDto> details = service.getServiceDetails().stream()
-                .map(d -> new ServiceDetailsCustomDto(d.getId(), d.getHours(), d.getDays()))
-                .collect(Collectors.toList());
-
-        return new CustomerServiceDetailsDTO(
-                service.getId(),
-                service.getServiceName(),
-                details
-        );
-    }
-
 }

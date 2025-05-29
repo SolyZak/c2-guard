@@ -1,7 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
-import com.eden.eden_crm_sec_crm_back.enums.CurrencyEnum;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,10 +19,11 @@ public class CustomerContract extends BaseEntity<Long> {
     private LocalDate startAgreementDate;
     private LocalDate endAgreementDate;
     private Long securityCompanyId;
-    @Enumerated(EnumType.STRING)
-    private CurrencyEnum currency;
+    private Long currency;
+
     @OneToOne(mappedBy = "customerAgreement", fetch = FetchType.LAZY)
     private ContractOperationRule customerAgreement;
+
     @OneToMany(mappedBy = "customerContract", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<LKCustomerContractService> customerContractServices = new ArrayList<>();
 
