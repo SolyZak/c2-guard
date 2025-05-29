@@ -20,7 +20,4 @@ public class AddContractServiceDto {
     @Min(value = 1, message = "{validation.contract.services.unitPrice.min-1}")
     @Max(value = 1000000, message = "{validation.contract.services.unitPrice.max-1000000}")
     private Double unitPrice;
-
-    // ALTER TABLE public.customer_contract ALTER COLUMN currency TYPE int4 USING currency::int4;
-    // ALTER TABLE public.customer_contract DROP CONSTRAINT customer_contract_currency_check;
 }
