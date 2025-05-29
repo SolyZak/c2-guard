@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,9 +25,11 @@ public class ComplaintEntity extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "customer_site_id")
+    @JsonBackReference
     private CustomerSite customerSite;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
+    @JsonBackReference
     private Customer customer;
 }

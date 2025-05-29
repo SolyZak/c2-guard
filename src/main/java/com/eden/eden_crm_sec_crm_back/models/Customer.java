@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -48,8 +49,10 @@ public class Customer extends BaseEntity {
     private boolean active = false;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<CustomerService> customerServices = new ArrayList<>();
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<CustomerContract> customerContracts = new ArrayList<>();
 }

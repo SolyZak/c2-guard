@@ -3,6 +3,8 @@ package com.eden.eden_crm_sec_crm_back.models;
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,9 +38,15 @@ public class CustomerContract extends BaseEntity<Long> {
     private ContractOperationRule customerAgreement;
 
     @OneToMany(mappedBy = "customerContract", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
+    @JsonManagedReference
     private List<LKCustomerContractService> customerContractServices = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
+    @JsonBackReference
     private Customer customer;
+
+    @OneToMany(mappedBy = "customerContract", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
+    @JsonManagedReference
+    private Set<SiteDistribution> siteDistributions = new HashSet<>();
 }

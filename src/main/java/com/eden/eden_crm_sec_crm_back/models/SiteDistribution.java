@@ -4,6 +4,8 @@ import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.enums.ActivityEnum;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,24 +20,33 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "site_distribution")
+@Table(name = "contract_operation_site_distribution")
 public class SiteDistribution extends BaseEntity<Long> {
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_site_id")
+    @JoinColumn(name = "operation_site_id")
+    @JsonBackReference
     private CustomerSite site;
 
     @ElementCollection(targetClass = ActivityEnum.class)
     @Enumerated(EnumType.STRING)
     @CollectionTable(
-            name = "site_distribution_activities",
-            joinColumns = @JoinColumn(name = "site_distribution_id", referencedColumnName = "id"),
-            foreignKey = @ForeignKey(name = "fk_site_distribution_id") // ensure this points to SiteDistribution
+            name = "contract_operation_site_distribution_activities",
+            joinColumns = @JoinColumn(name = "operation_site_distribution_id", referencedColumnName = "id"),
+            foreignKey = @ForeignKey(name = "fk_operation_site_distribution_id") // ensure this points to SiteDistribution
     )
     private Set<ActivityEnum> activities = new HashSet<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_service_id", nullable = false)
+    @JoinColumn(name = "customer_contract_service_id", nullable = false)
+    @JsonBackReference
     private LKCustomerContractService lkCustomerContractService;
 
     @OneToMany(mappedBy = "siteDistribution", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<LKCustomerContractOperationService> operationServices = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "customer_contract_id", nullable = false)
+    @JsonBackReference
+    private CustomerContract customerContract;
 }

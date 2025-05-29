@@ -4,6 +4,8 @@ import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.enums.ActivityEnum;
 import com.eden.eden_crm_sec_crm_back.enums.UnitEnum;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,8 +26,10 @@ public class CustomerService extends BaseEntity<Long> {
     private Set<ActivityEnum> activities = new HashSet<>();
     private boolean multiSite;
     @OneToMany(mappedBy = "customerService", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<ServiceDetails> serviceDetails = new ArrayList<>();
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
+    @JsonBackReference
     private Customer customer;
 }

@@ -18,8 +18,8 @@ import java.util.Optional;
 
 @Repository
 public interface CustomerContractRepository extends JpaRepository<CustomerContract, Long> {
-    @EntityGraph(attributePaths = {"operationRule", "services", "siteDistributions"})
-    Optional<CustomerContract> findWithDetailsById(Long contractId);
+    @EntityGraph(attributePaths = {"customerAgreement", "customerContractServices", "siteDistributions"})
+    Optional<CustomerContract> findWithDetailsByIdAndCustomerId(Long contractId, Long customerId);
 
     @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
             "WHERE cc.id = :id " +

@@ -1,8 +1,10 @@
 package com.eden.eden_crm_sec_crm_back.service;
 
+import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
+import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import jakarta.validation.Valid;
 
@@ -18,4 +20,5 @@ public interface CustomerContractService {
     PaginateResponse<ContractRowDto> paginateMyContracts(String search, LocalDate from, LocalDate to, int page, int size);
     List<ContractRowDto> listMyDraftedContracts();
     List<ContractServiceDetailsData> contractServicesList(Long contractId);
+    CustomerContract contractDistribute(Long contractId, @Valid SiteDistributionDto dto);
 }

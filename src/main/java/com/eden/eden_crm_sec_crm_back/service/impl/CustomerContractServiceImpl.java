@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.clients.dto.Currency;
 import com.eden.eden_crm_sec_crm_back.clients.dto.SecurityCompanyData;
+import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
@@ -123,5 +124,15 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         );
         return contractServiceRepository.getContractServices(contractId)
                 .stream().map(contractMapper::toContractServiceDetailsData).toList();
+    }
+
+    @Override
+    @Transactional
+    public CustomerContract contractDistribute(Long contractId, SiteDistributionDto dto) {
+        Customer customer = customerService.getLoggedInCustomer();
+        CustomerContract contract = customerContractRepository.findWithDetailsByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
+                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+        );
+        return contract;
     }
 }

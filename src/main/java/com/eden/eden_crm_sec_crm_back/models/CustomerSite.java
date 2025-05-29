@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,6 +23,7 @@ public class CustomerSite extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "customer_id", referencedColumnName = "id", nullable = false)
+    @JsonBackReference
     private Customer customer;
 
     @Column(name = "latitude")
