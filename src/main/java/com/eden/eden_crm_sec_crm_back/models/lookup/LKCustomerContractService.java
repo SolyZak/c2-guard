@@ -2,7 +2,6 @@ package com.eden.eden_crm_sec_crm_back.models.lookup;
 
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
-import com.eden.eden_crm_sec_crm_back.models.CustomerService;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +13,7 @@ import lombok.Setter;
 public class LKCustomerContractService extends BaseEntity<Long> {
 
     private Long quantity;
-    private Long unitPrice;
+    private Double unitPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_details_id") // Changed column name

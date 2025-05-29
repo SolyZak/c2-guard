@@ -23,7 +23,7 @@ public class ContractOperationRuleServiceImpl implements ContractOperationRuleSe
 
     @Override
     public String changeContractRule(ContractOperationRuleDTO dto) {
-        CustomerContract contract = contractRepository.findByIdAndCustomerId(Utils.getLoggedInCustomerId(), dto.getContractId())
+        CustomerContract contract = contractRepository.findByIdAndCustomerId(dto.getContractId(), Utils.getLoggedInCustomerId())
                 .orElseThrow(
                         () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contractId")}), HttpStatus.NOT_FOUND)
                 );

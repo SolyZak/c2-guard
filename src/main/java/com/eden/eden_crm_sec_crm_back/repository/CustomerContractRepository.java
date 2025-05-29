@@ -1,6 +1,9 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
+import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -10,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -23,6 +27,14 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
     Optional<CustomerContract> findByIdAndCustomerId(
             @Param("id") Long id,
             @Param("customerId") Long customerId
+    );
+
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "WHERE cc.status IN :statuses " +
+            "AND cc.customer.id = :customerId")
+    List<CustomerContract> listByCustomerIdAndStatus(
+            @NotNull @Param("customerId") Long customerId,
+            @NotEmpty @Param("statuses") List<ContractStatus> statuses
     );
 
     @Query(value = """

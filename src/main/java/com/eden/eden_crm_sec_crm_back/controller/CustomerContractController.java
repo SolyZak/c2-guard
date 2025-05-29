@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "/customers/contracts")
@@ -40,4 +42,19 @@ public class CustomerContractController {
     ) {
         return ApiResponse.ok(customerContractService.paginateMyContracts(search, from, to, page, size));
     }
+
+    @Operation(summary = "Get All My Drafted Contracts API")
+    @GetMapping("/drafts/dropdown")
+    public ApiResponse<List<ContractRowDto>> listMyDraftedContracts() {
+        return ApiResponse.ok(customerContractService.listMyDraftedContracts());
+    }
+
+    @Operation(summary = "Get Contract Services List API")
+    @GetMapping("/{id}/services")
+    public ApiResponse<List<ContractServiceDetailsData>> contractServicesList(
+            @PathVariable("id") Long contractId
+    ) {
+        return ApiResponse.ok(customerContractService.contractServicesList(contractId));
+    }
+
 }

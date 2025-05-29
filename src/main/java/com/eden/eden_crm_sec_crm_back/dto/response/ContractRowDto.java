@@ -11,6 +11,7 @@ public class ContractRowDto {
     private String agreementNumber;
     private String agreementName;
     private String securityCompanyName;
+    private String currencyCode;
     private LocalDate startAgreementDate;
     private LocalDate endAgreementDate;
     private ContractStatus status;

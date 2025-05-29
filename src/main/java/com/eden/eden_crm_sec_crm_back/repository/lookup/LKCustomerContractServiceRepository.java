@@ -19,4 +19,13 @@ public interface LKCustomerContractServiceRepository extends BaseRepository<LKCu
             @Param("customerContractId") Long customerContractId);
 
 
+    @Query("""
+            SELECT lkContService FROM LKCustomerContractService lkContService
+            LEFT JOIN FETCH lkContService.customerService serviceDetails
+            LEFT JOIN FETCH serviceDetails.customerService
+            WHERE lkContService.customerContract.id = :contractId
+            """)
+    List<LKCustomerContractService> getContractServices(
+            @Param("contractId") Long contractId
+    );
 }

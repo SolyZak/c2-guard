@@ -6,6 +6,7 @@ import com.eden.eden_crm_sec_crm_back.clients.dto.SecurityCompanyData;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.mapper.*;
@@ -14,6 +15,7 @@ import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
+import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.ServiceDetailsRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
@@ -38,6 +40,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     private final com.eden.eden_crm_sec_crm_back.service.CustomerService customerService;
     private final CustomerContractMapper contractMapper;
     private final ServiceDetailsRepository serviceDetailsRepository;
+    private final LKCustomerContractServiceRepository contractServiceRepository;
     private final OrgUnitClient orgUnitClient;
 
     @Override
@@ -99,5 +102,26 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                 contracts.getTotalElements(),
                 (long) contracts.getTotalPages()
         );
+    }
+
+    @Override
+    public List<ContractRowDto> listMyDraftedContracts() {
+        Customer customer = customerService.getLoggedInCustomer();
+        return customerContractRepository.listByCustomerIdAndStatus(
+                customer.getId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
+        )
+                .stream()
+                .map(contractMapper::toContractRowDto)
+                .toList();
+    }
+
+    @Override
+    public List<ContractServiceDetailsData> contractServicesList(Long contractId) {
+        Customer customer = customerService.getLoggedInCustomer();
+        customerContractRepository.findByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
+                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+        );
+        return contractServiceRepository.getContractServices(contractId)
+                .stream().map(contractMapper::toContractServiceDetailsData).toList();
     }
 }
