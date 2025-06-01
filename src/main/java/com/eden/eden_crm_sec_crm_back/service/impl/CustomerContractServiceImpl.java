@@ -228,7 +228,10 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     private void validateRequestQntVsContract(SiteDistributionDto dto, CustomerContract contract, LKCustomerContractService service) {
         long qntSum = dto.getOperationServices().stream().mapToLong(LKCustomerContractOperationServiceDto::getQuantity).sum();
         long existsQntSum = contract.getSiteDistributions().stream()
-                .filter(existsSite -> existsSite.getSite().getId().equals(dto.getSiteId()))
+                .filter(
+                        existsSite -> existsSite.getSite().getId().equals(dto.getSiteId()) &&
+                                existsSite.getLkCustomerContractService().getId().equals(dto.getLkCustomerContractServiceId())
+                )
                 .flatMap(existsSite -> existsSite.getOperationServices().stream())
                 .mapToLong(LKCustomerContractOperationService::getQuantity)
                 .sum();
