@@ -146,7 +146,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         LKCustomerContractService service = serviceFromContractAsDto(dto.getLkCustomerContractServiceId(), contract);
 
         validateRequestQntVsContract(dto, contract, service);
-        validateDaysVsContractDays(dto, contract, service);
+        validateDaysVsContractDays(dto, service);
 
         CustomerSite customerSite = customerSiteRepository.findByIdAndCustomerId(dto.getSiteId(), customer.getId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("operation-site")}), HttpStatus.NOT_FOUND)
@@ -216,7 +216,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                 );
     }
 
-    private void validateDaysVsContractDays(SiteDistributionDto dto, CustomerContract contract, LKCustomerContractService service) {
+    private void validateDaysVsContractDays(SiteDistributionDto dto, LKCustomerContractService service) {
         for (LKCustomerContractOperationServiceDto operationService : dto.getOperationServices()) {
             int daysSize = operationService.getDays().size();
             if (!service.getCustomerService().getDays().equals((long) daysSize)) {
