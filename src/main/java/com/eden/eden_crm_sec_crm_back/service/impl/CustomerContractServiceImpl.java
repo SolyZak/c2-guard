@@ -28,13 +28,13 @@ import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServic
 import com.eden.eden_crm_sec_crm_back.repository.lookup.ServiceDetailsRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -175,11 +175,14 @@ public class CustomerContractServiceImpl implements CustomerContractService {
             operationServices.add(lkCustomerContractOperationService);
         });
 
-        contractOperationServiceRepository.saveAll(operationServices);
-        contract.setStatus(ContractStatus.ON_DISTRIBUTE);
-        customerContractRepository.save(contract);
+        Long serviceDistributedQnt = dto.getOperationServices().stream().mapToLong(LKCustomerContractOperationServiceDto::getQuantity).sum();
+        service.setDistributedQuantity(serviceDistributedQnt);
+        contractServiceRepository.save(service);
 
-        // todo need to check the contract status for make it fully distributed in case of all services distributed
+        contractOperationServiceRepository.saveAll(operationServices);
+
+        contract.setStatus(getContractNewStatus(contractId, service.getId(), service.getQuantity(), serviceDistributedQnt));
+        customerContractRepository.save(contract);
 
         return MessageUtil.getMessage("contract.distributed");
     }
@@ -272,5 +275,21 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         if (service.getQuantity() < qntSum + existsQntSum) {
             throw new BusinessException(MessageUtil.getMessage("contract.distribution.you-exceed-quantity"), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private ContractStatus getContractNewStatus(
+            Long contractId,
+            Long serviceId,
+            Long serviceQnt,
+            Long serviceDistributedQnt
+    ) {
+
+        Long qnt = contractServiceRepository.sumQnty(contractId, serviceId);
+        Long distributedQnt = contractServiceRepository.sumDistributedQnty(contractId, serviceId);
+
+        if (qnt.equals(distributedQnt) && serviceQnt.equals(serviceDistributedQnt)) {
+            return ContractStatus.DISTRIBUTED;
+        }
+        return ContractStatus.ON_DISTRIBUTE;
     }
 }

@@ -16,6 +16,9 @@ public class LKCustomerContractService extends BaseEntity<Long> {
     private Long quantity;
     private Double unitPrice;
 
+    @Column(name = "distributed_quantity")
+    private Long distributedQuantity;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_details_id") // Changed column name
     @JsonBackReference

@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.exception;
 
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalException {
 
@@ -37,6 +39,8 @@ public class GlobalException {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<ApiException>> handleRuntimeException(RuntimeException ex) {
+
+        log.error("Runtime error: {}", ex.getMessage());
 
         ApiException apiException = new ApiException(
                 ex.getMessage(),

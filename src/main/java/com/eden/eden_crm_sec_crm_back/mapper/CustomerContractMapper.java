@@ -23,6 +23,7 @@ public interface CustomerContractMapper {
     @Mapping(target = "serviceMultiSite", source = "cs.customerService.customerService.multiSite")
     @Mapping(target = "hours", source = "cs.customerService.hours")
     @Mapping(target = "days", source = "cs.customerService.days")
+    @Mapping(target = "distributedQuantity", source = "cs.distributedQuantity")
     ContractServiceDetailsData toContractServiceDetailsData(LKCustomerContractService cs);
 
     @Mapping(target = "allowCheckInBefore", source = "c.customerAgreement.allowCheckInBefore")

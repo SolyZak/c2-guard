@@ -1,0 +1,1 @@
+ALTER TABLE customer_contract_service ADD COLUMN distributed_quantity int8 NULL;

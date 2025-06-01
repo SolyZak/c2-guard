@@ -13,6 +13,7 @@ public class ContractServiceDetailsData {
     private Long hours;
     private Long days;
     private Long quantity;
+    private Long distributedQuantity;
     private Double unitPrice;
     private List<ActivityEnum> serviceActivities;
 }
