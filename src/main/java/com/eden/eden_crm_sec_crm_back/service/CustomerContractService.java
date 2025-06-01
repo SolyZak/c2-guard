@@ -16,4 +16,5 @@ public interface CustomerContractService {
     List<ContractRowDto> listMyDraftedContracts();
     List<ContractServiceDetailsData> contractServicesList(Long contractId);
     String contractDistribute(Long contractId, @Valid SiteDistributionDto dto);
+    List<ContractRowDto> listAllMyContracts();
 }

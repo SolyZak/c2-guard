@@ -179,6 +179,13 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         return MessageUtil.getMessage("contract.distributed");
     }
 
+    @Override
+    public List<ContractRowDto> listAllMyContracts() {
+        return customerContractRepository.listByCustomerId(customerService.getLoggedInCustomer().getId())
+                .stream()
+                .map(contractMapper::toContractRowDto).toList();
+    }
+
     private LKCustomerContractService serviceFromContractAsDto(Long id, CustomerContract contract) {
         return contract.getCustomerContractServices()
                 .stream().filter(

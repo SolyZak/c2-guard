@@ -50,6 +50,12 @@ public class CustomerContractController {
         return ApiResponse.ok(customerContractService.listMyDraftedContracts());
     }
 
+    @Operation(summary = "Get All My Contracts API")
+    @GetMapping("/all/dropdown")
+    public ApiResponse<List<ContractRowDto>> listAllMyContracts() {
+        return ApiResponse.ok(customerContractService.listAllMyContracts());
+    }
+
     @Operation(summary = "Get Contract Services List API")
     @GetMapping("/{id}/services")
     public ApiResponse<List<ContractServiceDetailsData>> contractServicesList(

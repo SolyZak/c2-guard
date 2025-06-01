@@ -37,6 +37,12 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @NotEmpty @Param("statuses") List<ContractStatus> statuses
     );
 
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "WHERE cc.customer.id = :customerId")
+    List<CustomerContract> listByCustomerId(
+            @NotNull @Param("customerId") Long customerId
+    );
+
     @Query(value = """
         SELECT * FROM customer_contract cc
         WHERE cc.customer_id = :customerId
