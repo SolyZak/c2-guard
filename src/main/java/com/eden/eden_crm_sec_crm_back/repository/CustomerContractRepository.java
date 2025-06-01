@@ -43,6 +43,13 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @NotNull @Param("customerId") Long customerId
     );
 
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "LEFT JOIN FETCH cc.customerAgreement " +
+            "WHERE cc.customer.id = :customerId")
+    List<CustomerContract> listByCustomerIdWithRules(
+            @NotNull @Param("customerId") Long customerId
+    );
+
     @Query(value = """
         SELECT * FROM customer_contract cc
         WHERE cc.customer_id = :customerId
