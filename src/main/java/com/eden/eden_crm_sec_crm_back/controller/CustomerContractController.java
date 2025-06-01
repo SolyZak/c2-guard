@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
+import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
@@ -62,6 +63,14 @@ public class CustomerContractController {
             @PathVariable("id") Long contractId
     ) {
         return ApiResponse.ok(customerContractService.contractServicesList(contractId));
+    }
+
+    @Operation(summary = "Get available operation sites for a selected contract API")
+    @GetMapping("/{id}/operation-sites")
+    public ApiResponse<List<GeneralDropdown>> availableOperationSitesList(
+            @PathVariable("id") Long contractId
+    ) {
+        return ApiResponse.ok(customerContractService.availableOperationSitesList(contractId));
     }
 
     @Operation(summary = "Distribute A Contract Service & Operation Site API")

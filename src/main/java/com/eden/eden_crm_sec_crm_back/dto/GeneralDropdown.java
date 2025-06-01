@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class GeneralDropdown {
     private Long id;
-    private Long name;
+    private String name;
 }

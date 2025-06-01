@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.clients.dto.Currency;
 import com.eden.eden_crm_sec_crm_back.clients.dto.SecurityCompanyData;
+import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractOperationServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
@@ -51,6 +52,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     private final SiteDistributionRepository siteDistributionRepository;
     private final CustomerSiteRepository customerSiteRepository;
     private final LKCustomerContractOperationServiceRepository contractOperationServiceRepository;
+    private final CustomerSiteMapper customerSiteMapper;
 
     @Override
     @Transactional
@@ -117,8 +119,8 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     public List<ContractRowDto> listMyDraftedContracts() {
         Customer customer = customerService.getLoggedInCustomer();
         return customerContractRepository.listByCustomerIdAndStatus(
-                customer.getId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
-        )
+                        customer.getId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
+                )
                 .stream()
                 .map(contractMapper::toContractRowDto)
                 .toList();
@@ -184,6 +186,23 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         return customerContractRepository.listByCustomerId(customerService.getLoggedInCustomer().getId())
                 .stream()
                 .map(contractMapper::toContractRowDto).toList();
+    }
+
+    @Override
+    public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
+        Customer customer = customerService.getLoggedInCustomer();
+        CustomerContract contract = customerContractRepository.findWithDetailsByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
+                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+        );
+        return customerSiteRepository.findAvailableSitesForContract(
+                        customer.getId(),
+                        contractId,
+                        contract.getStartAgreementDate(),
+                        contract.getEndAgreementDate()
+                )
+                .stream()
+                .map(customerSiteMapper::toDropdown)
+                .toList();
     }
 
     private LKCustomerContractService serviceFromContractAsDto(Long id, CustomerContract contract) {
