@@ -29,6 +29,8 @@ public class ExternalController {
                 .name("Test Operation Site")
                 .operationSiteName("Test Operation Site")
                 .operationSiteId(1L)
+                .customerId(1)
+                .customerName("Test Customer")
                 .build();
     }
 
@@ -41,7 +43,7 @@ public class ExternalController {
                 .name("Test Operation Site")
                 .tolerance(500.0)
                 .latitude(31.33333333333)
-                        .longitude(30.3333333333)
+                .longitude(30.3333333333)
                 .build());
     }
 
