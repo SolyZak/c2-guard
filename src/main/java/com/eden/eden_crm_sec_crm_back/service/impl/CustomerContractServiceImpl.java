@@ -10,6 +10,8 @@ import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
+import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
+import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSiteDetail;
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.mapper.*;
@@ -36,6 +38,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -191,7 +194,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Override
     public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
         Customer customer = customerService.getLoggedInCustomer();
-        CustomerContract contract = customerContractRepository.findWithDetailsByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
+        CustomerContract contract = customerContractRepository.findByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
         );
         return customerSiteRepository.findAvailableSitesForContract(
@@ -202,6 +205,36 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                 )
                 .stream()
                 .map(customerSiteMapper::toDropdown)
+                .toList();
+    }
+
+    @Override
+    public List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId) {
+        Customer customer = customerService.getLoggedInCustomer();
+        customerContractRepository.findByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
+                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+        );
+
+        return siteDistributionRepository.findByContractAndLKCustomerService(contractId, lkCustomerContractServiceId)
+                .stream().map(sd -> {
+                    AtomicReference<Long> allQuantities = new AtomicReference<>(0L);
+                    List<DistributedOperationSiteDetail> details = sd.getOperationServices().stream().map(os -> {
+                        allQuantities.updateAndGet(v -> v + os.getQuantity());
+                        return DistributedOperationSiteDetail.builder()
+                                .days(os.getDays())
+                                .quantity(os.getQuantity())
+                                .fromTime(os.getFromTime())
+                                .toTime(os.getToTime())
+                                .build();
+                    }).toList();
+                    return DistributedOperationSite.builder()
+                            .operationSiteId(sd.getSite().getId())
+                            .operationSiteName(sd.getSite().getName())
+                            .quantity(allQuantities.get())
+                            .activities(sd.getActivities())
+                            .details(details)
+                            .build();
+                })
                 .toList();
     }
 

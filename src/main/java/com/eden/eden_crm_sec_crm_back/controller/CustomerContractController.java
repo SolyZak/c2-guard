@@ -6,6 +6,7 @@ import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
+import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -80,6 +81,15 @@ public class CustomerContractController {
             @RequestBody @Valid SiteDistributionDto dto
         ) {
         return ApiResponse.ok(customerContractService.contractDistribute(contractId, dto));
+    }
+
+    @Operation(summary = "Get distributed operation sites for a selected contract & contract service API")
+    @GetMapping("/distributed/operation-sites")
+    public ApiResponse<List<DistributedOperationSite>> distributedOperationSites(
+            @RequestParam(name = "contractId") Long contractId,
+            @RequestParam(name = "lkCustomerContractServiceId") Long lkCustomerContractServiceId
+    ) {
+        return ApiResponse.ok(customerContractService.distributedOperationSites(contractId, lkCustomerContractServiceId));
     }
 
 }

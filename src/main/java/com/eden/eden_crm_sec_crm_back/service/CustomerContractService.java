@@ -5,6 +5,7 @@ import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
+import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import jakarta.validation.Valid;
 
@@ -19,4 +20,5 @@ public interface CustomerContractService {
     String contractDistribute(Long contractId, @Valid SiteDistributionDto dto);
     List<ContractRowDto> listAllMyContracts();
     List<GeneralDropdown> availableOperationSitesList(Long contractId);
+    List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId);
 }
