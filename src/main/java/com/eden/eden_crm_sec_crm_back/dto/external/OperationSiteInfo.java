@@ -6,14 +6,14 @@ import lombok.Data;
 @Data
 @Builder
 public class OperationSiteInfo {
-    private Integer id;
+    private Long id;
     private String name;
     private Long operationSiteId;
     private String operationSiteName;
-    private Integer contractId;
+    private Long contractId;
     private String contractName;
-    private Integer customerId;
+    private Long customerId;
     private String customerName;
-    private Integer securityCompanyId;
+    private Long securityCompanyId;
     private String securityCompanyName;
 }
