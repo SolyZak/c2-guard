@@ -135,7 +135,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         customerContractRepository.findByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
         );
-        return contractServiceRepository.getContractServices(contractId)
+        return contractServiceRepository.getContractNotFullyDistributedServices(contractId)
                 .stream().map(contractMapper::toContractServiceDetailsData).toList();
     }
 

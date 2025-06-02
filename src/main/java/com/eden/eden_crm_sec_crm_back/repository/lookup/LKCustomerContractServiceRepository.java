@@ -21,6 +21,17 @@ public interface LKCustomerContractServiceRepository extends JpaRepository<LKCus
     );
 
     @Query("""
+            SELECT lkContService FROM LKCustomerContractService lkContService
+            LEFT JOIN FETCH lkContService.customerService serviceDetails
+            LEFT JOIN FETCH serviceDetails.customerService
+            WHERE lkContService.customerContract.id = :contractId
+            AND lkContService.quantity > lkContService.distributedQuantity
+            """)
+    List<LKCustomerContractService> getContractNotFullyDistributedServices(
+            @Param("contractId") Long contractId
+    );
+
+    @Query("""
            SELECT COALESCE(SUM(lk.distributedQuantity), 0)
            FROM LKCustomerContractService lk
            WHERE lk.customerContract.id = :contractId AND lk.id != :serviceId
