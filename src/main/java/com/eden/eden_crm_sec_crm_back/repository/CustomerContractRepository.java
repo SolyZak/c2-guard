@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
+import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -86,5 +87,39 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @Param("from") LocalDate from,
             @Param("to") LocalDate to,
             Pageable pageable
+    );
+
+    @Query("SELECT DISTINCT cc.customer FROM CustomerContract cc " +
+            "WHERE cc.securityCompanyId = :securityCompanyId " +
+            "AND cc.startAgreementDate <= :today " +
+            "AND cc.endAgreementDate >= :today")
+    List<Customer> listCustomerBySecurityCompanyIdAndActiveToday(
+            @NotNull @Param("securityCompanyId") Long securityCompanyId,
+            @NotNull @Param("today") LocalDate today
+    );
+
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "WHERE cc.securityCompanyId = :securityCompanyId " +
+            "AND cc.startAgreementDate <= :today " +
+            "AND cc.endAgreementDate >= :today " +
+            "AND cc.customer.id = :customerId")
+    List<CustomerContract> listByCustomerIdSecurityCompanyIdAndActiveToday(
+            @NotNull @Param("securityCompanyId") Long securityCompanyId,
+            @NotNull @Param("customerId") Long customerId,
+            @NotNull @Param("today") LocalDate today
+    );
+
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "WHERE cc.securityCompanyId = :securityCompanyId " +
+            "AND cc.startAgreementDate <= :today " +
+            "AND cc.endAgreementDate >= :today " +
+            "AND cc.customer.id = :customerId " +
+            "AND cc.id = :contractId")
+    @EntityGraph(attributePaths = {"customerAgreement", "siteDistributions"})
+    Optional<CustomerContract> findByCustomerIdSecurityCompanyIdAndActiveToday(
+            @NotNull @Param("securityCompanyId") Long securityCompanyId,
+            @NotNull @Param("customerId") Long customerId,
+            @NotNull @Param("contractId") Long contractId,
+            @NotNull @Param("today") LocalDate today
     );
 }

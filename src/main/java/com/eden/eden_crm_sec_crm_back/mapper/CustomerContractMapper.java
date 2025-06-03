@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.mapper;
 
+import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
@@ -34,5 +35,9 @@ public interface CustomerContractMapper {
     @Mapping(target = "checkOutAfterMinutes", source = "c.customerAgreement.checkOutAfterMinutes")
     @Mapping(target = "presenceMode", source = "c.customerAgreement.presenceMode")
     ContractWithRules toContractWithRules(CustomerContract c);
+
+    @Mapping(target = "id", source = "c.id")
+    @Mapping(target = "name", source = "c.agreementName")
+    GeneralDropdown toDropdown(CustomerContract c);
 }
 
