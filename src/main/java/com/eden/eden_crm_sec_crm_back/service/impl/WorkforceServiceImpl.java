@@ -86,22 +86,23 @@ public class WorkforceServiceImpl implements WorkforceService {
                     .id(site.getId())
                     .name(site.getName())
                     .services(distributions.stream().map(d -> {
-                        ServiceDetails details = d.getLkCustomerContractService().getCustomerService();
-                        return WorkforceSiteDistributionServiceDto.builder()
-                                .id(d.getLkCustomerContractService().getId())
-                                .name(details.getCustomerService().getServiceName())
-                                .hours(details.getHours())
-                                .days(details.getDays())
-                                .build();
-                    }).toList())
-                    .periods(distributions.stream()
-                            .flatMap(d -> d.getOperationServices().stream())
-                            .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
-                                    .fromTime(os.getFromTime())
-                                    .toTime(os.getToTime())
-                                    .status(WorkingPeriodStatus.IN_TIME)// todo need to be enhanced depends on contract agreement (Rules)
-                                    .build())
-                            .toList()
+                                ServiceDetails details = d.getLkCustomerContractService().getCustomerService();
+                                return WorkforceSiteDistributionServiceDto.builder()
+                                        .id(d.getLkCustomerContractService().getId())
+                                        .name(details.getCustomerService().getServiceName())
+                                        .hours(details.getHours())
+                                        .days(details.getDays())
+                                        .periods(
+                                                d.getOperationServices().stream()
+                                                .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
+                                                        .fromTime(os.getFromTime())
+                                                        .toTime(os.getToTime())
+                                                        .status(WorkingPeriodStatus.IN_TIME)// todo need to be enhanced depends on contract agreement (Rules)
+                                                        .build())
+                                                .toList()
+                                        )
+                                        .build();
+                            }).toList()
                     )
                     .build();
             workforceSiteDistributions.add(workforceSiteDistributionDto);

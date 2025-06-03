@@ -11,5 +11,4 @@ public class WorkforceSiteDistributionDto {
     private Long id;
     private String name;
     private List<WorkforceSiteDistributionServiceDto> services;
-    private List<WorkforceSiteDistributionWorkingPeriodDto> periods;
 }

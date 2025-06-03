@@ -3,6 +3,8 @@ package com.eden.eden_crm_sec_crm_back.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 public class WorkforceSiteDistributionServiceDto {
@@ -10,4 +12,5 @@ public class WorkforceSiteDistributionServiceDto {
     private String name;
     private Long hours;
     private Long days;
+    private List<WorkforceSiteDistributionWorkingPeriodDto> periods;
 }
