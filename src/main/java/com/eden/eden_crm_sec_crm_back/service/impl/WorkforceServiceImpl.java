@@ -74,12 +74,13 @@ public class WorkforceServiceImpl implements WorkforceService {
                 () -> new BusinessException(MessageUtil.getMessage("entity-not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
         );
         WeekDaysEnum weekDaysEnum = Utils.getTodayWeekDayEnum();
-        List<SiteDistribution> todaySiteDistributions = contract.getSiteDistributions().stream().filter(sd ->
-            sd.getOperationServices().stream().anyMatch(os -> os.getDays().contains(weekDaysEnum))
-        ).toList();
-        Map<CustomerSite, List<SiteDistribution>> groupedBySite = todaySiteDistributions.stream()
+
+        Map<CustomerSite, List<SiteDistribution>> groupedBySite = contract.getSiteDistributions().stream().filter(sd ->
+                        sd.getOperationServices().stream().anyMatch(os -> os.getDays().contains(weekDaysEnum))
+                )
                 .collect(Collectors.groupingBy(SiteDistribution::getSite));
         List<WorkforceSiteDistributionDto> workforceSiteDistributions = new ArrayList<>();
+
         groupedBySite.forEach((site, distributions) -> {
             WorkforceSiteDistributionDto workforceSiteDistributionDto = WorkforceSiteDistributionDto.builder()
                     .id(site.getId())
