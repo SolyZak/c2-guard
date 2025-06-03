@@ -13,4 +13,6 @@ public interface WorkforceService {
     List<WorkforceSiteDistributionDto> customersContractOperationSitesDropdown(Long customerId, Long contractId);
 
     List<GeneralDropdown> operationSitesDropdown();
+
+    WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id);
 }

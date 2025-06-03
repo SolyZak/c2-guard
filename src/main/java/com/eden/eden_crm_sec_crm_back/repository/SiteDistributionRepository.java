@@ -30,4 +30,18 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             @Param("today") LocalDate today
     );
 
+    @Query("""
+            SELECT sd FROM SiteDistribution sd
+            LEFT JOIN FETCH sd.site
+            WHERE sd.site.id = :siteId
+            AND sd.customerContract.startAgreementDate <= :today
+            AND sd.customerContract.endAgreementDate >= :today
+            AND sd.customerContract.securityCompanyId = :securityCompanyId
+            """)
+    List<SiteDistribution> listForSecurityCompanyActiveTodayAndSiteId(
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("siteId") Long siteId,
+            @Param("today") LocalDate today
+    );
+
 }

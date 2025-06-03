@@ -51,4 +51,12 @@ public class WorkforceController {
     public ApiResponse<List<GeneralDropdown>> operationSitesDropdown() {
         return ApiResponse.ok(workforceService.operationSitesDropdown());
     }
+
+    @Operation(summary = "Get operation site services dropdown list")
+    @GetMapping("/operation-sites/{id}/services")
+    public ApiResponse<WorkforceSiteDistributionDto> operationSiteServicesDropdown(
+            @PathVariable("id") Long id
+    ) {
+        return ApiResponse.ok(workforceService.operationSiteServicesDropdown(id));
+    }
 }

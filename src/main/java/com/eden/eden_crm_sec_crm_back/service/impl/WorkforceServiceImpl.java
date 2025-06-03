@@ -19,6 +19,7 @@ import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
+import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -40,6 +41,7 @@ public class WorkforceServiceImpl implements WorkforceService {
 
     private final CustomerSiteRepository customerSiteRepository;
     private final CustomerContractRepository contractRepository;
+    private final SiteDistributionRepository siteDistributionRepository;
     private final CustomerSiteMapper customerSiteMapper;
     private final CustomerMapper customerMapper;
     private final CustomerContractMapper customerContractMapper;
@@ -94,12 +96,12 @@ public class WorkforceServiceImpl implements WorkforceService {
                                         .days(details.getDays())
                                         .periods(
                                                 d.getOperationServices().stream()
-                                                .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
-                                                        .fromTime(os.getFromTime())
-                                                        .toTime(os.getToTime())
-                                                        .status(WorkingPeriodStatus.IN_TIME)// todo need to be enhanced depends on contract agreement (Rules)
-                                                        .build())
-                                                .toList()
+                                                        .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
+                                                                .fromTime(os.getFromTime())
+                                                                .toTime(os.getToTime())
+                                                                .status(WorkingPeriodStatus.IN_TIME)// todo need to be enhanced depends on contract agreement (Rules)
+                                                                .build())
+                                                        .toList()
                                         )
                                         .build();
                             }).toList()
@@ -113,6 +115,41 @@ public class WorkforceServiceImpl implements WorkforceService {
     @Override
     public List<GeneralDropdown> operationSitesDropdown() {
         return customerSiteRepository.findAll().stream().map(customerSiteMapper::toDropdown).toList();
+    }
+
+    @Override
+    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id) {
+        WorkforceFullDataDto workforceFullDataDto = getLoggedInWorkforce();
+        List<SiteDistribution> distributions = siteDistributionRepository.listForSecurityCompanyActiveTodayAndSiteId(
+                workforceFullDataDto.securityCompany().id(), id, LocalDate.now()
+        );
+        if (distributions.isEmpty()) {
+            throw new BusinessException(MessageUtil.getMessage("not-your-working-period"), HttpStatus.BAD_REQUEST);
+        }
+        CustomerSite site = distributions.getFirst().getSite();
+        return WorkforceSiteDistributionDto.builder()
+                .id(site.getId())
+                .name(site.getName())
+                .services(distributions.stream().map(d -> {
+                            ServiceDetails details = d.getLkCustomerContractService().getCustomerService();
+                            return WorkforceSiteDistributionServiceDto.builder()
+                                    .id(d.getLkCustomerContractService().getId())
+                                    .name(details.getCustomerService().getServiceName())
+                                    .hours(details.getHours())
+                                    .days(details.getDays())
+                                    .periods(
+                                            d.getOperationServices().stream()
+                                                    .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
+                                                            .fromTime(os.getFromTime())
+                                                            .toTime(os.getToTime())
+                                                            .status(WorkingPeriodStatus.IN_TIME)// todo need to be enhanced depends on contract agreement (Rules)
+                                                            .build())
+                                                    .toList()
+                                    )
+                                    .build();
+                        }).toList()
+                )
+                .build();
     }
 
     private WorkforceFullDataDto getLoggedInWorkforce() {
