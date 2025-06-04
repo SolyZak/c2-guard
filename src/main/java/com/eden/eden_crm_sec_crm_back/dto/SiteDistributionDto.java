@@ -28,10 +28,6 @@ public class SiteDistributionDto {
     @NotNull(message = "{validation.distribution.activities.required}")
     private Set<ActivityEnum> activities;
 
-    @NotNull(message = "{validation.distribution.lkCustomerContractServiceId.required}")
-    @Positive(message = "{validation.distribution.lkCustomerContractServiceId.positive}")
-    private Long lkCustomerContractServiceId;
-
     @Valid
     @NotEmpty(message = "{validation.distribution.details.required}")
     @NotNull(message = "{validation.distribution.details.required}")

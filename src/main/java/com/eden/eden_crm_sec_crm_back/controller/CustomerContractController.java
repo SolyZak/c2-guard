@@ -8,6 +8,7 @@ import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +28,7 @@ import java.util.List;
         description = "This part is for customer portal, will provide the needed for contracts API")
 public class CustomerContractController {
     private final CustomerContractService customerContractService;
+    private final ContractDistributeService contractDistributeService;
 
     @Operation(summary = "Create Contract API")
     @PostMapping
@@ -75,12 +77,13 @@ public class CustomerContractController {
     }
 
     @Operation(summary = "Distribute A Contract Service & Operation Site API")
-    @PutMapping("/{id}/distribute")
+    @PutMapping("/{id}/distribute/{serviceId}")
     public ApiResponse<String> contractDistribute(
             @PathVariable("id") Long contractId,
-            @RequestBody @Valid SiteDistributionDto dto
+            @PathVariable("serviceId") Long serviceId,
+            @RequestBody @Valid List<SiteDistributionDto> listDto
         ) {
-        return ApiResponse.ok(customerContractService.contractDistribute(contractId, dto));
+        return ApiResponse.ok(contractDistributeService.contractDistribute(contractId, serviceId, listDto));
     }
 
     @Operation(summary = "Get distributed operation sites for a selected contract & contract service API")

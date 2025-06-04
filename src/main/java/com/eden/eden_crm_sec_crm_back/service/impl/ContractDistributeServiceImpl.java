@@ -1,0 +1,123 @@
+package com.eden.eden_crm_sec_crm_back.service.impl;
+
+import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
+import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractOperationServiceDto;
+import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.models.Customer;
+import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
+import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
+import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
+import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
+import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
+import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
+import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
+import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
+import com.eden.eden_crm_sec_crm_back.service.CustomerService;
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class ContractDistributeServiceImpl implements ContractDistributeService {
+
+    private final CustomerService customerService;
+    private final CustomerContractRepository customerContractRepository;
+    private final CustomerSiteRepository customerSiteRepository;
+    private final SiteDistributionRepository siteDistributionRepository;
+    private final LKCustomerContractOperationServiceRepository contractOperationServiceRepository;
+    private final LKCustomerContractServiceRepository contractServiceRepository;
+
+    @Override
+    @Transactional
+    public String contractDistribute(Long contractId, Long serviceId, List<SiteDistributionDto> listDto) {
+        Customer customer = customerService.getLoggedInCustomer();
+        CustomerContract contract = customerContractRepository.findWithDetailsByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
+                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+        );
+        LKCustomerContractService service = serviceFromContractAsDto(serviceId, contract);
+        ServiceDetails serviceDetails = service.getCustomerService();
+
+        final Map<Long, CustomerSite> customerSites = getCustomerSiteMap(listDto, customer, contract);
+
+        // validate the distributed quantity is equal to service quantity
+        Long distributedQnt = listDto.stream().flatMap(sd -> sd.getOperationServices().stream())
+                .mapToLong(LKCustomerContractOperationServiceDto::getQuantity)
+                .sum();
+        if (!service.getQuantity().equals(distributedQnt)) {
+            throw new BusinessException(MessageUtil.getMessage("service-must-fully-distributed"), HttpStatus.NOT_FOUND);
+        }
+
+        // validate the distributed days are equals to days count in service
+        if (
+                listDto.stream().flatMap(dto -> dto.getOperationServices().stream()).anyMatch(os -> os.getDays().size() != serviceDetails.getDays())
+        ) throw new BusinessException(MessageUtil.getMessage("service-days-must-fully-distributed"), HttpStatus.NOT_FOUND);
+
+        // create site distributions
+        List<LKCustomerContractOperationService> operationServices = new ArrayList<>();
+        listDto.forEach(dto -> {
+            CustomerSite customerSite = customerSites.get(dto.getSiteId());
+            SiteDistribution siteDistribution = new SiteDistribution();
+            siteDistribution.setCustomerContract(contract);
+            siteDistribution.setSite(customerSite);
+            siteDistribution.setActivities(dto.getActivities());
+            siteDistribution.setLkCustomerContractService(service);
+            siteDistributionRepository.save(siteDistribution);
+
+            dto.getOperationServices().forEach(lkCustomerContractOperationServiceDto -> {
+                LKCustomerContractOperationService lkCustomerContractOperationService = new LKCustomerContractOperationService();
+                lkCustomerContractOperationService.setSiteDistribution(siteDistribution);
+                lkCustomerContractOperationService.setDays(lkCustomerContractOperationServiceDto.getDays());
+                lkCustomerContractOperationService.setQuantity(lkCustomerContractOperationServiceDto.getQuantity());
+                lkCustomerContractOperationService.setFromTime(lkCustomerContractOperationServiceDto.getFromTime());
+                lkCustomerContractOperationService.setToTime(lkCustomerContractOperationServiceDto.getFromTime().plusHours(service.getCustomerService().getHours()));
+
+                operationServices.add(lkCustomerContractOperationService);
+            });
+        });
+
+        contractOperationServiceRepository.saveAll(operationServices);
+        service.setDistributedQuantity(service.getQuantity());
+        contractServiceRepository.save(service);
+
+        return MessageUtil.getMessage("contract-service.distributed");
+    }
+
+    private Map<Long, CustomerSite> getCustomerSiteMap(List<SiteDistributionDto> listDto, Customer customer, CustomerContract contract) {
+        // make sure the requested sites for distribute are new and not have been distributed before
+        List<Long> siteIds = listDto.stream().map(SiteDistributionDto::getSiteId).toList();
+        Map<Long, CustomerSite> customerSites = customerSiteRepository.listByIdAndCustomerId(siteIds, customer.getId())
+                .stream().collect(Collectors.toMap(CustomerSite::getId, Function.identity()));
+
+        if (
+                siteIds.size() != customerSites.size() ||
+                        contract.getSiteDistributions().stream().anyMatch(sd -> siteIds.contains(sd.getSite().getId()))
+        ) {
+            throw new BusinessException(MessageUtil.getMessage("distribute-sites-not-accurate"), HttpStatus.NOT_FOUND);
+        }
+        return customerSites;
+    }
+
+    private LKCustomerContractService serviceFromContractAsDto(Long id, CustomerContract contract) {
+        return contract.getCustomerContractServices()
+                .stream().filter(
+                        e -> e.getId().equals(id)
+                )
+                .findFirst()
+                .orElseThrow(
+                        () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("service")}), HttpStatus.NOT_FOUND)
+                );
+    }
+}

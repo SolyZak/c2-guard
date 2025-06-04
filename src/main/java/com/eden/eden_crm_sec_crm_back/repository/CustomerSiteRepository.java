@@ -16,6 +16,13 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     Optional<CustomerSite> findByIdAndCustomerId(Long id, Long customerId);
 
     @Query("""
+            SELECT cs FROM CustomerSite cs
+            WHERE cs.customer.id = :customerId
+            AND cs.id IN :ids
+            """)
+    List<CustomerSite> listByIdAndCustomerId(@Param("ids") List<Long> ids, @Param("customerId") Long customerId);
+
+    @Query("""
     SELECT DISTINCT cs FROM CustomerSite cs
     WHERE cs.customer.id = :customerId AND (
         EXISTS (
