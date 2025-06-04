@@ -44,12 +44,9 @@ public class ContractOperationRuleServiceImpl implements ContractOperationRuleSe
         ContractOperationRule contractOperationRule = contractOperationRuleExists.orElseGet(ContractOperationRule::new);
 
         contractOperationRule.setCustomerAgreement(contract);
-        contractOperationRule.setAllowCheckInBefore(dto.isAllowCheckInBefore());
         contractOperationRule.setCheckInBeforeMinutes(dto.getCheckInBeforeMinutes());
-        contractOperationRule.setAllowCheckInAfter(dto.isAllowCheckInAfter());
         contractOperationRule.setCheckInAfterMinutes(dto.getCheckInAfterMinutes());
-        contractOperationRule.setAllowCheckOutAfter(dto.isAllowCheckOutAfter());
-        contractOperationRule.setCheckOutAfterMinutes(dto.getCheckOutAfterMinutes());
+        contractOperationRule.setCheckOutBeforeMinutes(dto.getCheckOutBeforeMinutes());
         contractOperationRule.setPresenceMode(dto.getPresenceMode());
         contractOperationRuleRepository.save(contractOperationRule);
 

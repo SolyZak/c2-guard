@@ -22,38 +22,32 @@ public class ContractOperationRuleDTO {
     @NotNull(message = "{validation.contract-operation-rule.contractId.required")
     private Long contractId;
 
-    private boolean allowCheckInBefore;
-
     private Integer checkInBeforeMinutes;
-
-    private boolean allowCheckInAfter;
 
     private Integer checkInAfterMinutes;
 
-    private boolean allowCheckOutAfter;
-
-    private Integer checkOutAfterMinutes;
+    private Integer checkOutBeforeMinutes;
 
     @NotNull(message = "{validation.contract-operation-rule.presenceMode.required")
     @Enumerated(EnumType.STRING)
     private PresenceMode presenceMode;
 
     public void validate() {
-        if (allowCheckInBefore && checkInBeforeMinutes == null) {
+        if (checkInBeforeMinutes == null) {
             throw new BusinessException(
                     MessageUtil.getMessage("field.required", new Object[]{MessageUtil.getMessage("checkInBeforeMinutes")}),
                     HttpStatus.UNPROCESSABLE_ENTITY
             );
         }
-        if (allowCheckOutAfter && checkOutAfterMinutes == null) {
+        if (checkInAfterMinutes == null) {
             throw new BusinessException(
-                    MessageUtil.getMessage("field.required", new Object[]{MessageUtil.getMessage("checkOutAfterMinutes")}),
+                    MessageUtil.getMessage("field.required", new Object[]{MessageUtil.getMessage("checkInAfterMinutes")}),
                     HttpStatus.UNPROCESSABLE_ENTITY
             );
         }
-        if (allowCheckInAfter && checkInAfterMinutes == null) {
+        if (presenceMode.equals(PresenceMode.BOTH) && checkOutBeforeMinutes == null) {
             throw new BusinessException(
-                    MessageUtil.getMessage("field.required", new Object[]{MessageUtil.getMessage("checkInAfterMinutes")}),
+                    MessageUtil.getMessage("field.required", new Object[]{MessageUtil.getMessage("checkOutBeforeMinutes")}),
                     HttpStatus.UNPROCESSABLE_ENTITY
             );
         }

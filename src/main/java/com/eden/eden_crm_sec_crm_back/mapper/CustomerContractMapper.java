@@ -27,12 +27,9 @@ public interface CustomerContractMapper {
     @Mapping(target = "distributedQuantity", source = "cs.distributedQuantity")
     ContractServiceDetailsData toContractServiceDetailsData(LKCustomerContractService cs);
 
-    @Mapping(target = "allowCheckInBefore", source = "c.customerAgreement.allowCheckInBefore")
     @Mapping(target = "checkInBeforeMinutes", source = "c.customerAgreement.checkInBeforeMinutes")
-    @Mapping(target = "allowCheckInAfter", source = "c.customerAgreement.allowCheckInAfter")
     @Mapping(target = "checkInAfterMinutes", source = "c.customerAgreement.checkInAfterMinutes")
-    @Mapping(target = "allowCheckOutAfter", source = "c.customerAgreement.allowCheckOutAfter")
-    @Mapping(target = "checkOutAfterMinutes", source = "c.customerAgreement.checkOutAfterMinutes")
+    @Mapping(target = "checkOutBeforeMinutes", source = "c.customerAgreement.checkOutBeforeMinutes")
     @Mapping(target = "presenceMode", source = "c.customerAgreement.presenceMode")
     ContractWithRules toContractWithRules(CustomerContract c);
 

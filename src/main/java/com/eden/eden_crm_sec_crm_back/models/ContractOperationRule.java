@@ -24,17 +24,11 @@ public class ContractOperationRule {
     @JoinColumn(name = "customer_contract_id")
     private CustomerContract customerAgreement;
 
-    private boolean allowCheckInBefore;
-
     private Integer checkInBeforeMinutes;
-
-    private boolean allowCheckInAfter;
 
     private Integer checkInAfterMinutes;
 
-    private boolean allowCheckOutAfter;
-
-    private Integer checkOutAfterMinutes;
+    private Integer checkOutBeforeMinutes;
 
     @Enumerated(EnumType.STRING)
     private PresenceMode presenceMode;

@@ -8,11 +8,8 @@ public class ContractWithRules {
     private Long id;
     private String agreementNumber;
     private String agreementName;
-    private boolean allowCheckInBefore;
     private Integer checkInBeforeMinutes;
-    private boolean allowCheckInAfter;
     private Integer checkInAfterMinutes;
-    private boolean allowCheckOutAfter;
-    private Integer checkOutAfterMinutes;
+    private Integer checkOutBeforeMinutes;
     private PresenceMode presenceMode;
 }

@@ -1,0 +1,4 @@
+ALTER TABLE public.contract_operation_rules DROP COLUMN allow_check_in_after;
+ALTER TABLE public.contract_operation_rules DROP COLUMN allow_check_in_before;
+ALTER TABLE public.contract_operation_rules DROP COLUMN allow_check_out_after;
+ALTER TABLE public.contract_operation_rules RENAME COLUMN check_out_after_minutes TO check_out_before_minutes;
