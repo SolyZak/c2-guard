@@ -10,5 +10,7 @@ import java.util.List;
 public class WorkforceSiteDistributionDto {
     private Long id;
     private String name;
+    private Double latitude;
+    private Double longitude;
     private List<WorkforceSiteDistributionServiceDto> services;
 }

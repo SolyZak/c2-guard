@@ -6,16 +6,18 @@ import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionWorkingPeriodDto;
+import com.eden.eden_crm_sec_crm_back.enums.AttendStatus;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
-import com.eden.eden_crm_sec_crm_back.enums.WorkingPeriodStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.mapper.CustomerContractMapper;
 import com.eden.eden_crm_sec_crm_back.mapper.CustomerMapper;
 import com.eden.eden_crm_sec_crm_back.mapper.CustomerSiteMapper;
+import com.eden.eden_crm_sec_crm_back.models.ContractOperationRule;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
@@ -29,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -83,10 +86,14 @@ public class WorkforceServiceImpl implements WorkforceService {
                 .collect(Collectors.groupingBy(SiteDistribution::getSite));
         List<WorkforceSiteDistributionDto> workforceSiteDistributions = new ArrayList<>();
 
+        ContractOperationRule contractOperationRule = contract.getCustomerAgreement();
+
         groupedBySite.forEach((site, distributions) -> {
             WorkforceSiteDistributionDto workforceSiteDistributionDto = WorkforceSiteDistributionDto.builder()
                     .id(site.getId())
                     .name(site.getName())
+                    .latitude(site.getLatitude())
+                    .longitude(site.getLongitude())
                     .services(distributions.stream().map(d -> {
                                 ServiceDetails details = d.getLkCustomerContractService().getCustomerService();
                                 return WorkforceSiteDistributionServiceDto.builder()
@@ -97,9 +104,12 @@ public class WorkforceServiceImpl implements WorkforceService {
                                         .periods(
                                                 d.getOperationServices().stream()
                                                         .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
+                                                                .id(os.getId())
                                                                 .fromTime(os.getFromTime())
                                                                 .toTime(os.getToTime())
-                                                                .status(WorkingPeriodStatus.IN_TIME)// todo need to be enhanced depends on contract agreement (Rules)
+                                                                .isWorking(isWorkingPeriod(contractOperationRule, os))
+                                                                .checkInStatus(checkInStatus(contractOperationRule, os))
+                                                                .checkOutStatus(checkOutStatus(contractOperationRule, os))
                                                                 .build())
                                                         .toList()
                                         )
@@ -126,12 +136,16 @@ public class WorkforceServiceImpl implements WorkforceService {
         if (distributions.isEmpty()) {
             throw new BusinessException(MessageUtil.getMessage("not-your-working-period"), HttpStatus.BAD_REQUEST);
         }
+        WeekDaysEnum weekDaysEnum = Utils.getTodayWeekDayEnum();
         CustomerSite site = distributions.getFirst().getSite();
         return WorkforceSiteDistributionDto.builder()
                 .id(site.getId())
                 .name(site.getName())
+                .latitude(site.getLatitude())
+                .longitude(site.getLongitude())
                 .services(distributions.stream().map(d -> {
                             ServiceDetails details = d.getLkCustomerContractService().getCustomerService();
+                            ContractOperationRule contractOperationRule = d.getCustomerContract().getCustomerAgreement();
                             return WorkforceSiteDistributionServiceDto.builder()
                                     .id(d.getLkCustomerContractService().getId())
                                     .name(details.getCustomerService().getServiceName())
@@ -139,11 +153,16 @@ public class WorkforceServiceImpl implements WorkforceService {
                                     .days(details.getDays())
                                     .periods(
                                             d.getOperationServices().stream()
+                                                    .filter(os -> os.getDays().contains(weekDaysEnum))
                                                     .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
+                                                            .id(os.getId())
                                                             .fromTime(os.getFromTime())
                                                             .toTime(os.getToTime())
-                                                            .status(WorkingPeriodStatus.IN_TIME)// todo need to be enhanced depends on contract agreement (Rules)
-                                                            .build())
+                                                            .isWorking(isWorkingPeriod(contractOperationRule, os))
+                                                            .checkInStatus(checkInStatus(contractOperationRule, os))
+                                                            .checkOutStatus(checkOutStatus(contractOperationRule, os))
+                                                            .build()
+                                                    )
                                                     .toList()
                                     )
                                     .build();
@@ -163,5 +182,55 @@ public class WorkforceServiceImpl implements WorkforceService {
             log.error("WorkforceServiceImpl::customersDropdown, Error while try to get workforce details from org unit, error: {}", e.getMessage());
             throw new UserNotProvided();
         }
+    }
+
+    private Boolean isWorkingPeriod(
+            ContractOperationRule contractOperationRule,
+            LKCustomerContractOperationService operationService
+    ) {
+        LocalDateTime from = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
+                .minusMinutes(contractOperationRule.getCheckInBeforeMinutes());
+        LocalDateTime to = LocalDateTime.of(LocalDate.now(), operationService.getToTime());
+        return LocalDateTime.now().isBefore(to) && LocalDateTime.now().isAfter(from);
+    }
+
+    private AttendStatus checkInStatus(
+            ContractOperationRule contractOperationRule,
+            LKCustomerContractOperationService operationService
+    ) {
+        LocalDateTime earlyFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
+                .minusMinutes(contractOperationRule.getCheckInBeforeMinutes());
+        LocalDateTime earlyTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime());
+
+        if (
+                (LocalDateTime.now().isAfter(earlyFrom) || LocalDateTime.now().isEqual(earlyFrom))
+                        && (LocalDateTime.now().isBefore(earlyTo) || LocalDateTime.now().isEqual(earlyTo))
+        ) return AttendStatus.CHECK_IN_EARLY;
+
+        LocalDateTime inTimeFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime());
+        LocalDateTime inTimeTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
+                .plusMinutes(contractOperationRule.getCheckInAfterMinutes());
+        if (
+                (LocalDateTime.now().isAfter(inTimeFrom) || LocalDateTime.now().isEqual(inTimeFrom))
+                        && (LocalDateTime.now().isBefore(inTimeTo) || LocalDateTime.now().isEqual(inTimeTo))
+        ) return AttendStatus.CHECK_IN_IN_TIME;
+        return AttendStatus.CHECK_IN_LATE;
+    }
+
+    private AttendStatus checkOutStatus(
+            ContractOperationRule contractOperationRule,
+            LKCustomerContractOperationService operationService
+    ) {
+        LocalDateTime withdrawnFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
+                .minusMinutes(contractOperationRule.getCheckInBeforeMinutes());
+        LocalDateTime withdrawnTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
+                .minusMinutes(contractOperationRule.getCheckOutBeforeMinutes());
+
+        if (
+                (LocalDateTime.now().isAfter(withdrawnFrom) || LocalDateTime.now().isEqual(withdrawnFrom))
+                        && LocalDateTime.now().isBefore(withdrawnTo)
+        ) return AttendStatus.CHECK_OUT_WITHDRAWN;
+
+        return AttendStatus.CHECK_OUT_IN_TIME;
     }
 }

@@ -33,6 +33,7 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
     @Query("""
             SELECT sd FROM SiteDistribution sd
             LEFT JOIN FETCH sd.site
+            LEFT JOIN FETCH sd.customerContract
             WHERE sd.site.id = :siteId
             AND sd.customerContract.startAgreementDate <= :today
             AND sd.customerContract.endAgreementDate >= :today
