@@ -93,6 +93,8 @@ public class WorkforceServiceImpl implements WorkforceService {
             WorkforceSiteDistributionDto workforceSiteDistributionDto = WorkforceSiteDistributionDto.builder()
                     .id(site.getId())
                     .name(site.getName())
+                    .contractId(contractId)
+                    .contractName(contract.getAgreementName())
                     .latitude(site.getLatitude())
                     .longitude(site.getLongitude())
                     .tolerance(site.getTolerance())
@@ -143,9 +145,12 @@ public class WorkforceServiceImpl implements WorkforceService {
         }
         WeekDaysEnum weekDaysEnum = Utils.getTodayWeekDayEnum();
         CustomerSite site = distributions.getFirst().getSite();
+        CustomerContract contract = distributions.getFirst().getCustomerContract();
         return WorkforceSiteDistributionDto.builder()
                 .id(site.getId())
                 .name(site.getName())
+                .contractId(contract.getId())
+                .contractName(contract.getAgreementName())
                 .latitude(site.getLatitude())
                 .longitude(site.getLongitude())
                 .tolerance(site.getTolerance())

@@ -10,6 +10,8 @@ import java.util.List;
 public class WorkforceSiteDistributionDto {
     private Long id;
     private String name;
+    private Long contractId;
+    private String contractName;
     private Double latitude;
     private Double longitude;
     private Double tolerance;
