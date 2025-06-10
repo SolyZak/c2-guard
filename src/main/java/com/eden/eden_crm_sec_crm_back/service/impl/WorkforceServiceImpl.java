@@ -7,6 +7,7 @@ import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionWorkingPeriodDto;
 import com.eden.eden_crm_sec_crm_back.enums.AttendStatus;
+import com.eden.eden_crm_sec_crm_back.enums.UnitEnum;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
@@ -76,7 +77,7 @@ public class WorkforceServiceImpl implements WorkforceService {
         CustomerContract contract = contractRepository.findByCustomerIdSecurityCompanyIdAndActiveToday(
                 workforceFullDataDto.securityCompany().id(), customerId, contractId, LocalDate.now()
         ).orElseThrow(
-                () -> new BusinessException(MessageUtil.getMessage("entity-not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
         );
         WeekDaysEnum weekDaysEnum = Utils.getTodayWeekDayEnum();
 
@@ -94,13 +95,16 @@ public class WorkforceServiceImpl implements WorkforceService {
                     .name(site.getName())
                     .latitude(site.getLatitude())
                     .longitude(site.getLongitude())
-                    .services(distributions.stream().map(d -> {
+                    .services(distributions.stream()
+                            .filter(d -> d.getLkCustomerContractService().getCustomerService().getCustomerService().getUnit().equals(UnitEnum.PERSON))
+                            .map(d -> {
                                 ServiceDetails details = d.getLkCustomerContractService().getCustomerService();
                                 return WorkforceSiteDistributionServiceDto.builder()
                                         .id(d.getLkCustomerContractService().getId())
                                         .name(details.getCustomerService().getServiceName())
                                         .hours(details.getHours())
                                         .days(details.getDays())
+                                        .unit(UnitEnum.PERSON)
                                         .periods(
                                                 d.getOperationServices().stream()
                                                         .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
@@ -143,7 +147,9 @@ public class WorkforceServiceImpl implements WorkforceService {
                 .name(site.getName())
                 .latitude(site.getLatitude())
                 .longitude(site.getLongitude())
-                .services(distributions.stream().map(d -> {
+                .services(distributions.stream()
+                        .filter(d -> d.getLkCustomerContractService().getCustomerService().getCustomerService().getUnit().equals(UnitEnum.PERSON))
+                        .map(d -> {
                             ServiceDetails details = d.getLkCustomerContractService().getCustomerService();
                             ContractOperationRule contractOperationRule = d.getCustomerContract().getCustomerAgreement();
                             return WorkforceSiteDistributionServiceDto.builder()
@@ -151,6 +157,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                                     .name(details.getCustomerService().getServiceName())
                                     .hours(details.getHours())
                                     .days(details.getDays())
+                                    .unit(UnitEnum.PERSON)
                                     .periods(
                                             d.getOperationServices().stream()
                                                     .filter(os -> os.getDays().contains(weekDaysEnum))
@@ -223,7 +230,7 @@ public class WorkforceServiceImpl implements WorkforceService {
     ) {
         LocalDateTime withdrawnFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
                 .minusMinutes(contractOperationRule.getCheckInBeforeMinutes());
-        LocalDateTime withdrawnTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
+        LocalDateTime withdrawnTo = LocalDateTime.of(LocalDate.now(), operationService.getToTime())
                 .minusMinutes(contractOperationRule.getCheckOutBeforeMinutes());
 
         if (

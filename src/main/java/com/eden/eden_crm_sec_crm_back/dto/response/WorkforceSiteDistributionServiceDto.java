@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dto.response;
 
+import com.eden.eden_crm_sec_crm_back.enums.UnitEnum;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,5 +13,6 @@ public class WorkforceSiteDistributionServiceDto {
     private String name;
     private Long hours;
     private Long days;
+    private UnitEnum unit;
     private List<WorkforceSiteDistributionWorkingPeriodDto> periods;
 }
