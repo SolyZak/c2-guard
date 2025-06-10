@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.dto.response;
 
 import com.eden.eden_crm_sec_crm_back.enums.AttendStatus;
+import com.eden.eden_crm_sec_crm_back.enums.PresenceMode;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,4 +16,5 @@ public class WorkforceSiteDistributionWorkingPeriodDto {
     private Boolean isWorking;
     private AttendStatus checkInStatus;
     private AttendStatus checkOutStatus;
+    private PresenceMode presenceMode;
 }
