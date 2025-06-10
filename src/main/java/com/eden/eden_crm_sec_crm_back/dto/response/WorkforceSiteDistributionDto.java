@@ -12,6 +12,8 @@ public class WorkforceSiteDistributionDto {
     private String name;
     private Long contractId;
     private String contractName;
+    private Long customerId;
+    private String customerName;
     private Double latitude;
     private Double longitude;
     private Double tolerance;
