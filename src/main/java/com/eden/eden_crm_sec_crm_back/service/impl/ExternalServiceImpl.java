@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.dto.external.CustomerInfo;
 import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData;
 import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteInfo;
+import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.mapper.ExternalMapper;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
@@ -13,6 +14,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
+import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class ExternalServiceImpl implements ExternalService {
     private final CustomerSiteRepository customerSiteRepository;
     private final CustomerRepository customerRepository;
     private final SiteDistributionRepository siteDistributionRepository;
+    private final WorkforceService workforceService;
     private final ExternalMapper externalMapper;
 
     // This function will provide information abut operation site today status
@@ -73,5 +76,10 @@ public class ExternalServiceImpl implements ExternalService {
                 .name(customer.getName())
                 .code(customer.getCode())
                 .build();
+    }
+
+    @Override
+    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id) {
+        return workforceService.operationSiteServicesDropdown(id);
     }
 }

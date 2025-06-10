@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 import com.eden.eden_crm_sec_crm_back.dto.external.CustomerInfo;
 import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData;
 import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteInfo;
+import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,5 +39,13 @@ public class ExternalController {
     @GetMapping("/customers/{id}")
     public CustomerInfo getCustomerInfo(@PathVariable(name = "id") Long id) {
         return externalService.getCustomerInfo(id);
+    }
+
+    @Operation(summary = "Get operation site distributions for the logged in workforce")
+    @GetMapping("/workforce/operation-sites/{id}/distributions")
+    public WorkforceSiteDistributionDto operationSiteServicesDropdown(
+            @PathVariable("id") Long id
+    ) {
+        return externalService.operationSiteServicesDropdown(id);
     }
 }
