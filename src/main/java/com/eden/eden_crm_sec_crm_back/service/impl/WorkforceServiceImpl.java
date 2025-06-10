@@ -95,6 +95,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                     .name(site.getName())
                     .latitude(site.getLatitude())
                     .longitude(site.getLongitude())
+                    .tolerance(site.getTolerance())
                     .services(distributions.stream()
                             .filter(d -> d.getLkCustomerContractService().getCustomerService().getCustomerService().getUnit().equals(UnitEnum.PERSON))
                             .map(d -> {
@@ -147,6 +148,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                 .name(site.getName())
                 .latitude(site.getLatitude())
                 .longitude(site.getLongitude())
+                .tolerance(site.getTolerance())
                 .services(distributions.stream()
                         .filter(d -> d.getLkCustomerContractService().getCustomerService().getCustomerService().getUnit().equals(UnitEnum.PERSON))
                         .map(d -> {

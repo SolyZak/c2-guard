@@ -12,5 +12,6 @@ public class WorkforceSiteDistributionDto {
     private String name;
     private Double latitude;
     private Double longitude;
+    private Double tolerance;
     private List<WorkforceSiteDistributionServiceDto> services;
 }
