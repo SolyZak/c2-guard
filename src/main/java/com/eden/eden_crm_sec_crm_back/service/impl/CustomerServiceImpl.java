@@ -5,21 +5,24 @@ import com.eden.eden_crm_sec_crm_back.dto.request.CustomerRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerResponseDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.identity.KeycloakClient;
+import com.eden.eden_crm_sec_crm_back.identity.dto.UserRequest;
 import com.eden.eden_crm_sec_crm_back.mapper.CustomerMapper;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
+import com.eden.eden_crm_sec_crm_back.objects.UserType;
 import com.eden.eden_crm_sec_crm_back.payload.MessageResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.service.AsyncEmailService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.List;
@@ -31,6 +34,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository repository;
     private final CustomerMapper mapper;
     private final AsyncEmailService asyncEmailService;
+    private final KeycloakClient keycloakClient;
 
     @Value("${customer-portal.url}")
     private String customerPortalUrl;
@@ -39,6 +43,12 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerResponseDto create(CustomerRequestDto dto) {
         isEmailExists(dto.email());
         isCodeExists(dto.code());
+        if (keycloakClient.userExits(dto.email())) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("email-cant-login"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
 
         Customer customer = mapper.requestToCustomer(dto);
         customer = repository.save(customer);
@@ -68,10 +78,13 @@ public class CustomerServiceImpl implements CustomerService {
                 .toList();
     }
 
+    @Transactional
     @Override
     public MessageResponse delete(Long id) {
         Customer customer = repository.findById(id)
                 .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
+
+        keycloakClient.deleteUser(customer.getEmail());
 
         // TODO: check if customer has active projects or not if yes throw next exception
         // throw new BusinessException(ExceptionMessages.CUSTOMER_HAS_PROJECT, HttpStatus.BAD_REQUEST);
@@ -97,10 +110,30 @@ public class CustomerServiceImpl implements CustomerService {
 
         // validate email
         isEmailExists(dto.email(), id);
+        if (keycloakClient.userExitsIgnoreUserId(dto.email(), id)) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("email-cant-login"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+        String oldUsername = customer.getEmail();
 
         mapper.updateCustomerFromDto(dto, customer);
 
         repository.save(customer);
+
+        if (customer.isActive()) {
+            String password = customer.getEmail() + "@123";
+            UserRequest userRequest = new UserRequest(
+                    customer.getId(), UserType.CUSTOMER, customer.getEmail(), customer.getName(), "",
+                    password, customer.getEmail(), true
+            );
+            if (keycloakClient.userExits(oldUsername)) {
+                keycloakClient.updateUser(oldUsername, userRequest);
+            } else {
+                keycloakClient.createUser(userRequest);
+            }
+        }
 
         return mapper.customerToResponse(customer);
     }
@@ -114,14 +147,22 @@ public class CustomerServiceImpl implements CustomerService {
             throw new BusinessException(MessageUtil.getMessage("validation.email.not.empty"), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-//        String userId = "";// todo use keycloak here: identityProviderIntegration.getUserIdIfExits(customer.getId().toString());
-//        if (ObjectUtils.isEmpty(userId)) {
-            String password = customer.getId() + "@AMNCO";
-            // todo use keycloak here: identityProviderIntegration.createUser(new CreateUserRequest(customer.getId(), customer.getCode(), customer.getName(), password, customer.getEmail(), true));
+        if (!keycloakClient.userExits(customer.getEmail())) {
+            String password = customer.getEmail() + "@123";
+            keycloakClient.createUser(new UserRequest(
+                    customer.getId(),
+                    UserType.CUSTOMER,
+                    customer.getEmail(),
+                    customer.getName(),
+                    "",
+                    password,
+                    customer.getEmail(),
+                    true
+            ));
             customer.setActive(true);
             repository.save(customer);
             sendEmailToEnabledCustomer(customer.getEmail(), customer.getId().toString(), password);
-//        }
+        }
     }
 
     @Override
@@ -163,7 +204,6 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private void sendEmailToEnabledCustomer(String emailTo, String code, String password) {
-        // todo get subject and body from message properties
         String subject = "Customer Portal Credentials";
         String body = "Dear Customer,<br><br>" +
                 "Your account has been activated. Please <a href=\"" + customerPortalUrl + "\">visit link</a> and find your credentials below:<br>" +

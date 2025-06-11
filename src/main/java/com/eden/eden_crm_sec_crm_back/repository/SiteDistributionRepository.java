@@ -45,4 +45,6 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             @Param("today") LocalDate today
     );
 
+    boolean existsBySiteId(Long siteId);
+
 }

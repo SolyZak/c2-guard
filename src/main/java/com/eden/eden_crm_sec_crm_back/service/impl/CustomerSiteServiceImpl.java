@@ -8,6 +8,7 @@ import com.eden.eden_crm_sec_crm_back.mapper.CustomerSiteMapper;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
+import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
@@ -24,6 +25,7 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
     private final CustomerSiteRepository customerSiteRepository;
     private final CustomerSiteMapper customerSiteMapper;
     private final CustomerService customerService;
+    private final SiteDistributionRepository siteDistributionRepository;
 
     @Override
     public CustomerSiteResponseDto addCustomerSite(CustomerSiteRequestDto requestDto) {
@@ -64,7 +66,9 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
 
         CustomerSite site = findOne(id, customer.getId());
 
-        // todo need to check if there is any related data to this operation site
+        if (siteDistributionRepository.existsBySiteId(site.getId())) {
+            throw new BusinessException(MessageUtil.getMessage("site-has-contract"), HttpStatus.BAD_REQUEST);
+        }
         customerSiteRepository.delete(site);
 
         return MessageUtil.getMessage("customer-site.deleted");
