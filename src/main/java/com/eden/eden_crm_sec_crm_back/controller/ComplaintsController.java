@@ -10,7 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(path = "/complaints")
+@RequestMapping(path = "/customer/complaints")
 @RequiredArgsConstructor
 public class ComplaintsController {
     // HINT: this controller must be used by customers to manage them complaints
