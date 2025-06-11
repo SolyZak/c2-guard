@@ -14,5 +14,6 @@ public class WorkforceSiteDistributionServiceDto {
     private Long hours;
     private Long days;
     private UnitEnum unit;
+    private Long qnt;
     private List<WorkforceSiteDistributionWorkingPeriodDto> periods;
 }

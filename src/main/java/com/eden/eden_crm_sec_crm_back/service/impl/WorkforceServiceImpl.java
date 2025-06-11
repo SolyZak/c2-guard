@@ -110,6 +110,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                                         .hours(details.getHours())
                                         .days(details.getDays())
                                         .unit(UnitEnum.PERSON)
+                                        .qnt(d.getLkCustomerContractService().getQuantity())
                                         .periods(
                                                 d.getOperationServices().stream()
                                                         .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
@@ -170,6 +171,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                                     .hours(details.getHours())
                                     .days(details.getDays())
                                     .unit(UnitEnum.PERSON)
+                                    .qnt(d.getLkCustomerContractService().getQuantity())
                                     .periods(
                                             d.getOperationServices().stream()
                                                     .filter(os -> os.getDays().contains(weekDaysEnum))
