@@ -9,7 +9,6 @@ import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.repository.ContractOperationRuleRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.service.ContractOperationRuleService;
-import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -24,12 +23,11 @@ import java.util.Optional;
 public class ContractOperationRuleServiceImpl implements ContractOperationRuleService {
     private final ContractOperationRuleRepository contractOperationRuleRepository;
     private final CustomerContractRepository contractRepository;
-    private final CustomerService customerService;
     private final CustomerContractMapper contractMapper;
 
     @Override
     public List<ContractWithRules> contractListWithRules() {
-        return contractRepository.listByCustomerIdWithRules(customerService.getLoggedInCustomer().getId())
+        return contractRepository.listByCustomerIdWithRules(Utils.getLoggedInCustomerId())
                 .stream().map(contractMapper::toContractWithRules)
                 .toList();
     }

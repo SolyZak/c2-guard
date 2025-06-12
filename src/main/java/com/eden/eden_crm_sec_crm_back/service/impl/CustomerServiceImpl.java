@@ -16,6 +16,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.service.AsyncEmailService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -123,10 +124,9 @@ public class CustomerServiceImpl implements CustomerService {
         repository.save(customer);
 
         if (customer.isActive()) {
-            String password = customer.getEmail() + "@123";
             UserRequest userRequest = new UserRequest(
                     customer.getId(), UserType.CUSTOMER, customer.getEmail(), customer.getName(), "",
-                    password, customer.getEmail(), true
+                    customer.getEmail() + "@123", customer.getEmail(), true
             );
             if (keycloakClient.userExits(oldUsername)) {
                 keycloakClient.updateUser(oldUsername, userRequest);
@@ -167,7 +167,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Customer getLoggedInCustomer() {
-        return repository.findById(1L)// todo this must be replaced by info from token
+        return repository.findById(Utils.getLoggedInCustomerId())
                 .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
     }
 

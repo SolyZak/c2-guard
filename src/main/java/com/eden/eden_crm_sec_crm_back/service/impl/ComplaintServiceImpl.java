@@ -1,5 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
+import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
+import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddComplaintRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.Complaint;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -12,10 +14,12 @@ import com.eden.eden_crm_sec_crm_back.repository.ComplaintRepository;
 import com.eden.eden_crm_sec_crm_back.service.ComplaintService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
+import com.eden.eden_crm_sec_crm_back.utils.Constants;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ComplaintServiceImpl implements ComplaintService {
@@ -33,6 +38,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     private final CustomerSiteService customerSiteService;
     private final ComplaintMapper complaintMapper;
     private final OracleStorageUtil oracleStorageUtil;
+    private final DocumentsFeignClient documentsFeignClient;
 
     @Override
     public PaginateResponse<Complaint> getComplaintsForCustomer(Integer page, Integer size) {
@@ -85,7 +91,16 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     private List<String> uploadEvidences(List<MultipartFile> images) {
-        // todo to be integrated with document service
-        return List.of();
+        return images.stream().map(image -> {
+            String evidenceUri = "%s%s/%s".formatted(Constants.COMPLAINT_PATH, Math.random(), image.getOriginalFilename());
+            try {
+                documentsFeignClient.uploadImage(
+                        UploadImageRequest.builder().image(image).path(evidenceUri).build()
+                );
+            } catch (Exception e) {
+                log.error("Can't upload document for complaint, cause: {}", e.getMessage());
+            }
+            return evidenceUri;
+        }).toList();
     }
 }

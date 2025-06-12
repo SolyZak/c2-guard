@@ -24,6 +24,7 @@ import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServic
 import com.eden.eden_crm_sec_crm_back.repository.lookup.ServiceDetailsRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -102,8 +103,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Override
     public PaginateResponse<ContractRowDto> paginateMyContracts(String search, LocalDate from, LocalDate to, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        Customer customer = customerService.getLoggedInCustomer();
-        Page<CustomerContract> contracts = customerContractRepository.paginateByCustomer(customer.getId(), search, from, to, pageable);
+        Page<CustomerContract> contracts = customerContractRepository.paginateByCustomer(Utils.getLoggedInCustomerId(), search, from, to, pageable);
         return new PaginateResponse<>(
                 contracts.getContent().stream().map(contractMapper::toContractRowDto).toList(),
                 page,
@@ -115,9 +115,8 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public List<ContractRowDto> listMyDraftedContracts() {
-        Customer customer = customerService.getLoggedInCustomer();
         return customerContractRepository.listByCustomerIdAndStatus(
-                        customer.getId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
+                        Utils.getLoggedInCustomerId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
                 )
                 .stream()
                 .map(contractMapper::toContractRowDto)
@@ -126,29 +125,29 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public List<ContractServiceDetailsData> contractServicesList(Long contractId) {
-        Customer customer = customerService.getLoggedInCustomer();
-        customerContractRepository.findByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
-                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
-        );
+        customerContractRepository.findByIdAndCustomerId(contractId, Utils.getLoggedInCustomerId())
+                .orElseThrow(
+                        () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+                );
         return contractServiceRepository.getContractNotFullyDistributedServices(contractId)
                 .stream().map(contractMapper::toContractServiceDetailsData).toList();
     }
 
     @Override
     public List<ContractRowDto> listAllMyContracts() {
-        return customerContractRepository.listByCustomerId(customerService.getLoggedInCustomer().getId())
+        return customerContractRepository.listByCustomerId(Utils.getLoggedInCustomerId())
                 .stream()
                 .map(contractMapper::toContractRowDto).toList();
     }
 
     @Override
     public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
-        Customer customer = customerService.getLoggedInCustomer();
-        CustomerContract contract = customerContractRepository.findByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
-                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
-        );
+        CustomerContract contract = customerContractRepository.findByIdAndCustomerId(contractId, Utils.getLoggedInCustomerId())
+                .orElseThrow(
+                        () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
+                );
         return customerSiteRepository.findAvailableSitesForContract(
-                        customer.getId(),
+                        Utils.getLoggedInCustomerId(),
                         contractId,
                         contract.getStartAgreementDate(),
                         contract.getEndAgreementDate()
@@ -160,8 +159,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId) {
-        Customer customer = customerService.getLoggedInCustomer();
-        customerContractRepository.findByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
+        customerContractRepository.findByIdAndCustomerId(contractId, Utils.getLoggedInCustomerId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
         );
 
