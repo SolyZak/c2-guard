@@ -102,6 +102,11 @@
 			<artifactId>keycloak-admin-client</artifactId>
 			<version>${keycloak.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.auth0</groupId>
+			<artifactId>java-jwt</artifactId>
+			<version>4.4.0</version> <!-- Check for the latest version -->
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
