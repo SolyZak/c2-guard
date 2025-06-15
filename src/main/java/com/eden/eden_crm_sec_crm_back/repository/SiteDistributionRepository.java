@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -46,5 +47,29 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
     );
 
     boolean existsBySiteId(Long siteId);
+
+    @EntityGraph(attributePaths = {
+            "site",
+            "customerContract",
+            "lkCustomerContractService",
+            "operationServices"
+    })
+    @Query("""
+            SELECT sd FROM SiteDistribution sd
+            WHERE (sd.customerContract.startAgreementDate <= :to AND sd.customerContract.endAgreementDate >= :from)
+            AND (:securityCompanyId IS NULL OR sd.customerContract.securityCompanyId IN :securityCompanyId)
+            AND (:customerId IS NULL OR sd.customerContract.customer.id IN :customerId)
+            AND (:contractId IS NULL OR sd.customerContract.id IN :contractId)
+            AND (:operationSiteId IS NULL OR sd.site.id IN :operationSiteId)
+            """)
+    List<SiteDistribution> listSiteDistributionForStats(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
+            @Param("securityCompanyId") List<Long> securityCompanyId,
+            @Param("customerId") List<Long> customerId,
+            @Param("contractId") List<Long> contractId,
+            @Param("operationSiteId") List<Long> operationSiteId
+    );
+
 
 }

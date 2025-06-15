@@ -1,17 +1,14 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
-import com.eden.eden_crm_sec_crm_back.dto.external.CustomerInfo;
-import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData;
-import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteInfo;
+import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -47,5 +44,17 @@ public class ExternalController {
             @PathVariable("id") Long id
     ) {
         return externalService.operationSiteServicesDropdown(id);
+    }
+
+    @Operation(summary = "Get customer attendance stats for operation site")
+    @GetMapping("/customer/attendance/stats")
+    public List<AttendanceStatsData> getAttendanceStats(
+            @Valid AttendanceStatsDto dto
+    ) {
+        dto.validate();
+
+        // HINT: I have to ignore pagination for now, data is destructed via multiple tables, with aggregation methods needed & loading data.
+        dto.setCustomerId(List.of(Utils.getLoggedInCustomerId()));
+        return externalService.getAttendanceStats(dto);
     }
 }

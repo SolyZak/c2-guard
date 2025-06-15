@@ -1,9 +1,8 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.dto.external.CustomerInfo;
-import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData;
-import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteInfo;
+import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
+import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.mapper.ExternalMapper;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
@@ -20,8 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +40,7 @@ public class ExternalServiceImpl implements ExternalService {
         );
         Optional<SiteDistribution> firstSiteDistributed = siteDistributionRepository.findByActiveTodayAndSiteId(id, LocalDate.now()).stream().findFirst();
 
-         OperationSiteInfo.OperationSiteInfoBuilder operationSiteInfoBuilder = OperationSiteInfo.builder()
+        OperationSiteInfo.OperationSiteInfoBuilder operationSiteInfoBuilder = OperationSiteInfo.builder()
                 .id(operationSite.getId())
                 .name(operationSite.getName())
                 .operationSiteName(operationSite.getName())
@@ -49,16 +48,16 @@ public class ExternalServiceImpl implements ExternalService {
                 .customerId(operationSite.getCustomer().getId())
                 .customerName(operationSite.getCustomer().getName());
 
-         if (firstSiteDistributed.isPresent()) {
-             CustomerContract contract = firstSiteDistributed.get().getCustomerContract();
-             operationSiteInfoBuilder
-                     .contractName(contract.getAgreementName())
-                     .contractId(contract.getId())
-                     .securityCompanyId(contract.getSecurityCompanyId())
-                     .securityCompanyName(contract.getSecurityCompanyName());
-         }
+        if (firstSiteDistributed.isPresent()) {
+            CustomerContract contract = firstSiteDistributed.get().getCustomerContract();
+            operationSiteInfoBuilder
+                    .contractName(contract.getAgreementName())
+                    .contractId(contract.getId())
+                    .securityCompanyId(contract.getSecurityCompanyId())
+                    .securityCompanyName(contract.getSecurityCompanyName());
+        }
 
-         return operationSiteInfoBuilder.build();
+        return operationSiteInfoBuilder.build();
     }
 
     @Override
@@ -81,5 +80,51 @@ public class ExternalServiceImpl implements ExternalService {
     @Override
     public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id) {
         return workforceService.operationSiteServicesDropdown(id);
+    }
+
+    @Override
+    public List<AttendanceStatsData> getAttendanceStats(AttendanceStatsDto dto) {
+        List<AttendanceStatsData> attendanceStatsData = new ArrayList<>();
+        Map<CustomerSite, Map<CustomerContract, List<SiteDistribution>>> groupedMap =
+                siteDistributionRepository
+                        .listSiteDistributionForStats(
+                                dto.getFrom(),
+                                dto.getTo(),
+                                dto.getSecurityCompanyId(),
+                                dto.getCustomerId(),
+                                dto.getContractId(),
+                                dto.getOperationSiteId()
+                        )
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                SiteDistribution::getSite,
+                                Collectors.groupingBy(SiteDistribution::getCustomerContract)
+                        ));
+
+        for (Map.Entry<CustomerSite, Map<CustomerContract, List<SiteDistribution>>> siteEntry : groupedMap.entrySet()) {
+            CustomerSite site = siteEntry.getKey();
+            Map<CustomerContract, List<SiteDistribution>> contractMap = siteEntry.getValue();
+
+            for (Map.Entry<CustomerContract, List<SiteDistribution>> contractEntry : contractMap.entrySet()) {
+                CustomerContract contract = contractEntry.getKey();
+                List<SiteDistribution> distributions = contractEntry.getValue();
+                Map<WeekDaysEnum, Long> weekdayPlanned = new HashMap<>();
+                distributions.stream().flatMap(d -> d.getOperationServices().stream()).forEach(os -> {
+                    os.getDays().forEach(weekday -> weekdayPlanned.merge(weekday, os.getQuantity(), Long::sum));
+                });
+                attendanceStatsData.add(AttendanceStatsData.builder()
+                                .operationSiteId(site.getId())
+                                .operationSiteName(site.getName())
+                                .contractId(contract.getId())
+                                .contractName(contract.getAgreementName())
+                                .securityCompanyId(contract.getSecurityCompanyId())
+                                .securityCompanyName(contract.getSecurityCompanyName())
+                                .totalAttended(0L)
+                                .totalPlanned(distributions.stream().mapToLong(d -> d.getLkCustomerContractService().getQuantity()).sum())
+                                .weekdayPlanned(weekdayPlanned)
+                        .build());
+            }
+        }
+        return attendanceStatsData;
     }
 }

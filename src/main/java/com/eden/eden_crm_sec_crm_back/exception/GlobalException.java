@@ -52,4 +52,17 @@ public class GlobalException {
         ApiResponse<ApiException> errorResponse = ApiResponse.error(apiException, apiException.getHttpStatus());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(ValidationException ex) {
+
+        // Create the payload as a map with the attribute and its message
+        Map<String, String> payload = Map.of(ex.getAttribute(), ex.getMessage());
+
+        // Build the ApiResponse with the payload
+        ApiResponse<Map<String, String>> errorResponse = ApiResponse.error(payload, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        // Return the ResponseEntity with the error response
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
 }
