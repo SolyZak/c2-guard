@@ -25,6 +25,11 @@ public class CustomerDropdownsController {
 
     @GetMapping("/security-companies/dropdown")
     public ApiResponse<List<GeneralDropdown>> myContractedSecurityCompaniesDropdown() {
+        /**
+         * todo this api must be called from here with org unit
+         * for getting the security companies ids then query org unit to fetch the data related to those ids
+         * but for now we just query in crm db which has security company id & name in contracts table
+         */
         return ApiResponse.ok(dropdownService.customerContractedSecurityCompaniesDropdown(Utils.getLoggedInCustomerId()));
     }
 
@@ -33,5 +38,13 @@ public class CustomerDropdownsController {
             @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId
     ) {
         return ApiResponse.ok(dropdownService.myContractsDropdown(Utils.getLoggedInCustomerId(), securityCompanyId));
+    }
+
+    @GetMapping("/operation-sites/dropdown")
+    public ApiResponse<List<GeneralDropdown>> myOperationSitesDropdown(
+            @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId,
+            @RequestParam(name = "contractId", required = false) Long contractId
+    ) {
+        return ApiResponse.ok(dropdownService.myOperationSitesDropdown(Utils.getLoggedInCustomerId(), securityCompanyId, contractId));
     }
 }

@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -71,5 +72,18 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             @Param("operationSiteId") List<Long> operationSiteId
     );
 
+    @Query("""
+            SELECT sd.site.id AS id, sd.site.name AS name
+            FROM SiteDistribution sd
+            WHERE sd.site.customer.id = :customerId
+              AND (:securityCompanyId IS NULL OR sd.customerContract.securityCompanyId = :securityCompanyId)
+              AND (:contractId IS NULL OR sd.customerContract.id = :contractId)
+            GROUP BY sd.site.id, sd.site.name
+            """)
+    List<GeneralDropdownProjection> operationSitesDropdown(
+            @Param("customerId") Long customerId,
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("contractId") Long contractId
+    );
 
 }

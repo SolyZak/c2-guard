@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
+import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -45,4 +46,10 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
+    @Query("""
+            SELECT cs.id as id, cs.name as name FROM CustomerSite cs
+            WHERE cs.customer.id = :customerId
+            """)
+    List<GeneralDropdownProjection> operationSitesDropdown(@Param("customerId") Long customerId);
 }
