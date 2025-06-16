@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.repository;
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
+import com.eden.eden_crm_sec_crm_back.models.projections.SecurityCompanyProjection;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
@@ -52,34 +53,34 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
     );
 
     @Query(value = """
-        SELECT * FROM customer_contract cc
-        WHERE cc.customer_id = :customerId
-        AND (
-            :search IS NULL OR
-            cc.agreement_number ILIKE CONCAT('%', :search, '%') OR
-            cc.agreement_name ILIKE CONCAT('%', :search, '%')
-        )
-        AND (
-            (:from IS NULL AND :to IS NULL) OR
-            (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date) 
-             AND cc.end_agreement_date >= COALESCE(:from, cc.end_agreement_date))
-        )
-        """,
-        countQuery = """
-        SELECT COUNT(*) FROM customer_contract cc
-        WHERE cc.customer_id = :customerId
-        AND (
-            :search IS NULL OR
-            cc.agreement_number ILIKE CONCAT('%', :search, '%') OR
-            cc.agreement_name ILIKE CONCAT('%', :search, '%')
-        )
-        AND (
-            (:from IS NULL AND :to IS NULL) OR
-            (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date) 
-             AND cc.end_agreement_date >= COALESCE(:from, cc.end_agreement_date))
-        )
-        """,
-        nativeQuery = true
+            SELECT * FROM customer_contract cc
+            WHERE cc.customer_id = :customerId
+            AND (
+                :search IS NULL OR
+                cc.agreement_number ILIKE CONCAT('%', :search, '%') OR
+                cc.agreement_name ILIKE CONCAT('%', :search, '%')
+            )
+            AND (
+                (:from IS NULL AND :to IS NULL) OR
+                (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date) 
+                 AND cc.end_agreement_date >= COALESCE(:from, cc.end_agreement_date))
+            )
+            """,
+            countQuery = """
+                    SELECT COUNT(*) FROM customer_contract cc
+                    WHERE cc.customer_id = :customerId
+                    AND (
+                        :search IS NULL OR
+                        cc.agreement_number ILIKE CONCAT('%', :search, '%') OR
+                        cc.agreement_name ILIKE CONCAT('%', :search, '%')
+                    )
+                    AND (
+                        (:from IS NULL AND :to IS NULL) OR
+                        (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date) 
+                         AND cc.end_agreement_date >= COALESCE(:from, cc.end_agreement_date))
+                    )
+                    """,
+            nativeQuery = true
     )
     Page<CustomerContract> paginateByCustomer(
             @Param("customerId") Long customerId,
@@ -122,4 +123,12 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @NotNull @Param("contractId") Long contractId,
             @NotNull @Param("today") LocalDate today
     );
+
+    @Query("""
+            SELECT cc.securityCompanyId AS id, cc.securityCompanyName AS name
+            FROM CustomerContract cc
+            WHERE cc.customer.id = :customerId
+            GROUP BY cc.securityCompanyId, cc.securityCompanyName
+            """)
+    List<SecurityCompanyProjection> securityCompanies(@Param("customerId") Long customerId);
 }
