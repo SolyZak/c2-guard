@@ -14,8 +14,10 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
+import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,7 @@ public class ExternalServiceImpl implements ExternalService {
     private final WorkforceService workforceService;
     private final ExternalMapper externalMapper;
     private final LKCustomerContractOperationServiceRepository contractOperationServiceRepository;
+    private final LKCustomerContractServiceRepository lkCustomerContractServiceRepository;
 
     // This function will provide information abut operation site today status
     @Override
@@ -146,5 +149,20 @@ public class ExternalServiceImpl implements ExternalService {
                         .toTime(os.getToTime())
                         .build())
                 .toList();
+    }
+
+    @Override
+    public List<ContractPlannedQntDto> getContractPlannedQnt(
+            Long customerId, Long securityCompanyId, List<Long> contractId, LocalDate from, LocalDate to
+    ) {
+        if (from == null && to == null)
+            return lkCustomerContractServiceRepository.sumPlannedQuantityByContract(customerId, securityCompanyId, contractId);
+        if (from != null && to == null) {
+            throw new BusinessException(MessageUtil.getMessage("to.required"), HttpStatus.BAD_REQUEST);
+        }
+        if (from != null && to.isBefore(from)) {
+            throw new BusinessException(MessageUtil.getMessage("to.must-be-after-from"), HttpStatus.BAD_REQUEST);
+        }
+        return lkCustomerContractServiceRepository.sumPlannedQuantityByContract(customerId, securityCompanyId, contractId, from, to);
     }
 }

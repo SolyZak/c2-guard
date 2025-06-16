@@ -70,4 +70,15 @@ public class ExternalController {
     ) {
         return externalService.getAttendanceDateWorkingPeriod(Utils.getLoggedInCustomerId(), contractId, operationSiteId, date);
     }
+
+    @Operation(summary = "Get customer contracts planned quantities")
+    @GetMapping("/customer/contracts/planned-quantities")
+    public List<ContractPlannedQntDto> getContractPlannedQnt(
+            @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId,
+            @RequestParam(name = "contractId", required = false) List<Long> contractId,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return externalService.getContractPlannedQnt(Utils.getLoggedInCustomerId(), securityCompanyId, contractId, from, to);
+    }
 }

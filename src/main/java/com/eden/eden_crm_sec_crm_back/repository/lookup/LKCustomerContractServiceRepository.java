@@ -1,11 +1,13 @@
 package com.eden.eden_crm_sec_crm_back.repository.lookup;
 
+import com.eden.eden_crm_sec_crm_back.dto.external.ContractPlannedQntDto;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -32,22 +34,60 @@ public interface LKCustomerContractServiceRepository extends JpaRepository<LKCus
     );
 
     @Query("""
-           SELECT COALESCE(SUM(lk.distributedQuantity), 0)
-           FROM LKCustomerContractService lk
-           WHERE lk.customerContract.id = :contractId AND lk.id != :serviceId
-           """)
+            SELECT COALESCE(SUM(lk.distributedQuantity), 0)
+            FROM LKCustomerContractService lk
+            WHERE lk.customerContract.id = :contractId AND lk.id != :serviceId
+            """)
     Long sumDistributedQnty(
             @Param("contractId") Long contractId,
             @Param("serviceId") Long serviceId
     );
 
     @Query("""
-           SELECT COALESCE(SUM(lk.quantity), 0)
-           FROM LKCustomerContractService lk
-           WHERE lk.customerContract.id = :contractId AND lk.id != :serviceId
-           """)
+            SELECT COALESCE(SUM(lk.quantity), 0)
+            FROM LKCustomerContractService lk
+            WHERE lk.customerContract.id = :contractId AND lk.id != :serviceId
+            """)
     Long sumQnty(
             @Param("contractId") Long contractId,
             @Param("serviceId") Long serviceId
     );
+
+    @Query("""
+            SELECT new com.eden.eden_crm_sec_crm_back.dto.external.ContractPlannedQntDto(
+                c.id, c.agreementName, SUM(s.quantity)
+            )
+            FROM LKCustomerContractService s
+            JOIN s.customerContract c
+            WHERE c.customer.id = :customerId
+              AND (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId)
+              AND (:contractIds IS NULL OR c.id IN :contractIds)
+              AND (c.startAgreementDate <= :to AND c.endAgreementDate >= :from)
+            GROUP BY c.id, c.agreementName
+            """)
+    List<ContractPlannedQntDto> sumPlannedQuantityByContract(
+            @Param("customerId") Long customerId,
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("contractIds") List<Long> contractIds,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to
+    );
+
+    @Query("""
+            SELECT new com.eden.eden_crm_sec_crm_back.dto.external.ContractPlannedQntDto(
+                c.id, c.agreementName, SUM(s.quantity)
+            )
+            FROM LKCustomerContractService s
+            JOIN s.customerContract c
+            WHERE c.customer.id = :customerId
+              AND (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId)
+              AND (:contractIds IS NULL OR c.id IN :contractIds)
+            GROUP BY c.id, c.agreementName
+            """)
+    List<ContractPlannedQntDto> sumPlannedQuantityByContract(
+            @Param("customerId") Long customerId,
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("contractIds") List<Long> contractIds
+    );
+
 }
