@@ -20,4 +20,10 @@ public class DropdownServiceImpl implements DropdownService {
     public List<GeneralDropdown> customerContractedSecurityCompaniesDropdown(Long customerId) {
         return customerContractRepository.securityCompanies(customerId).stream().map(customerContractMapper::toDropdown).toList();
     }
+
+    @Override
+    public List<GeneralDropdown> myContractsDropdown(Long customerId, Long securityCompanyId) {
+        // todo must include status once we impl status controlling
+        return customerContractRepository.contractsDropdown(customerId, securityCompanyId).stream().map(customerContractMapper::toDropdown).toList();
+    }
 }

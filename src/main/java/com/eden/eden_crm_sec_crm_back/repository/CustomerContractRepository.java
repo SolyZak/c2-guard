@@ -3,7 +3,7 @@ package com.eden.eden_crm_sec_crm_back.repository;
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
-import com.eden.eden_crm_sec_crm_back.models.projections.SecurityCompanyProjection;
+import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
@@ -62,7 +62,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             )
             AND (
                 (:from IS NULL AND :to IS NULL) OR
-                (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date) 
+                (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date)
                  AND cc.end_agreement_date >= COALESCE(:from, cc.end_agreement_date))
             )
             """,
@@ -76,7 +76,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
                     )
                     AND (
                         (:from IS NULL AND :to IS NULL) OR
-                        (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date) 
+                        (cc.start_agreement_date <= COALESCE(:to, cc.start_agreement_date)
                          AND cc.end_agreement_date >= COALESCE(:from, cc.end_agreement_date))
                     )
                     """,
@@ -130,5 +130,16 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             WHERE cc.customer.id = :customerId
             GROUP BY cc.securityCompanyId, cc.securityCompanyName
             """)
-    List<SecurityCompanyProjection> securityCompanies(@Param("customerId") Long customerId);
+    List<GeneralDropdownProjection> securityCompanies(@Param("customerId") Long customerId);
+
+    @Query("""
+            SELECT cc.id AS id, cc.agreementName AS name
+            FROM CustomerContract cc
+            WHERE cc.customer.id = :customerId
+            AND (:securityCompanyId IS NULL OR cc.securityCompanyId = :securityCompanyId)
+            """)
+    List<GeneralDropdownProjection> contractsDropdown(
+            @Param("customerId") Long customerId,
+            @Param("securityCompanyId") Long securityCompanyId
+    );
 }

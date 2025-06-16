@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -25,5 +26,12 @@ public class CustomerDropdownsController {
     @GetMapping("/security-companies/dropdown")
     public ApiResponse<List<GeneralDropdown>> myContractedSecurityCompaniesDropdown() {
         return ApiResponse.ok(dropdownService.customerContractedSecurityCompaniesDropdown(Utils.getLoggedInCustomerId()));
+    }
+
+    @GetMapping("/contracts/dropdown")
+    public ApiResponse<List<GeneralDropdown>> myContractsDropdown(
+            @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId
+    ) {
+        return ApiResponse.ok(dropdownService.myContractsDropdown(Utils.getLoggedInCustomerId(), securityCompanyId));
     }
 }

@@ -8,7 +8,7 @@ import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractWithRules;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
-import com.eden.eden_crm_sec_crm_back.models.projections.SecurityCompanyProjection;
+import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.mapstruct.*;
 
 
@@ -38,6 +38,6 @@ public interface CustomerContractMapper {
     @Mapping(target = "name", source = "c.agreementName")
     GeneralDropdown toDropdown(CustomerContract c);
 
-    GeneralDropdown toDropdown(SecurityCompanyProjection c);
+    GeneralDropdown toDropdown(GeneralDropdownProjection c);
 }
 

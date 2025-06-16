@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface DropdownService {
     List<GeneralDropdown> customerContractedSecurityCompaniesDropdown(Long customerId);
+    List<GeneralDropdown> myContractsDropdown(Long loggedInCustomerId, Long securityCompanyId);
 }
