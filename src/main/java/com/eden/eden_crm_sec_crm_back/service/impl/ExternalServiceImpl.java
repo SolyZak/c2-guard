@@ -9,11 +9,14 @@ import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import com.eden.eden_crm_sec_crm_back.dto.external.AttendanceWorkingPeriodData;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
+import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ public class ExternalServiceImpl implements ExternalService {
     private final SiteDistributionRepository siteDistributionRepository;
     private final WorkforceService workforceService;
     private final ExternalMapper externalMapper;
+    private final LKCustomerContractOperationServiceRepository contractOperationServiceRepository;
 
     // This function will provide information abut operation site today status
     @Override
@@ -113,18 +117,34 @@ public class ExternalServiceImpl implements ExternalService {
                     os.getDays().forEach(weekday -> weekdayPlanned.merge(weekday, os.getQuantity(), Long::sum));
                 });
                 attendanceStatsData.add(AttendanceStatsData.builder()
-                                .operationSiteId(site.getId())
-                                .operationSiteName(site.getName())
-                                .contractId(contract.getId())
-                                .contractName(contract.getAgreementName())
-                                .securityCompanyId(contract.getSecurityCompanyId())
-                                .securityCompanyName(contract.getSecurityCompanyName())
-                                .totalAttended(0L)
-                                .totalPlanned(distributions.stream().mapToLong(d -> d.getLkCustomerContractService().getQuantity()).sum())
-                                .weekdayPlanned(weekdayPlanned)
+                        .operationSiteId(site.getId())
+                        .operationSiteName(site.getName())
+                        .contractId(contract.getId())
+                        .contractName(contract.getAgreementName())
+                        .securityCompanyId(contract.getSecurityCompanyId())
+                        .securityCompanyName(contract.getSecurityCompanyName())
+                        .totalAttended(0L)
+                        .totalPlanned(distributions.stream().mapToLong(d -> d.getLkCustomerContractService().getQuantity()).sum())
+                        .weekdayPlanned(weekdayPlanned)
                         .build());
             }
         }
         return attendanceStatsData;
+    }
+
+    @Override
+    public List<AttendanceWorkingPeriodData> getAttendanceDateWorkingPeriod(Long customerId, Long contractId, Long operationSiteId, LocalDate date) {
+        WeekDaysEnum todayWeekday = Utils.getWeekdayEnum(date);
+        return contractOperationServiceRepository.findContractOperationServices(
+                        customerId, operationSiteId, contractId
+                ).stream()
+                .filter(os -> os.getDays().contains(todayWeekday))
+                .map(os -> AttendanceWorkingPeriodData.builder()
+                        .id(os.getId())
+                        .quantity(os.getQuantity())
+                        .fromTime(os.getFromTime())
+                        .toTime(os.getToTime())
+                        .build())
+                .toList();
     }
 }

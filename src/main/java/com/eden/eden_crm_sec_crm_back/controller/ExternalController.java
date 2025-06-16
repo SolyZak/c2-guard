@@ -2,14 +2,17 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
+import com.eden.eden_crm_sec_crm_back.dto.external.AttendanceWorkingPeriodData;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -56,5 +59,15 @@ public class ExternalController {
         // HINT: I have to ignore pagination for now, data is destructed via multiple tables, with aggregation methods needed & loading data.
         dto.setCustomerId(List.of(Utils.getLoggedInCustomerId()));
         return externalService.getAttendanceStats(dto);
+    }
+
+    @Operation(summary = "Get customer attendance stats for operation site")
+    @GetMapping("/customer/attendance/working-periods")
+    public List<AttendanceWorkingPeriodData> getAttendanceDateWorkingPeriod(
+            @RequestParam(name = "contractId") Long contractId,
+            @RequestParam(name = "operationSiteId") Long operationSiteId,
+            @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return externalService.getAttendanceDateWorkingPeriod(Utils.getLoggedInCustomerId(), contractId, operationSiteId, date);
     }
 }

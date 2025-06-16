@@ -71,4 +71,9 @@ public class Utils {
         DayOfWeek dayOfWeek = LocalDate.now().getDayOfWeek();
         return WeekDaysEnum.valueOf(dayOfWeek.name());
     }
+
+    public static WeekDaysEnum getWeekdayEnum(LocalDate date) {
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        return WeekDaysEnum.valueOf(dayOfWeek.name());
+    }
 }
