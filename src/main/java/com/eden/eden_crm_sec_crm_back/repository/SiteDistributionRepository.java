@@ -77,13 +77,13 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             FROM SiteDistribution sd
             WHERE sd.site.customer.id = :customerId
               AND (:securityCompanyId IS NULL OR sd.customerContract.securityCompanyId = :securityCompanyId)
-              AND (:contractId IS NULL OR sd.customerContract.id = :contractId)
+              AND (:contractId IS NULL OR sd.customerContract.id IN :contractId)
             GROUP BY sd.site.id, sd.site.name
             """)
     List<GeneralDropdownProjection> operationSitesDropdown(
             @Param("customerId") Long customerId,
             @Param("securityCompanyId") Long securityCompanyId,
-            @Param("contractId") Long contractId
+            @Param("contractId") List<Long> contractId
     );
 
 }

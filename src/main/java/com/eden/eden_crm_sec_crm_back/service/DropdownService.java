@@ -7,5 +7,5 @@ import java.util.List;
 public interface DropdownService {
     List<GeneralDropdown> customerContractedSecurityCompaniesDropdown(Long customerId);
     List<GeneralDropdown> myContractsDropdown(Long customerId, Long securityCompanyId);
-    List<GeneralDropdown> myOperationSitesDropdown(Long customerId, Long securityCompanyId, Long contractId);
+    List<GeneralDropdown> myOperationSitesDropdown(Long customerId, Long securityCompanyId, List<Long> contractId);
 }

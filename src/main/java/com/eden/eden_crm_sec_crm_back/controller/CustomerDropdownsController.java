@@ -43,7 +43,7 @@ public class CustomerDropdownsController {
     @GetMapping("/operation-sites/dropdown")
     public ApiResponse<List<GeneralDropdown>> myOperationSitesDropdown(
             @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId,
-            @RequestParam(name = "contractId", required = false) Long contractId
+            @RequestParam(name = "contractId", required = false) List<Long> contractId
     ) {
         return ApiResponse.ok(dropdownService.myOperationSitesDropdown(Utils.getLoggedInCustomerId(), securityCompanyId, contractId));
     }

@@ -33,7 +33,7 @@ public class DropdownServiceImpl implements DropdownService {
     }
 
     @Override
-    public List<GeneralDropdown> myOperationSitesDropdown(Long customerId, Long securityCompanyId, Long contractId) {
+    public List<GeneralDropdown> myOperationSitesDropdown(Long customerId, Long securityCompanyId, List<Long> contractId) {
         List<GeneralDropdownProjection> operationSites = securityCompanyId == null && contractId == null ?
                 customerSiteRepository.operationSitesDropdown(customerId) :
                 siteDistributionRepository.operationSitesDropdown(customerId, securityCompanyId, contractId);
