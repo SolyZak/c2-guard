@@ -50,7 +50,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
         LKCustomerContractService service = serviceFromContractAsDto(serviceId, contract);
         ServiceDetails serviceDetails = service.getCustomerService();
 
-        final Map<Long, CustomerSite> customerSites = getCustomerSiteMap(listDto, customer, contract);
+        final Map<Long, CustomerSite> customerSites = getCustomerSiteMap(listDto, customer);
 
         // validate the distributed quantity is equal to service quantity
         Long distributedQnt = listDto.stream().flatMap(sd -> sd.getOperationServices().stream())
@@ -95,16 +95,13 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
         return MessageUtil.getMessage("contract-service.distributed");
     }
 
-    private Map<Long, CustomerSite> getCustomerSiteMap(List<SiteDistributionDto> listDto, Customer customer, CustomerContract contract) {
+    private Map<Long, CustomerSite> getCustomerSiteMap(List<SiteDistributionDto> listDto, Customer customer) {
         // make sure the requested sites for distribute are new and not have been distributed before
         List<Long> siteIds = listDto.stream().map(SiteDistributionDto::getSiteId).toList();
         Map<Long, CustomerSite> customerSites = customerSiteRepository.listByIdAndCustomerId(siteIds, customer.getId())
                 .stream().collect(Collectors.toMap(CustomerSite::getId, Function.identity()));
 
-        if (
-                siteIds.size() != customerSites.size() ||
-                        contract.getSiteDistributions().stream().anyMatch(sd -> siteIds.contains(sd.getSite().getId()))
-        ) {
+        if (siteIds.size() != customerSites.size()) {
             throw new BusinessException(MessageUtil.getMessage("distribute-sites-not-accurate"), HttpStatus.NOT_FOUND);
         }
         return customerSites;
