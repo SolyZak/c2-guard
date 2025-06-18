@@ -10,11 +10,11 @@ import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
 import com.eden.eden_crm_sec_crm_back.dto.external.AttendanceWorkingPeriodData;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
-import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,7 +38,7 @@ public class ExternalServiceImpl implements ExternalService {
     private final WorkforceService workforceService;
     private final ExternalMapper externalMapper;
     private final LKCustomerContractOperationServiceRepository contractOperationServiceRepository;
-    private final LKCustomerContractServiceRepository lkCustomerContractServiceRepository;
+    private final CustomerContractRepository customerContractRepository;
 
     // This function will provide information abut operation site today status
     @Override
@@ -116,9 +117,9 @@ public class ExternalServiceImpl implements ExternalService {
                 CustomerContract contract = contractEntry.getKey();
                 List<SiteDistribution> distributions = contractEntry.getValue();
                 Map<WeekDaysEnum, Long> weekdayPlanned = new HashMap<>();
-                distributions.stream().flatMap(d -> d.getOperationServices().stream()).forEach(os -> {
-                    os.getDays().forEach(weekday -> weekdayPlanned.merge(weekday, os.getQuantity(), Long::sum));
-                });
+                distributions.stream().flatMap(d -> d.getOperationServices().stream()).forEach(
+                        os -> os.getDays().forEach(weekday -> weekdayPlanned.merge(weekday, os.getQuantity(), Long::sum))
+                );
                 attendanceStatsData.add(AttendanceStatsData.builder()
                         .operationSiteId(site.getId())
                         .operationSiteName(site.getName())
@@ -153,16 +154,51 @@ public class ExternalServiceImpl implements ExternalService {
 
     @Override
     public List<ContractPlannedQntDto> getContractPlannedQnt(
-            Long customerId, Long securityCompanyId, List<Long> contractId, LocalDate from, LocalDate to
+            Long customerId, Long securityCompanyId, List<Long> contractIds, LocalDate from, LocalDate to
     ) {
+        List<CustomerContract> customerContracts;
         if (from == null && to == null)
-            return lkCustomerContractServiceRepository.sumPlannedQuantityByContract(customerId, securityCompanyId, contractId);
-        if (from != null && to == null) {
-            throw new BusinessException(MessageUtil.getMessage("to.required"), HttpStatus.BAD_REQUEST);
+            customerContracts = customerContractRepository.listContracts(customerId, securityCompanyId, contractIds);
+        else {
+            if (from != null && to == null) {
+                throw new BusinessException(MessageUtil.getMessage("to.required"), HttpStatus.BAD_REQUEST);
+            }
+            if (from != null && to.isBefore(from)) {
+                throw new BusinessException(MessageUtil.getMessage("to.must-be-after-from"), HttpStatus.BAD_REQUEST);
+            }
+            customerContracts = customerContractRepository.listContracts(customerId, securityCompanyId, contractIds, from, to);
         }
-        if (from != null && to.isBefore(from)) {
-            throw new BusinessException(MessageUtil.getMessage("to.must-be-after-from"), HttpStatus.BAD_REQUEST);
+        List<ContractPlannedQntDto> contractPlannedQnt = new ArrayList<>();
+        customerContracts.forEach(contract -> {
+            AtomicLong qnt = new AtomicLong();
+            LocalDate dateFrom = from != null ? from : contract.getStartAgreementDate();
+            LocalDate dateTo = to != null ? to : contract.getEndAgreementDate();
+            contract.getSiteDistributions().forEach(
+                    siteDistribution -> siteDistribution.getOperationServices().forEach(operationService -> {
+                        Integer daysCount = countWeekdaysInRange(dateFrom, dateTo, operationService.getDays());
+                        qnt.addAndGet(operationService.getQuantity() * daysCount);
+                    })
+            );
+            contractPlannedQnt.add(new ContractPlannedQntDto(contract.getId(), contract.getAgreementName(), qnt.get()));
+        });
+        return contractPlannedQnt;
+    }
+
+    private Integer countWeekdaysInRange(LocalDate from, LocalDate to, Set<WeekDaysEnum> targetDays) {
+        Map<WeekDaysEnum, Integer> counts = new EnumMap<>(WeekDaysEnum.class);
+        for (WeekDaysEnum day : targetDays) {
+            counts.put(day, 0);
         }
-        return lkCustomerContractServiceRepository.sumPlannedQuantityByContract(customerId, securityCompanyId, contractId, from, to);
+
+        LocalDate current = from;
+        while (!current.isAfter(to)) {
+            WeekDaysEnum weekday = WeekDaysEnum.valueOf(current.getDayOfWeek().name());
+            if (targetDays.contains(weekday)) {
+                counts.put(weekday, counts.get(weekday) + 1);
+            }
+            current = current.plusDays(1);
+        }
+
+        return counts.values().stream().mapToInt(Integer::intValue).sum();
     }
 }

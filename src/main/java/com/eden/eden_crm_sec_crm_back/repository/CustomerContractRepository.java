@@ -142,4 +142,31 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @Param("customerId") Long customerId,
             @Param("securityCompanyId") Long securityCompanyId
     );
+
+    @Query("SELECT c FROM CustomerContract c " +
+            "WHERE (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId) " +
+            "AND (:contractIds IS NULL OR c.id IN :contractIds) " +
+            "AND (c.startAgreementDate <= :to AND c.endAgreementDate >= :from)" +
+            "AND c.customer.id = :customerId "
+    )
+    @EntityGraph(attributePaths = {"siteDistributions.operationServices"})
+    List<CustomerContract> listContracts(
+            @Param("customerId") Long customerId,
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("contractIds") List<Long> contractIds,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to
+    );
+
+    @Query("SELECT c FROM CustomerContract c " +
+            "WHERE (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId) " +
+            "AND (:contractIds IS NULL OR c.id IN :contractIds) " +
+            "AND c.customer.id = :customerId "
+    )
+    @EntityGraph(attributePaths = {"siteDistributions.operationServices"})
+    List<CustomerContract> listContracts(
+            @Param("customerId") Long customerId,
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("contractIds") List<Long> contractIds
+    );
 }
