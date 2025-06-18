@@ -156,49 +156,55 @@ public class ExternalServiceImpl implements ExternalService {
     public List<ContractPlannedQntDto> getContractPlannedQnt(
             Long customerId, Long securityCompanyId, List<Long> contractIds, LocalDate from, LocalDate to
     ) {
-        List<CustomerContract> customerContracts;
-        if (from == null && to == null)
-            customerContracts = customerContractRepository.listContracts(customerId, securityCompanyId, contractIds);
-        else {
-            if (from != null && to == null) {
-                throw new BusinessException(MessageUtil.getMessage("to.required"), HttpStatus.BAD_REQUEST);
-            }
-            if (from != null && to.isBefore(from)) {
-                throw new BusinessException(MessageUtil.getMessage("to.must-be-after-from"), HttpStatus.BAD_REQUEST);
-            }
-            customerContracts = customerContractRepository.listContracts(customerId, securityCompanyId, contractIds, from, to);
-        }
-        List<ContractPlannedQntDto> contractPlannedQnt = new ArrayList<>();
-        customerContracts.forEach(contract -> {
-            AtomicLong qnt = new AtomicLong();
-            LocalDate dateFrom = from != null ? from : contract.getStartAgreementDate();
-            LocalDate dateTo = to != null ? to : contract.getEndAgreementDate();
-            contract.getSiteDistributions().forEach(
-                    siteDistribution -> siteDistribution.getOperationServices().forEach(operationService -> {
-                        Integer daysCount = countWeekdaysInRange(dateFrom, dateTo, operationService.getDays());
-                        qnt.addAndGet(operationService.getQuantity() * daysCount);
-                    })
-            );
-            contractPlannedQnt.add(new ContractPlannedQntDto(contract.getId(), contract.getAgreementName(), qnt.get()));
-        });
-        return contractPlannedQnt;
+        validateDateRange(from, to);
+
+        List<CustomerContract> customerContracts =
+                (from == null && to == null)
+                        ? customerContractRepository.listContracts(customerId, securityCompanyId, contractIds)
+                        : customerContractRepository.listContracts(customerId, securityCompanyId, contractIds, from, to);
+
+        return customerContracts.stream()
+                .map(contract -> buildContractPlannedQntDto(contract, from, to))
+                .toList(); // Use collect(Collectors.toList()) if you're on Java <16
     }
 
-    private Integer countWeekdaysInRange(LocalDate from, LocalDate to, Set<WeekDaysEnum> targetDays) {
-        Map<WeekDaysEnum, Integer> counts = new EnumMap<>(WeekDaysEnum.class);
-        for (WeekDaysEnum day : targetDays) {
-            counts.put(day, 0);
+    private void validateDateRange(LocalDate from, LocalDate to) {
+        if (from != null && to == null) {
+            throw new BusinessException(MessageUtil.getMessage("to.required"), HttpStatus.BAD_REQUEST);
         }
+        if (from != null && to.isBefore(from)) {
+            throw new BusinessException(MessageUtil.getMessage("to.must-be-after-from"), HttpStatus.BAD_REQUEST);
+        }
+    }
 
+    private ContractPlannedQntDto buildContractPlannedQntDto(CustomerContract contract, LocalDate from, LocalDate to) {
+        AtomicLong qnt = new AtomicLong();
+        LocalDate dateFrom = from != null ? from : contract.getStartAgreementDate();
+        LocalDate dateTo = to != null ? to : contract.getEndAgreementDate();
+
+        contract.getSiteDistributions().forEach(siteDistribution ->
+                siteDistribution.getOperationServices().forEach(service -> {
+                    int daysCount = countWeekdaysInRange(dateFrom, dateTo, service.getDays());
+                    qnt.addAndGet(service.getQuantity() * daysCount);
+                })
+        );
+
+        return new ContractPlannedQntDto(contract.getId(), contract.getAgreementName(), qnt.get());
+    }
+
+    private int countWeekdaysInRange(LocalDate from, LocalDate to, Set<WeekDaysEnum> targetDays) {
+        int count = 0;
         LocalDate current = from;
+
         while (!current.isAfter(to)) {
             WeekDaysEnum weekday = WeekDaysEnum.valueOf(current.getDayOfWeek().name());
             if (targetDays.contains(weekday)) {
-                counts.put(weekday, counts.get(weekday) + 1);
+                count++;
             }
             current = current.plusDays(1);
         }
 
-        return counts.values().stream().mapToInt(Integer::intValue).sum();
+        return count;
     }
+
 }
