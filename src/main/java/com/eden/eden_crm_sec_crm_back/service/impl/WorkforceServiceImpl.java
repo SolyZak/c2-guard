@@ -212,8 +212,10 @@ public class WorkforceServiceImpl implements WorkforceService {
             ContractOperationRule contractOperationRule,
             LKCustomerContractOperationService operationService
     ) {
+        int checkInBefore = contractOperationRule == null || contractOperationRule.getCheckInBeforeMinutes() == null ?
+                0 : contractOperationRule.getCheckInBeforeMinutes();
         LocalDateTime from = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .minusMinutes(contractOperationRule.getCheckInBeforeMinutes());
+                .minusMinutes(checkInBefore);
         LocalDateTime to = LocalDateTime.of(LocalDate.now(), operationService.getToTime());
         return LocalDateTime.now().isBefore(to) && LocalDateTime.now().isAfter(from);
     }
@@ -222,8 +224,10 @@ public class WorkforceServiceImpl implements WorkforceService {
             ContractOperationRule contractOperationRule,
             LKCustomerContractOperationService operationService
     ) {
+        int checkInBefore = contractOperationRule == null || contractOperationRule.getCheckInBeforeMinutes() == null ?
+                0 : contractOperationRule.getCheckInBeforeMinutes();
         LocalDateTime earlyFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .minusMinutes(contractOperationRule.getCheckInBeforeMinutes());
+                .minusMinutes(checkInBefore);
         LocalDateTime earlyTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime());
 
         if (
@@ -231,9 +235,12 @@ public class WorkforceServiceImpl implements WorkforceService {
                         && (LocalDateTime.now().isBefore(earlyTo) || LocalDateTime.now().isEqual(earlyTo))
         ) return AttendStatus.CHECK_IN_EARLY;
 
+        int checkInAfter = contractOperationRule == null || contractOperationRule.getCheckInAfterMinutes() == null ?
+                0 : contractOperationRule.getCheckInAfterMinutes();
+
         LocalDateTime inTimeFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime());
         LocalDateTime inTimeTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .plusMinutes(contractOperationRule.getCheckInAfterMinutes());
+                .plusMinutes(checkInAfter);
         if (
                 (LocalDateTime.now().isAfter(inTimeFrom) || LocalDateTime.now().isEqual(inTimeFrom))
                         && (LocalDateTime.now().isBefore(inTimeTo) || LocalDateTime.now().isEqual(inTimeTo))
@@ -245,10 +252,14 @@ public class WorkforceServiceImpl implements WorkforceService {
             ContractOperationRule contractOperationRule,
             LKCustomerContractOperationService operationService
     ) {
+        int checkInBefore = contractOperationRule == null || contractOperationRule.getCheckInBeforeMinutes() == null ?
+                0 : contractOperationRule.getCheckInBeforeMinutes();
+        int checkOutBefore = contractOperationRule == null || contractOperationRule.getCheckOutBeforeMinutes() == null ?
+                0 : contractOperationRule.getCheckOutBeforeMinutes();
         LocalDateTime withdrawnFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .minusMinutes(contractOperationRule.getCheckInBeforeMinutes());
+                .minusMinutes(checkInBefore);
         LocalDateTime withdrawnTo = LocalDateTime.of(LocalDate.now(), operationService.getToTime())
-                .minusMinutes(contractOperationRule.getCheckOutBeforeMinutes());
+                .minusMinutes(checkOutBefore);
 
         if (
                 (LocalDateTime.now().isAfter(withdrawnFrom) || LocalDateTime.now().isEqual(withdrawnFrom))
