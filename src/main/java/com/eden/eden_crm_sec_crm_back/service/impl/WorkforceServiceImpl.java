@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -117,8 +118,8 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                 d.getOperationServices().stream()
                                                         .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
                                                                 .id(os.getId())
-                                                                .fromTime(os.getFromTime())
-                                                                .toTime(os.getToTime())
+                                                                .fromTime(getFromTime(contractOperationRule, os).toLocalTime())
+                                                                .toTime(getToTime(os).toLocalTime())
                                                                 .isWorking(isWorkingPeriod(contractOperationRule, os))
                                                                 .checkInStatus(checkInStatus(contractOperationRule, os))
                                                                 .checkOutStatus(checkOutStatus(contractOperationRule, os))
@@ -180,8 +181,8 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                     .filter(os -> os.getDays().contains(weekDaysEnum))
                                                     .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
                                                             .id(os.getId())
-                                                            .fromTime(os.getFromTime())
-                                                            .toTime(os.getToTime())
+                                                            .fromTime(getFromTime(contractOperationRule, os).toLocalTime())
+                                                            .toTime(getToTime(os).toLocalTime())
                                                             .isWorking(isWorkingPeriod(contractOperationRule, os))
                                                             .checkInStatus(checkInStatus(contractOperationRule, os))
                                                             .checkOutStatus(checkOutStatus(contractOperationRule, os))
@@ -272,5 +273,18 @@ public class WorkforceServiceImpl implements WorkforceService {
 
     private PresenceMode getPresenceMode(ContractOperationRule rule) {
         return rule != null && rule.getPresenceMode() != null ? rule.getPresenceMode() : PresenceMode.BOTH;
+    }
+
+    private LocalDateTime getFromTime(
+            ContractOperationRule rule, LKCustomerContractOperationService operationService
+    ) {
+        int checkInBefore = rule == null || rule.getCheckInBeforeMinutes() == null ?
+                0 : rule.getCheckInBeforeMinutes();
+        return LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
+                .minusMinutes(checkInBefore);
+    }
+
+    private LocalDateTime getToTime(LKCustomerContractOperationService operationService) {
+        return LocalDateTime.of(LocalDate.now(), operationService.getToTime());
     }
 }
