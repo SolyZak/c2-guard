@@ -7,6 +7,7 @@ import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionWorkingPeriodDto;
 import com.eden.eden_crm_sec_crm_back.enums.AttendStatus;
+import com.eden.eden_crm_sec_crm_back.enums.PresenceMode;
 import com.eden.eden_crm_sec_crm_back.enums.UnitEnum;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -121,7 +122,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                                 .isWorking(isWorkingPeriod(contractOperationRule, os))
                                                                 .checkInStatus(checkInStatus(contractOperationRule, os))
                                                                 .checkOutStatus(checkOutStatus(contractOperationRule, os))
-                                                                .presenceMode(contractOperationRule.getPresenceMode())
+                                                                .presenceMode(getPresenceMode(contractOperationRule))
                                                                 .build())
                                                         .toList()
                                         )
@@ -184,7 +185,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                             .isWorking(isWorkingPeriod(contractOperationRule, os))
                                                             .checkInStatus(checkInStatus(contractOperationRule, os))
                                                             .checkOutStatus(checkOutStatus(contractOperationRule, os))
-                                                            .presenceMode(contractOperationRule.getPresenceMode())
+                                                            .presenceMode(getPresenceMode(contractOperationRule))
                                                             .build()
                                                     )
                                                     .toList()
@@ -267,5 +268,9 @@ public class WorkforceServiceImpl implements WorkforceService {
         ) return AttendStatus.CHECK_OUT_WITHDRAWN;
 
         return AttendStatus.CHECK_OUT_IN_TIME;
+    }
+
+    private PresenceMode getPresenceMode(ContractOperationRule rule) {
+        return rule != null && rule.getPresenceMode() != null ? rule.getPresenceMode() : PresenceMode.BOTH;
     }
 }
