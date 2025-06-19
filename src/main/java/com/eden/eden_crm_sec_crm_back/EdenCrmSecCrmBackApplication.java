@@ -18,8 +18,9 @@ public class EdenCrmSecCrmBackApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(EdenCrmSecCrmBackApplication.class, args);
 	}
+
 	@PostConstruct
-	void started() {
-		TimeZone.setDefault(TimeZone.getTimeZone("Africa/Cairo"));
+	public void init() {
+		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 	}
 }
