@@ -169,4 +169,18 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @Param("securityCompanyId") Long securityCompanyId,
             @Param("contractIds") List<Long> contractIds
     );
+
+    @Query("""
+                SELECT DISTINCT cc FROM CustomerContract cc
+                LEFT JOIN FETCH cc.customerAgreement
+                LEFT JOIN FETCH cc.customerContractServices ccs
+                LEFT JOIN FETCH ccs.customerService cs
+                LEFT JOIN FETCH cs.customerService
+                WHERE cc.id = :id AND cc.customer.id = :customerId
+            """)
+    Optional<CustomerContract> findWithServicesByIdAndCustomerId(
+            @Param("id") Long contractId,
+            @Param("customerId") Long customerId
+    );
+
 }

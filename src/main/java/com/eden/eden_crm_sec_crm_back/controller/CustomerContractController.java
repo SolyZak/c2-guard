@@ -4,6 +4,7 @@ import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ContractDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
@@ -93,6 +94,14 @@ public class CustomerContractController {
             @RequestParam(name = "lkCustomerContractServiceId") Long lkCustomerContractServiceId
     ) {
         return ApiResponse.ok(customerContractService.distributedOperationSites(contractId, lkCustomerContractServiceId));
+    }
+
+    @Operation(summary = "Get Contract Details API")
+    @GetMapping("/{id}")
+    public ApiResponse<ContractDetailsData> getContractDetails(
+            @PathVariable("id") Long contractId
+    ) {
+        return ApiResponse.ok(customerContractService.getCustomerContractDetails(contractId));
     }
 
 }

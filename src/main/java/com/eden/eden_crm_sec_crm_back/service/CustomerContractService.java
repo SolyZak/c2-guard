@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service;
 
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ContractDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
@@ -18,4 +19,5 @@ public interface CustomerContractService {
     List<ContractRowDto> listAllMyContracts();
     List<GeneralDropdown> availableOperationSitesList(Long contractId);
     List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId);
+    ContractDetailsData getCustomerContractDetails(Long contractId);
 }

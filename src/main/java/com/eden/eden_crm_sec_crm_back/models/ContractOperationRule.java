@@ -20,7 +20,7 @@ public class ContractOperationRule {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "contract_operation_rule_seq")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_contract_id")
     private CustomerContract customerAgreement;
 

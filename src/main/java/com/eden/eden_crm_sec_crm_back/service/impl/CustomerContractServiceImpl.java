@@ -6,10 +6,7 @@ import com.eden.eden_crm_sec_crm_back.clients.dto.SecurityCompanyData;
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
-import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
-import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSiteDetail;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.mapper.*;
@@ -185,4 +182,66 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                 })
                 .toList();
     }
+
+    @Override
+    public ContractDetailsData getCustomerContractDetails(Long contractId) {
+        Long customerId = Utils.getLoggedInCustomerId();
+
+        CustomerContract contract = customerContractRepository
+                .findWithServicesByIdAndCustomerId(contractId, customerId)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        List<SiteDistribution> siteDistributions = siteDistributionRepository.findDistributionsByContractId(contractId);
+
+        ContractDetailsData detailsData = contractMapper.fromEntity(contract);
+
+        // Group SiteDistributions by Service ID
+        Map<Long, List<SiteDistribution>> distributionsByServiceId = siteDistributions.stream()
+                .collect(Collectors.groupingBy(sd -> sd.getLkCustomerContractService().getId()));
+
+        List<ContractDetailsData.ContractServiceDetails> services = contract.getCustomerContractServices()
+                .stream()
+                .map(ccs -> {
+                    ContractDetailsData.ContractServiceDetails serviceDetails = contractMapper.fromEntity(ccs);
+
+                    List<ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData> distributionDataList = Optional
+                            .ofNullable(distributionsByServiceId.get(ccs.getId()))
+                            .orElse(Collections.emptyList())
+                            .stream()
+                            .collect(Collectors.groupingBy(sd -> sd.getSite().getId()))
+                            .values()
+                            .stream()
+                            .map(siteGroup -> {
+                                AtomicReference<Long> totalQnt = new AtomicReference<>(0L);
+                                List<ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData.ContractOperationServiceDetails> operationServiceDetails =
+                                        siteGroup.stream()
+                                                .flatMap(sd -> sd.getOperationServices().stream())
+                                                .map(os -> {
+                                                    totalQnt.updateAndGet(v -> v + os.getQuantity());
+                                                    return contractMapper.fromEntity(os);
+                                                })
+                                                .toList();
+
+                                SiteDistribution representative = siteGroup.getFirst(); // all have same site
+                                return ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData.builder()
+                                        .activities(representative.getActivities())
+                                        .operationSiteName(representative.getSite().getName())
+                                        .quantity(totalQnt.get())
+                                        .operationServices(operationServiceDetails)
+                                        .build();
+                            })
+                            .toList();
+
+                    serviceDetails.setDistributions(distributionDataList);
+                    return serviceDetails;
+                })
+                .toList();
+
+        detailsData.setServices(services);
+        return detailsData;
+    }
+
 }

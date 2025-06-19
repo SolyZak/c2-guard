@@ -34,14 +34,14 @@ public class CustomerContract extends BaseEntity<Long> {
     private String currencyName;
     private String currencyCode;
 
-    @OneToOne(mappedBy = "customerAgreement", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "customerAgreement", fetch = FetchType.EAGER)
     private ContractOperationRule customerAgreement;
 
     @OneToMany(mappedBy = "customerContract", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     @JsonManagedReference
     private List<LKCustomerContractService> customerContractServices = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id")
     @JsonBackReference
     private Customer customer;

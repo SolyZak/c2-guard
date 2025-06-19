@@ -3,10 +3,12 @@ package com.eden.eden_crm_sec_crm_back.mapper;
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ContractDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractWithRules;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.mapstruct.*;
@@ -39,5 +41,19 @@ public interface CustomerContractMapper {
     GeneralDropdown toDropdown(CustomerContract c);
 
     GeneralDropdown toDropdown(GeneralDropdownProjection c);
+
+    @Mapping(target = "checkInBeforeMinutes", source = "e.customerAgreement.checkInBeforeMinutes")
+    @Mapping(target = "checkInAfterMinutes", source = "e.customerAgreement.checkInAfterMinutes")
+    @Mapping(target = "checkOutBeforeMinutes", source = "e.customerAgreement.checkOutBeforeMinutes")
+    @Mapping(target = "presenceMode", source = "e.customerAgreement.presenceMode")
+    ContractDetailsData fromEntity(CustomerContract e);
+
+    @Mapping(target = "name", source = "e.customerService.customerService.serviceName")
+    @Mapping(target = "hours", source = "e.customerService.hours")
+    @Mapping(target = "days", source = "e.customerService.days")
+    ContractDetailsData.ContractServiceDetails fromEntity(LKCustomerContractService e);
+
+    ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData.ContractOperationServiceDetails
+        fromEntity(LKCustomerContractOperationService e);
 }
 

@@ -22,7 +22,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Table(name = "contract_operation_site_distribution")
 public class SiteDistribution extends BaseEntity<Long> {
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "operation_site_id")
     @JsonBackReference
     private CustomerSite site;
@@ -36,7 +36,7 @@ public class SiteDistribution extends BaseEntity<Long> {
     )
     private Set<ActivityEnum> activities = new HashSet<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_contract_service_id", nullable = false)
     @JsonBackReference
     private LKCustomerContractService lkCustomerContractService;

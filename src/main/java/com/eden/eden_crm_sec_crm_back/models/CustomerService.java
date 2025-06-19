@@ -28,7 +28,7 @@ public class CustomerService extends BaseEntity<Long> {
     @OneToMany(mappedBy = "customerService", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<ServiceDetails> serviceDetails = new ArrayList<>();
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id")
     @JsonBackReference
     private Customer customer;

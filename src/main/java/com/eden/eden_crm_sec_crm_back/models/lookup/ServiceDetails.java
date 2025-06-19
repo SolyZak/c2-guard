@@ -14,7 +14,7 @@ public class ServiceDetails extends BaseEntity<Long> {
 
     private Long hours;
     private Long days;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_service_id")
     @JsonBackReference
     private CustomerService customerService;

@@ -86,4 +86,13 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             @Param("contractId") List<Long> contractId
     );
 
+    @Query("""
+                SELECT sd FROM SiteDistribution sd
+                LEFT JOIN FETCH sd.lkCustomerContractService
+                LEFT JOIN FETCH sd.operationServices
+                LEFT JOIN FETCH sd.site
+                WHERE sd.customerContract.id = :contractId
+            """)
+    List<SiteDistribution> findDistributionsByContractId(@Param("contractId") Long contractId);
+
 }
