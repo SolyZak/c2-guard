@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalTime;
+import java.time.OffsetTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,8 +23,8 @@ public class LKCustomerContractOperationService extends BaseEntity<Long> {
     @Enumerated(EnumType.STRING)
     private Set<WeekDaysEnum> days = new HashSet<>();
 
-    private LocalTime fromTime;
-    private LocalTime toTime;
+    private OffsetTime fromTime;
+    private OffsetTime toTime;
 
     @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "contract_operation_site_distribution_id", nullable = false)

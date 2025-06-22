@@ -4,7 +4,7 @@ import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalTime;
+import java.time.OffsetTime;
 import java.util.Set;
 
 @Data
@@ -12,6 +12,6 @@ import java.util.Set;
 public class DistributedOperationSiteDetail {
     private Long quantity;
     private Set<WeekDaysEnum> days;
-    private LocalTime fromTime;
-    private LocalTime toTime;
+    private OffsetTime fromTime;
+    private OffsetTime toTime;
 }

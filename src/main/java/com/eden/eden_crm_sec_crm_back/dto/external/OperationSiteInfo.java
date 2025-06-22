@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dto.external;
 
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,4 +17,5 @@ public class OperationSiteInfo {
     private String customerName;
     private Long securityCompanyId;
     private String securityCompanyName;
+    private CustomTimezone timezone;
 }

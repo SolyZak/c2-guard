@@ -33,6 +33,7 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
 
         CustomerSite site = customerSiteMapper.toEntity(requestDto);
         site.setCustomer(customer);
+        site.setTimezone(customer.getTimezone());
         customerSiteRepository.save(site);
 
         return customerSiteMapper.fromEntity(site);
@@ -45,6 +46,7 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
         CustomerSite site = findOne(id, customer.getId());
 
         customerSiteMapper.updateEntityFromDto(requestDto, site);
+        site.setTimezone(customer.getTimezone());
         customerSiteRepository.save(site);
     }
 

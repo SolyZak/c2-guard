@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dto.response;
 
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,5 +18,6 @@ public class WorkforceSiteDistributionDto {
     private Double latitude;
     private Double longitude;
     private Double tolerance;
+    private CustomTimezone timezone;
     private List<WorkforceSiteDistributionServiceDto> services;
 }

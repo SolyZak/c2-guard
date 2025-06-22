@@ -54,7 +54,8 @@ public class ExternalServiceImpl implements ExternalService {
                 .operationSiteName(operationSite.getName())
                 .operationSiteId(operationSite.getId())
                 .customerId(operationSite.getCustomer().getId())
-                .customerName(operationSite.getCustomer().getName());
+                .customerName(operationSite.getCustomer().getName())
+                .timezone(operationSite.getTimezone());
 
         if (firstSiteDistributed.isPresent()) {
             CustomerContract contract = firstSiteDistributed.get().getCustomerContract();

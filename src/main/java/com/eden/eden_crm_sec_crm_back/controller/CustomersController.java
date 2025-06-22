@@ -4,6 +4,7 @@ import com.eden.eden_crm_sec_crm_back.dto.request.CustomerPaginateDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.CustomerRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerResponseDto;
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.MessageResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
@@ -25,6 +26,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomersController {
     private final CustomerService customerService;
+
+    @Operation(summary = "Get allowed timezones dropdown")
+    @GetMapping("/timezone/dropdown")
+    ApiResponse<List<CustomTimezone>> timezoneDropdown() {
+        return ApiResponse.ok(List.of(
+                CustomTimezone.EGYPT,
+                CustomTimezone.SAUDI_ARABIA,
+                CustomTimezone.EMIRATES
+        ));
+    }
 
     @Operation(summary = "Create customer")
     @PostMapping

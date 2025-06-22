@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -55,4 +56,8 @@ public class Customer extends BaseEntity {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<CustomerContract> customerContracts = new ArrayList<>();
+
+    @Column(name = "timezone")
+    @Enumerated(EnumType.STRING)
+    private CustomTimezone timezone;
 }

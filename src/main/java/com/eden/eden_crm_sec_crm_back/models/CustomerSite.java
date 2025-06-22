@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,4 +38,8 @@ public class CustomerSite extends BaseEntity {
 
     @Column
     private Boolean active ;
+
+    @Column(name = "timezone")
+    @Enumerated(EnumType.STRING)
+    private CustomTimezone timezone;
 }

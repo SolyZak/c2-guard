@@ -1,10 +1,8 @@
 package com.eden.eden_crm_sec_crm_back.dto.request;
 
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.utils.Constants;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 public record CustomerRequestDto(
         @NotBlank(message = "{validation.name.not.empty}")
@@ -33,5 +31,8 @@ public record CustomerRequestDto(
 
         @Pattern(regexp = Constants.Regex.TEN_DIGITS, message = "{validation.registration.number.ten.digits.only}")
         @NotBlank(message = "{validation.registration.number.ten.digits.only}")
-        String registrationNumber
+        String registrationNumber,
+
+        @NotNull(message = "{validation.timezone.invalid}")
+        CustomTimezone timezone
 ) {}

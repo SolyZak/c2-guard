@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.utils;
 
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.objects.UserData;
@@ -10,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
@@ -75,5 +78,14 @@ public class Utils {
     public static WeekDaysEnum getWeekdayEnum(LocalDate date) {
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         return WeekDaysEnum.valueOf(dayOfWeek.name());
+    }
+
+    public static ZoneId getTimeWithTimezone(CustomTimezone timezone) {
+        final Map<CustomTimezone, ZoneId> ZONE_MAP = Map.of(
+                CustomTimezone.EGYPT, ZoneId.of("Africa/Cairo"),
+                CustomTimezone.SAUDI_ARABIA, ZoneId.of("Asia/Riyadh"),
+                CustomTimezone.EMIRATES, ZoneId.of("Asia/Dubai")
+        );
+        return ZONE_MAP.get(timezone);
     }
 }

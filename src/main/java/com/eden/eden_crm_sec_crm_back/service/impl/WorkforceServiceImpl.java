@@ -32,9 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +100,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                     .latitude(site.getLatitude())
                     .longitude(site.getLongitude())
                     .tolerance(site.getTolerance())
+                    .timezone(site.getTimezone())
                     .services(distributions.stream()
                             .filter(d -> d.getLkCustomerContractService().getCustomerService().getCustomerService().getUnit().equals(UnitEnum.PERSON))
                             .map(d -> {
@@ -163,6 +162,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                 .latitude(site.getLatitude())
                 .longitude(site.getLongitude())
                 .tolerance(site.getTolerance())
+                .timezone(site.getTimezone())
                 .services(distributions.stream()
                         .filter(d -> d.getLkCustomerContractService().getCustomerService().getCustomerService().getUnit().equals(UnitEnum.PERSON))
                         .map(d -> {
@@ -210,81 +210,81 @@ public class WorkforceServiceImpl implements WorkforceService {
         }
     }
 
-    private Boolean isWorkingPeriod(
-            ContractOperationRule contractOperationRule,
-            LKCustomerContractOperationService operationService
+    private boolean isWorkingPeriod(
+            ContractOperationRule rule,
+            LKCustomerContractOperationService service
     ) {
-        int checkInBefore = contractOperationRule == null || contractOperationRule.getCheckInBeforeMinutes() == null ?
-                0 : contractOperationRule.getCheckInBeforeMinutes();
-        LocalDateTime from = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .minusMinutes(checkInBefore);
-        LocalDateTime to = LocalDateTime.of(LocalDate.now(), operationService.getToTime());
-        return LocalDateTime.now().isBefore(to) && LocalDateTime.now().isAfter(from);
+        OffsetTime now = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
+        OffsetTime from = getFromTime(rule, service);
+        OffsetTime to = service.getToTime();
+
+        return now.isAfter(from) && now.isBefore(to);
     }
 
     private AttendStatus checkInStatus(
-            ContractOperationRule contractOperationRule,
-            LKCustomerContractOperationService operationService
+            ContractOperationRule rule,
+            LKCustomerContractOperationService service
     ) {
-        int checkInBefore = contractOperationRule == null || contractOperationRule.getCheckInBeforeMinutes() == null ?
-                0 : contractOperationRule.getCheckInBeforeMinutes();
-        LocalDateTime earlyFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .minusMinutes(checkInBefore);
-        LocalDateTime earlyTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime());
+        OffsetTime now = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
 
-        if (
-                (LocalDateTime.now().isAfter(earlyFrom) || LocalDateTime.now().isEqual(earlyFrom))
-                        && (LocalDateTime.now().isBefore(earlyTo) || LocalDateTime.now().isEqual(earlyTo))
-        ) return AttendStatus.CHECK_IN_EARLY;
+        OffsetTime fromTime = service.getFromTime();
 
-        int checkInAfter = contractOperationRule == null || contractOperationRule.getCheckInAfterMinutes() == null ?
-                0 : contractOperationRule.getCheckInAfterMinutes();
+        int checkInBefore = getSafe(rule != null ? rule.getCheckInBeforeMinutes() : null);
+        int checkInAfter = getSafe(rule != null ? rule.getCheckInAfterMinutes() : null);
 
-        LocalDateTime inTimeFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime());
-        LocalDateTime inTimeTo = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .plusMinutes(checkInAfter);
-        if (
-                (LocalDateTime.now().isAfter(inTimeFrom) || LocalDateTime.now().isEqual(inTimeFrom))
-                        && (LocalDateTime.now().isBefore(inTimeTo) || LocalDateTime.now().isEqual(inTimeTo))
-        ) return AttendStatus.CHECK_IN_IN_TIME;
+        OffsetTime earlyFrom = fromTime.minusMinutes(checkInBefore);
+
+        if (!now.isBefore(earlyFrom) && !now.isAfter(fromTime)) {
+            return AttendStatus.CHECK_IN_EARLY;
+        }
+
+        OffsetTime inTimeTo = fromTime.plusMinutes(checkInAfter);
+
+        if (!now.isBefore(fromTime) && !now.isAfter(inTimeTo)) {
+            return AttendStatus.CHECK_IN_IN_TIME;
+        }
+
         return AttendStatus.CHECK_IN_LATE;
     }
 
     private AttendStatus checkOutStatus(
-            ContractOperationRule contractOperationRule,
-            LKCustomerContractOperationService operationService
+            ContractOperationRule rule,
+            LKCustomerContractOperationService service
     ) {
-        int checkInBefore = contractOperationRule == null || contractOperationRule.getCheckInBeforeMinutes() == null ?
-                0 : contractOperationRule.getCheckInBeforeMinutes();
-        int checkOutBefore = contractOperationRule == null || contractOperationRule.getCheckOutBeforeMinutes() == null ?
-                0 : contractOperationRule.getCheckOutBeforeMinutes();
-        LocalDateTime withdrawnFrom = LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .minusMinutes(checkInBefore);
-        LocalDateTime withdrawnTo = LocalDateTime.of(LocalDate.now(), operationService.getToTime())
-                .minusMinutes(checkOutBefore);
+        OffsetTime now = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
 
-        if (
-                (LocalDateTime.now().isAfter(withdrawnFrom) || LocalDateTime.now().isEqual(withdrawnFrom))
-                        && LocalDateTime.now().isBefore(withdrawnTo)
-        ) return AttendStatus.CHECK_OUT_WITHDRAWN;
+        OffsetTime fromTime = service.getFromTime();
+        OffsetTime toTime = service.getToTime();
+
+        int checkInBefore = getSafe(rule != null ? rule.getCheckInBeforeMinutes() : null);
+        int checkOutBefore = getSafe(rule != null ? rule.getCheckOutBeforeMinutes() : null);
+
+        OffsetTime withdrawnFrom = fromTime.minusMinutes(checkInBefore);
+        OffsetTime withdrawnTo = toTime.minusMinutes(checkOutBefore);
+
+        if (!now.isBefore(withdrawnFrom) && now.isBefore(withdrawnTo)) {
+            return AttendStatus.CHECK_OUT_WITHDRAWN;
+        }
 
         return AttendStatus.CHECK_OUT_IN_TIME;
     }
 
     private PresenceMode getPresenceMode(ContractOperationRule rule) {
-        return rule != null && rule.getPresenceMode() != null ? rule.getPresenceMode() : PresenceMode.BOTH;
+        return rule != null && rule.getPresenceMode() != null
+                ? rule.getPresenceMode()
+                : PresenceMode.BOTH;
     }
 
-    private LocalDateTime getFromTime(
-            ContractOperationRule rule, LKCustomerContractOperationService operationService
-    ) {
-        int checkInBefore = rule == null || rule.getCheckInBeforeMinutes() == null ?
-                0 : rule.getCheckInBeforeMinutes();
-        return LocalDateTime.of(LocalDate.now(), operationService.getFromTime())
-                .minusMinutes(checkInBefore);
+    private OffsetTime getFromTime(ContractOperationRule rule, LKCustomerContractOperationService service) {
+        int checkInBefore = getSafe(rule != null ? rule.getCheckInBeforeMinutes() : null);
+        return service.getFromTime().minusMinutes(checkInBefore);
     }
 
-    private LocalDateTime getToTime(LKCustomerContractOperationService operationService) {
-        return LocalDateTime.of(LocalDate.now(), operationService.getToTime());
+    private OffsetTime getToTime(LKCustomerContractOperationService service) {
+        return service.getToTime();
+    }
+
+    private int getSafe(Integer minutes) {
+        return minutes != null ? minutes : 0;
     }
 }
