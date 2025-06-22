@@ -9,9 +9,7 @@ import com.eden.eden_crm_sec_crm_back.utils.security.JwtUtil;
 import com.eden.eden_crm_sec_crm_back.utils.security.TokenUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Map;
 import java.util.Objects;
 
@@ -87,5 +85,14 @@ public class Utils {
                 CustomTimezone.EMIRATES, ZoneId.of("Asia/Dubai")
         );
         return ZONE_MAP.get(timezone);
+    }
+
+    public static LocalTime toLocalTime(CustomTimezone targetTimezone, OffsetTime time) {
+        ZoneId targetZoneId = getTimeWithTimezone(targetTimezone);
+
+        OffsetDateTime originalDateTime = time.atDate(LocalDate.now());
+        ZonedDateTime targetZoned = originalDateTime.atZoneSameInstant(targetZoneId);
+
+        return targetZoned.toLocalTime();
     }
 }
