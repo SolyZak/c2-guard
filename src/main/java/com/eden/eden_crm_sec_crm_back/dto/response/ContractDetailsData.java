@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.OffsetTime;
 import java.util.List;
 import java.util.Set;
 
@@ -56,8 +57,8 @@ public class ContractDetailsData {
             public static class ContractOperationServiceDetails {
                 private Long quantity;
                 private Set<WeekDaysEnum> days;
-                private LocalTime fromTime;
-                private LocalTime toTime;
+                private OffsetTime fromTime;
+                private OffsetTime toTime;
             }
         }
     }
