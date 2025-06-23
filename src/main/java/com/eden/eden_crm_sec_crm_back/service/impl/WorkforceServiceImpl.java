@@ -25,6 +25,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -117,8 +118,8 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                 d.getOperationServices().stream()
                                                         .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
                                                                 .id(os.getId())
-                                                                .fromTime(Utils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os)))
-                                                                .toTime(Utils.toLocalTime(site.getTimezone(), getToTime(os)))
+                                                                .fromTime(DateUtils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os)))
+                                                                .toTime(DateUtils.toLocalTime(site.getTimezone(), getToTime(os)))
                                                                 .isWorking(isWorkingPeriod(contractOperationRule, os))
                                                                 .checkInStatus(checkInStatus(contractOperationRule, os))
                                                                 .checkOutStatus(checkOutStatus(contractOperationRule, os))
@@ -181,8 +182,8 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                     .filter(os -> os.getDays().contains(weekDaysEnum))
                                                     .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
                                                             .id(os.getId())
-                                                            .fromTime(Utils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os)))
-                                                            .toTime(Utils.toLocalTime(site.getTimezone(), getToTime(os)))
+                                                            .fromTime(DateUtils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os)))
+                                                            .toTime(DateUtils.toLocalTime(site.getTimezone(), getToTime(os)))
                                                             .isWorking(isWorkingPeriod(contractOperationRule, os))
                                                             .checkInStatus(checkInStatus(contractOperationRule, os))
                                                             .checkOutStatus(checkOutStatus(contractOperationRule, os))
