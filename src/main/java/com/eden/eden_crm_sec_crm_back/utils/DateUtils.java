@@ -20,6 +20,10 @@ public class DateUtils {
         return OffsetDateTime.now(getTimeWithTimezone(timezone)).toOffsetTime();
     }
 
+    public static OffsetDateTime nowDateTime(CustomTimezone timezone) {
+        return OffsetDateTime.now(getTimeWithTimezone(timezone));
+    }
+
     public static OffsetTime toLocalTime(CustomTimezone timezone, LocalTime time) {
         if (time == null) return null;
         ZoneId zoneId = getTimeWithTimezone(timezone);

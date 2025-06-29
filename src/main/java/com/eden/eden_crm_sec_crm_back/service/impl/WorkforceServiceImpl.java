@@ -215,9 +215,26 @@ public class WorkforceServiceImpl implements WorkforceService {
             ContractOperationRule rule,
             LKCustomerContractOperationService service
     ) {
-        OffsetTime now = DateUtils.now(service.getSiteDistribution().getSite().getTimezone());
-        OffsetTime from = getFromTime(rule, service);
-        OffsetTime to = service.getToTime();
+        OffsetDateTime now = DateUtils.nowDateTime(service.getSiteDistribution().getSite().getTimezone());
+
+        OffsetTime fromTime = getFromTime(rule, service);
+        OffsetDateTime from = now.with(fromTime);
+
+        // Build "to" datetime
+        OffsetTime toTime = service.getToTime();
+        OffsetDateTime to = now.with(toTime);
+
+        // Handle "from" possibly on previous day
+        if (to.isBefore(from)) {
+            // The period crosses midnight
+            if (now.isBefore(to)) {
+                // It's after midnight but before "to" => "from" was yesterday
+                from = from.minusDays(1);
+            } else {
+                // It's after "to" but before midnight => "to" is tomorrow
+                to = to.plusDays(1);
+            }
+        }
 
         return now.isAfter(from) && now.isBefore(to);
     }
