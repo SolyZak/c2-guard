@@ -215,7 +215,7 @@ public class WorkforceServiceImpl implements WorkforceService {
             ContractOperationRule rule,
             LKCustomerContractOperationService service
     ) {
-        OffsetTime now = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
+        OffsetTime now = DateUtils.now(service.getSiteDistribution().getSite().getTimezone());
         OffsetTime from = getFromTime(rule, service);
         OffsetTime to = service.getToTime();
 
