@@ -8,4 +8,5 @@ public interface KeycloakClient {
     void createUser(UserRequest userRequest);
     void updateUser(String username, UserRequest updatedRequest);
     void deleteUser(String username);
+    void resetPassword(String username, String newPassword, boolean forceChangeOnFirstLogin);
 }

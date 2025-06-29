@@ -122,6 +122,32 @@ public class KeycloakClientImpl implements KeycloakClient {
         }
     }
 
+    @Override
+    public void resetPassword(String username, String newPassword, boolean forceChangeOnFirstLogin) {
+        UsersResource usersResource = getRealmResource().users();
+        UserRepresentation user = usersResource.search(username, 0, 1)
+                .stream().findFirst()
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("identity-manager.user.not.found"), HttpStatus.NOT_FOUND
+                ));
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(newPassword);
+        credential.setTemporary(forceChangeOnFirstLogin);
+
+        try {
+            usersResource.get(user.getId()).resetPassword(credential);
+        } catch (Exception e) {
+            log.error("Failed to reset password for user [{}]: {}", username, e.getMessage());
+            throw new BusinessException(
+                    MessageUtil.getMessage("identity-manager.failed.reset.password"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+
     private RealmResource getRealmResource() {
         return keycloak.realm(realm);
     }
