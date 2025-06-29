@@ -13,9 +13,9 @@ import lombok.*;
 public class CustomerUser extends BaseEntity {
 
     @Id
-    @SequenceGenerator(name = "customer_site_id_seq",
-            sequenceName = "customer_site_id_seq", initialValue = 1, allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_site_id_seq")
+    @SequenceGenerator(name = "customer_users_id_seq",
+            sequenceName = "customer_users_id_seq", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_users_id_seq")
     private Long id;
 
     @Column(nullable = false)
