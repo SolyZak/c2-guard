@@ -11,7 +11,7 @@ import java.util.List;
 @Table(name = "complaint")
 @Getter
 @Setter
-public class ComplaintEntity extends BaseEntity {
+public class ComplaintEntity extends BaseAuditEntity {
     @Id
     @SequenceGenerator(name = "complaint_seq", sequenceName = "complaint_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "complaint_seq")

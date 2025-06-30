@@ -9,6 +9,7 @@ import com.eden.eden_crm_sec_crm_back.utils.security.TokenUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.*;
+import java.util.Arrays;
 import java.util.Objects;
 
 @Slf4j
@@ -74,5 +75,27 @@ public class Utils {
     public static WeekDaysEnum getWeekdayEnum(LocalDate date) {
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         return WeekDaysEnum.valueOf(dayOfWeek.name());
+    }
+
+    public static UserData getLoggedInUser() {
+        try {
+            String token = TokenUtil.getTokenFromRequest();
+            String id = JwtUtil.getClaimValue(token, "user_id");
+            String name = JwtUtil.getClaimValue(token, "name");
+            String userType = JwtUtil.getClaimValue(token, "user_type");
+            if (id != null && userType != null && Arrays.stream(UserType.values()).anyMatch(u -> u.name().equalsIgnoreCase(userType)))
+                return UserData.builder()
+                        .id(id)
+                        .name(name)
+                        .type(UserType.valueOf(userType))
+                        .build();
+            else
+                throw new UserNotProvided();
+        } catch (UserNotProvided e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception when trying to get logged in user data exception: {}", e.getMessage());
+            throw new UserNotProvided();
+        }
     }
 }

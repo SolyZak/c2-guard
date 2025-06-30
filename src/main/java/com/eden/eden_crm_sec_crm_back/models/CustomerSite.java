@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "customer_site")
-public class CustomerSite extends BaseEntity {
+public class CustomerSite extends BaseAuditEntity {
     @Id
     @SequenceGenerator(name = "operation_site_seq",
             sequenceName = "operation_site_seq", initialValue = 1, allocationSize = 1)

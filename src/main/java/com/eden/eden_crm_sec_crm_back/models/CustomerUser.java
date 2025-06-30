@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "customer_users")
-public class CustomerUser extends BaseEntity {
+public class CustomerUser extends BaseAuditEntity {
 
     @Id
     @SequenceGenerator(name = "customer_users_id_seq",
