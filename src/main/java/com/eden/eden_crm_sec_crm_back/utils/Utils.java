@@ -2,44 +2,25 @@ package com.eden.eden_crm_sec_crm_back.utils;
 
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
+import com.eden.eden_crm_sec_crm_back.models.CustomerUser;
 import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.objects.UserType;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerUserRepository;
 import com.eden.eden_crm_sec_crm_back.utils.security.JwtUtil;
 import com.eden.eden_crm_sec_crm_back.utils.security.TokenUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.time.*;
-import java.util.Arrays;
 import java.util.Objects;
 
 @Slf4j
+@RequiredArgsConstructor
+@Service
 public class Utils {
 
-    public static UserData getLoggedInCustomer() {
-        try {
-            String token = TokenUtil.getTokenFromRequest();
-            String id = JwtUtil.getClaimValue(token, "user_id");
-            String name = JwtUtil.getClaimValue(token, "name");
-            String userType = JwtUtil.getClaimValue(token, "user_type");
-            if (id != null && userType != null && userType.equalsIgnoreCase(UserType.CUSTOMER.name()))
-                return UserData.builder()
-                        .id(id)
-                        .name(name)
-                        .type(UserType.CUSTOMER)
-                        .build();
-            else
-                throw new UserNotProvided();
-        } catch (UserNotProvided e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Exception when trying to get logged in customer data exception: {}", e.getMessage());
-            throw new UserNotProvided();
-        }
-    }
-
-    public static Long getLoggedInCustomerId() {
-        return Long.valueOf(Objects.requireNonNull(getLoggedInCustomer()).getId());
-    }
+    private final CustomerUserRepository customerUserRepository;
 
     public static UserData getLoggedInWorkforce() {
         try {
@@ -77,18 +58,51 @@ public class Utils {
         return WeekDaysEnum.valueOf(dayOfWeek.name());
     }
 
-    public static UserData getLoggedInUser() {
+    public static UserData getAuditor() {
         try {
             String token = TokenUtil.getTokenFromRequest();
             String id = JwtUtil.getClaimValue(token, "user_id");
             String name = JwtUtil.getClaimValue(token, "name");
             String userType = JwtUtil.getClaimValue(token, "user_type");
-            if (id != null && userType != null && Arrays.stream(UserType.values()).anyMatch(u -> u.name().equalsIgnoreCase(userType)))
+
+            if (id != null && userType != null) {
                 return UserData.builder()
                         .id(id)
                         .name(name)
-                        .type(UserType.valueOf(userType))
+                        .type(UserType.valueOf(userType.toUpperCase()))
                         .build();
+            }
+            else
+                throw new UserNotProvided();
+        } catch (UserNotProvided e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception when trying to get static logged in user data exception: {}", e.getMessage());
+            throw new UserNotProvided();
+        }
+    }
+
+    public UserData getLoggedInUser() {
+        try {
+            String token = TokenUtil.getTokenFromRequest();
+            String id = JwtUtil.getClaimValue(token, "user_id");
+            String name = JwtUtil.getClaimValue(token, "name");
+            String userType = JwtUtil.getClaimValue(token, "user_type");
+
+            if (id != null && userType != null) {
+                Long defaultCustomerId = Long.valueOf(id);
+                if (userType.equalsIgnoreCase(UserType.USER_CUSTOMER.name())) {
+                    CustomerUser customerUser = customerUserRepository.findById(defaultCustomerId)
+                            .orElseThrow(UserNotProvided::new);
+                    defaultCustomerId = customerUser.getCustomer().getId();
+                }
+                return UserData.builder()
+                        .id(id)
+                        .name(name)
+                        .type(UserType.valueOf(userType.toUpperCase()))
+                        .customerId(defaultCustomerId)
+                        .build();
+            }
             else
                 throw new UserNotProvided();
         } catch (UserNotProvided e) {

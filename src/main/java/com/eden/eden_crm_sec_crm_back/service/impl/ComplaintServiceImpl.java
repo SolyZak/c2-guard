@@ -5,18 +5,20 @@ import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddComplaintRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.Complaint;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.mapper.ComplaintMapper;
 import com.eden.eden_crm_sec_crm_back.models.ComplaintEntity;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.ComplaintRepository;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.service.ComplaintService;
-import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
 import com.eden.eden_crm_sec_crm_back.utils.Constants;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,18 +35,18 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ComplaintServiceImpl implements ComplaintService {
-    private final CustomerService customerService;
+    private final CustomerRepository customerRepository;
     private final ComplaintRepository complaintRepository;
     private final CustomerSiteService customerSiteService;
     private final ComplaintMapper complaintMapper;
     private final OracleStorageUtil oracleStorageUtil;
     private final DocumentsFeignClient documentsFeignClient;
+    private final Utils utils;
 
     @Override
     public PaginateResponse<Complaint> getComplaintsForCustomer(Integer page, Integer size) {
-        Customer customer = customerService.getLoggedInCustomer();
         Pageable pageable = PageRequest.of(page, size);
-        Page<ComplaintEntity> complaintsPage = complaintRepository.findByCustomer(customer.getId(), pageable);
+        Page<ComplaintEntity> complaintsPage = complaintRepository.findByCustomer(getLoggedInCustomerId(), pageable);
 
         List<Complaint> complaintList = complaintsPage.toList().stream()
                 .map(
@@ -65,7 +67,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Transactional
     @Override
     public String addComplaint(AddComplaintRequest request) {
-        Customer customer = customerService.getLoggedInCustomer();
+        Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
         CustomerSite site = customerSiteService.findOne(request.getOperationSiteId(), customer.getId());
 
         ComplaintEntity complaint = new ComplaintEntity();
@@ -80,8 +82,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     public String deleteComplaintForCustomer(Long id) {
-        Customer customer = customerService.getLoggedInCustomer();
-        ComplaintEntity complaint = complaintRepository.findByIdAndCustomerId(id, customer.getId()).orElseThrow(
+        ComplaintEntity complaint = complaintRepository.findByIdAndCustomerId(id, getLoggedInCustomerId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("not-found"), HttpStatus.NOT_FOUND)
         );
 
@@ -102,5 +103,9 @@ public class ComplaintServiceImpl implements ComplaintService {
             }
             return evidenceUri;
         }).toList();
+    }
+
+    private Long getLoggedInCustomerId() {
+        return utils.getLoggedInUser().getCustomerId();
     }
 }

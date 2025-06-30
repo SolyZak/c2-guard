@@ -24,17 +24,18 @@ public class ContractOperationRuleServiceImpl implements ContractOperationRuleSe
     private final ContractOperationRuleRepository contractOperationRuleRepository;
     private final CustomerContractRepository contractRepository;
     private final CustomerContractMapper contractMapper;
+    private final Utils utils;
 
     @Override
     public List<ContractWithRules> contractListWithRules() {
-        return contractRepository.listByCustomerIdWithRules(Utils.getLoggedInCustomerId())
+        return contractRepository.listByCustomerIdWithRules(getLoggedInCustomerId())
                 .stream().map(contractMapper::toContractWithRules)
                 .toList();
     }
 
     @Override
     public String changeContractRule(ContractOperationRuleDTO dto) {
-        CustomerContract contract = contractRepository.findByIdAndCustomerId(dto.getContractId(), Utils.getLoggedInCustomerId())
+        CustomerContract contract = contractRepository.findByIdAndCustomerId(dto.getContractId(), getLoggedInCustomerId())
                 .orElseThrow(
                         () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contractId")}), HttpStatus.NOT_FOUND)
                 );
@@ -49,5 +50,9 @@ public class ContractOperationRuleServiceImpl implements ContractOperationRuleSe
         contractOperationRuleRepository.save(contractOperationRule);
 
         return MessageUtil.getMessage("contract-operation-rule.changed");
+    }
+
+    private Long getLoggedInCustomerId() {
+        return utils.getLoggedInUser().getCustomerId();
     }
 }

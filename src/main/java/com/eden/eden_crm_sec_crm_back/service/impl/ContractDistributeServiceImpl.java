@@ -4,6 +4,7 @@ import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractOperationServiceDto;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
@@ -12,14 +13,15 @@ import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationS
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
-import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -36,17 +38,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ContractDistributeServiceImpl implements ContractDistributeService {
 
-    private final CustomerService customerService;
+    private final CustomerRepository customerRepository;
     private final CustomerContractRepository customerContractRepository;
     private final CustomerSiteRepository customerSiteRepository;
     private final SiteDistributionRepository siteDistributionRepository;
     private final LKCustomerContractOperationServiceRepository contractOperationServiceRepository;
     private final LKCustomerContractServiceRepository contractServiceRepository;
+    private final Utils utils;
 
     @Override
     @Transactional
     public String contractDistribute(Long contractId, Long serviceId, List<SiteDistributionDto> listDto) {
-        Customer customer = customerService.getLoggedInCustomer();
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         CustomerContract contract = customerContractRepository.findWithDetailsByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
         );

@@ -4,6 +4,7 @@ import com.eden.eden_crm_sec_crm_back.dto.request.AddCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.identity.KeycloakClient;
 import com.eden.eden_crm_sec_crm_back.identity.dto.UserRequest;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
@@ -11,10 +12,11 @@ import com.eden.eden_crm_sec_crm_back.models.CustomerUser;
 import com.eden.eden_crm_sec_crm_back.mapper.CustomerUserMapper;
 import com.eden.eden_crm_sec_crm_back.objects.UserType;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerUserRepository;
-import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -25,14 +27,15 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomerUserServiceImpl implements CustomerUserService {
     private final CustomerUserRepository customerUserRepository;
+    private final CustomerRepository customerRepository;
     private final CustomerUserMapper mapper;
-    private final CustomerService customerService;
     private final KeycloakClient keycloakClient;
+    private final Utils utils;
 
     @Override
     @Transactional
     public String create(AddCustomerUserDto dto) {
-        Customer customer = customerService.getLoggedInCustomer();
+        Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
 
         validateCreateUser(dto.getEmail(), dto.getCode());
 
@@ -50,13 +53,10 @@ public class CustomerUserServiceImpl implements CustomerUserService {
 
     @Override
     public PaginateResponse<CustomerUserData> paginated(String search, int page, int size) {
-        // todo, need to ignore the logged in user in case the logged in user is customer user actor
-        Customer customer = customerService.getLoggedInCustomer();
-
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         Page<CustomerUser> resultPage = customerUserRepository.searchByCustomerAndSearch(
-                customer.getId(), search, pageable
+                getLoggedInCustomerId(), search, pageable
         );
 
         return new PaginateResponse<>(
@@ -72,9 +72,7 @@ public class CustomerUserServiceImpl implements CustomerUserService {
 
     @Override
     public String resetPassword(Long id, ResetCustomerUserPassword dto) {
-        // todo, need to ignore the logged in user in case the logged in user is customer user actor
-        Customer customer = customerService.getLoggedInCustomer();
-        CustomerUser user = customerUserRepository.findByIdAncCustomerId(id, customer.getId()).orElseThrow(
+        CustomerUser user = customerUserRepository.findByIdAncCustomerId(id, getLoggedInCustomerId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("customer-user")}), HttpStatus.NOT_FOUND)
         );
         if (keycloakClient.userExits(user.getEmail())) {
@@ -102,5 +100,9 @@ public class CustomerUserServiceImpl implements CustomerUserService {
         if(customerUserRepository.existsByCode(code)) {
             throw new BusinessException(MessageUtil.getMessage("customer-user.code.exists"), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private Long getLoggedInCustomerId() {
+        return utils.getLoggedInUser().getCustomerId();
     }
 }

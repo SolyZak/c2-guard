@@ -7,13 +7,16 @@ import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class CustomAuditListener {
+
     @PrePersist
     public void setCreatedBy(Object entity) {
-        UserData userData = Utils.getLoggedInUser();
+        UserData userData = Utils.getAuditor();
         Long id = Long.valueOf(userData.getId());
         String name = userData.getName();
         if (entity instanceof BaseAuditEntity baseAudit) {
@@ -36,7 +39,7 @@ public class CustomAuditListener {
 
     @PreUpdate
     public void setModifiedBy(Object entity) {
-        UserData userData = Utils.getLoggedInUser();
+        UserData userData = Utils.getAuditor();
         Long id = Long.valueOf(userData.getId());
         String name = userData.getName();
         if (entity instanceof BaseAuditEntity baseAudit) {

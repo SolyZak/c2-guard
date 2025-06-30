@@ -16,7 +16,6 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.service.AsyncEmailService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
-import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -163,12 +162,6 @@ public class CustomerServiceImpl implements CustomerService {
             repository.save(customer);
             sendEmailToEnabledCustomer(customer.getEmail(), customer.getId().toString(), password);
         }
-    }
-
-    @Override
-    public Customer getLoggedInCustomer() {
-        return repository.findById(Utils.getLoggedInCustomerId())
-                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
     }
 
     private void isEmailExists(String email) {

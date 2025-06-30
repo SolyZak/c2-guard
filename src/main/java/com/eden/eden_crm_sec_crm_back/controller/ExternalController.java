@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.external.AttendanceWorkingPeriodData;
+import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +23,10 @@ import java.util.List;
         name = "External, Service To Service APIs",
         description = "This part is for service to service usage, will provide the needed from crm service to other services")
 public class ExternalController {
+
     private final ExternalService externalService;
+    private final Utils utils;
+
     @Operation(summary = "Get operation site info for today", description = "This API will provide information abut operation site today status")
     @GetMapping("/operation-sites/{id}")
     public OperationSiteInfo getOperationSiteDetails(@PathVariable(name = "id") Long id) {
@@ -57,7 +61,7 @@ public class ExternalController {
         dto.validate();
 
         // HINT: I have to ignore pagination for now, data is destructed via multiple tables, with aggregation methods needed & loading data.
-        dto.setCustomerId(List.of(Utils.getLoggedInCustomerId()));
+        dto.setCustomerId(List.of(getLoggedInCustomerId()));
         return externalService.getAttendanceStats(dto);
     }
 
@@ -68,7 +72,7 @@ public class ExternalController {
             @RequestParam(name = "operationSiteId") Long operationSiteId,
             @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return externalService.getAttendanceDateWorkingPeriod(Utils.getLoggedInCustomerId(), contractId, operationSiteId, date);
+        return externalService.getAttendanceDateWorkingPeriod(getLoggedInCustomerId(), contractId, operationSiteId, date);
     }
 
     @Operation(summary = "Get customer contracts planned quantities")
@@ -79,6 +83,16 @@ public class ExternalController {
             @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
-        return externalService.getContractPlannedQnt(Utils.getLoggedInCustomerId(), securityCompanyId, contractId, from, to);
+        return externalService.getContractPlannedQnt(getLoggedInCustomerId(), securityCompanyId, contractId, from, to);
+    }
+
+    @Operation(summary = "Get logged in customer user data")
+    @GetMapping("/customer/user/info")
+    public UserData getLoggedInCustomerUser() {
+        return utils.getLoggedInUser();
+    }
+
+    private Long getLoggedInCustomerId() {
+        return utils.getLoggedInUser().getCustomerId();
     }
 }

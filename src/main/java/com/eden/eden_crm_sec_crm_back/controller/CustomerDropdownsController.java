@@ -22,6 +22,7 @@ import java.util.List;
 public class CustomerDropdownsController {
 
     private final DropdownService dropdownService;
+    private final Utils utils;
 
     @GetMapping("/security-companies/dropdown")
     public ApiResponse<List<GeneralDropdown>> myContractedSecurityCompaniesDropdown() {
@@ -30,14 +31,14 @@ public class CustomerDropdownsController {
          * for getting the security companies ids then query org unit to fetch the data related to those ids
          * but for now we just query in crm db which has security company id & name in contracts table
          */
-        return ApiResponse.ok(dropdownService.customerContractedSecurityCompaniesDropdown(Utils.getLoggedInCustomerId()));
+        return ApiResponse.ok(dropdownService.customerContractedSecurityCompaniesDropdown(getLoggedInCustomerId()));
     }
 
     @GetMapping("/contracts/dropdown")
     public ApiResponse<List<GeneralDropdown>> myContractsDropdown(
             @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId
     ) {
-        return ApiResponse.ok(dropdownService.myContractsDropdown(Utils.getLoggedInCustomerId(), securityCompanyId));
+        return ApiResponse.ok(dropdownService.myContractsDropdown(getLoggedInCustomerId(), securityCompanyId));
     }
 
     @GetMapping("/operation-sites/dropdown")
@@ -45,6 +46,10 @@ public class CustomerDropdownsController {
             @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId,
             @RequestParam(name = "contractId", required = false) List<Long> contractId
     ) {
-        return ApiResponse.ok(dropdownService.myOperationSitesDropdown(Utils.getLoggedInCustomerId(), securityCompanyId, contractId));
+        return ApiResponse.ok(dropdownService.myOperationSitesDropdown(getLoggedInCustomerId(), securityCompanyId, contractId));
+    }
+
+    private Long getLoggedInCustomerId() {
+        return utils.getLoggedInUser().getCustomerId();
     }
 }

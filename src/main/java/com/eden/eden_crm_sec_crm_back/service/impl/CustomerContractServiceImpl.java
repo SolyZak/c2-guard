@@ -9,12 +9,14 @@ import com.eden.eden_crm_sec_crm_back.dto.request.AddContractServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.ContractStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.mapper.*;
 import com.eden.eden_crm_sec_crm_back.models.*;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
@@ -41,7 +43,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CustomerContractServiceImpl implements CustomerContractService {
     private final CustomerContractRepository customerContractRepository;
-    private final com.eden.eden_crm_sec_crm_back.service.CustomerService customerService;
+    private final CustomerRepository customerRepository;
     private final CustomerContractMapper contractMapper;
     private final ServiceDetailsRepository serviceDetailsRepository;
     private final LKCustomerContractServiceRepository contractServiceRepository;
@@ -49,11 +51,12 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     private final SiteDistributionRepository siteDistributionRepository;
     private final CustomerSiteRepository customerSiteRepository;
     private final CustomerSiteMapper customerSiteMapper;
+    private final Utils utils;
 
     @Override
     @Transactional
     public String createAgreement(AddContractDto dto) {
-        Customer customer = customerService.getLoggedInCustomer();
+        Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
         SecurityCompanyData securityCompanyData;
         try {
             securityCompanyData = orgUnitClient.getSecurityCompanyDetails(dto.getSecurityCompanyId());
@@ -100,7 +103,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Override
     public PaginateResponse<ContractRowDto> paginateMyContracts(String search, LocalDate from, LocalDate to, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        Page<CustomerContract> contracts = customerContractRepository.paginateByCustomer(Utils.getLoggedInCustomerId(), search, from, to, pageable);
+        Page<CustomerContract> contracts = customerContractRepository.paginateByCustomer(getLoggedInCustomerId(), search, from, to, pageable);
         return new PaginateResponse<>(
                 contracts.getContent().stream().map(contractMapper::toContractRowDto).toList(),
                 page,
@@ -113,7 +116,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Override
     public List<ContractRowDto> listMyDraftedContracts() {
         return customerContractRepository.listByCustomerIdAndStatus(
-                        Utils.getLoggedInCustomerId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
+                        getLoggedInCustomerId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
                 )
                 .stream()
                 .map(contractMapper::toContractRowDto)
@@ -122,7 +125,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public List<ContractServiceDetailsData> contractServicesList(Long contractId) {
-        customerContractRepository.findByIdAndCustomerId(contractId, Utils.getLoggedInCustomerId())
+        customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId())
                 .orElseThrow(
                         () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
                 );
@@ -132,19 +135,19 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public List<ContractRowDto> listAllMyContracts() {
-        return customerContractRepository.listByCustomerId(Utils.getLoggedInCustomerId())
+        return customerContractRepository.listByCustomerId(getLoggedInCustomerId())
                 .stream()
                 .map(contractMapper::toContractRowDto).toList();
     }
 
     @Override
     public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
-        CustomerContract contract = customerContractRepository.findByIdAndCustomerId(contractId, Utils.getLoggedInCustomerId())
+        CustomerContract contract = customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId())
                 .orElseThrow(
                         () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
                 );
         return customerSiteRepository.findAvailableSitesForContract(
-                        Utils.getLoggedInCustomerId(),
+                        getLoggedInCustomerId(),
                         contractId,
                         contract.getStartAgreementDate(),
                         contract.getEndAgreementDate()
@@ -156,7 +159,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId) {
-        customerContractRepository.findByIdAndCustomerId(contractId, Utils.getLoggedInCustomerId()).orElseThrow(
+        customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
         );
 
@@ -185,7 +188,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public ContractDetailsData getCustomerContractDetails(Long contractId) {
-        Long customerId = Utils.getLoggedInCustomerId();
+        Long customerId = getLoggedInCustomerId();
 
         CustomerContract contract = customerContractRepository
                 .findWithServicesByIdAndCustomerId(contractId, customerId)
@@ -242,6 +245,10 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
         detailsData.setServices(services);
         return detailsData;
+    }
+
+    private Long getLoggedInCustomerId() {
+        return utils.getLoggedInUser().getCustomerId();
     }
 
 }
