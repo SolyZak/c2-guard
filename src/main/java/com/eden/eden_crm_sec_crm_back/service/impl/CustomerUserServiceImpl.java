@@ -14,11 +14,13 @@ import com.eden.eden_crm_sec_crm_back.objects.UserType;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerUserRepository;
+import com.eden.eden_crm_sec_crm_back.service.AsyncEmailService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,10 @@ public class CustomerUserServiceImpl implements CustomerUserService {
     private final CustomerUserMapper mapper;
     private final KeycloakClient keycloakClient;
     private final Utils utils;
+    private final AsyncEmailService asyncEmailService;
+
+    @Value("${customer-portal.url}")
+    private String customerPortalUrl;
 
     @Override
     @Transactional
@@ -47,6 +53,8 @@ public class CustomerUserServiceImpl implements CustomerUserService {
                 entity.getId(), UserType.USER_CUSTOMER, entity.getEmail(), entity.getName(),
                 "", dto.getPassword(), entity.getEmail(), true
         ));
+
+        sendEmailToEnabledCustomer(entity.getName(), entity.getEmail(), dto.getPassword());
 
         return MessageUtil.getMessage("customer-user.created");
     }
@@ -104,5 +112,14 @@ public class CustomerUserServiceImpl implements CustomerUserService {
 
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
+    }
+
+    private void sendEmailToEnabledCustomer(String name, String emailTo, String password) {
+        String subject = "Application Credentials";
+        String body = "Dear " + name + ",<br><br>" +
+                "Your credentials login for the system is, Username: " + emailTo +
+                ", password: " + password + "<br>" +
+                "You can login through the following link <a href=\"" + customerPortalUrl + "\">visit link</a>" + "<br>";
+        asyncEmailService.sendHtmlEmailAsync(emailTo, subject, body);
     }
 }
