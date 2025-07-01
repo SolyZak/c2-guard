@@ -138,7 +138,10 @@ public class WorkforceServiceImpl implements WorkforceService {
 
     @Override
     public List<GeneralDropdown> operationSitesDropdown() {
-        return customerSiteRepository.findAll().stream().map(customerSiteMapper::toDropdown).toList();
+//        return customerSiteRepository.findAll().stream().map(customerSiteMapper::toDropdown).toList();
+        WorkforceFullDataDto workforceFullDataDto = getLoggedInWorkforce();
+        return customerSiteRepository.findBySecurityCompanyId(workforceFullDataDto.securityCompany().id(), LocalDate.now())
+                .stream().map(customerSiteMapper::toDropdown).toList();
     }
 
     @Override

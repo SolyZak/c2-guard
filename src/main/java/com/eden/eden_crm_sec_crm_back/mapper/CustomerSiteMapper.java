@@ -5,6 +5,7 @@ import com.eden.eden_crm_sec_crm_back.dto.request.CustomerSiteRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerSiteRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
+import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -20,4 +21,6 @@ public interface CustomerSiteMapper {
     @Mapping(target = "id", source = "s.id")
     @Mapping(target = "name", source = "s.name")
     GeneralDropdown toDropdown(CustomerSite s);
+
+    GeneralDropdown toDropdown(GeneralDropdownProjection s);
 }
