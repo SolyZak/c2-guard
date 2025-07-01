@@ -58,11 +58,10 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
                 SELECT cs.id as id, cs.name as name FROM CustomerSite cs
                 WHERE EXISTS (
                     SELECT sd FROM SiteDistribution sd
-                    WHERE sd.site = cs AND sd.customerContract.securityCompanyId = :securityCompanyId
-                    AND (
-                        sd.customerContract.startAgreementDate >= :today AND
-                        sd.customerContract.endAgreementDate >= :today AND
-                    )
+                    WHERE sd.site = cs
+                    AND sd.customerContract.securityCompanyId = :securityCompanyId
+                    AND sd.customerContract.startAgreementDate >= :today
+                    AND sd.customerContract.endAgreementDate >= :today
                 )
             """)
     List<GeneralDropdownProjection> findBySecurityCompanyId(
