@@ -17,6 +17,7 @@ import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -147,8 +148,8 @@ public class ExternalServiceImpl implements ExternalService {
                 .map(os -> AttendanceWorkingPeriodData.builder()
                         .id(os.getId())
                         .quantity(os.getQuantity())
-                        .fromTime(os.getFromTime())
-                        .toTime(os.getToTime())
+                        .fromTime(DateUtils.toLocalTime(os.getSiteDistribution().getSite().getTimezone(), os.getFromTime()))
+                        .toTime(DateUtils.toLocalTime(os.getSiteDistribution().getSite().getTimezone(), os.getToTime()))
                         .build())
                 .toList();
     }
