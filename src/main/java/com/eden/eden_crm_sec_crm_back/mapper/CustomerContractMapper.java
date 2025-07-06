@@ -13,6 +13,8 @@ import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.mapstruct.*;
 
+import java.time.LocalTime;
+
 
 @Mapper(componentModel = "spring")
 public interface CustomerContractMapper {
@@ -53,7 +55,9 @@ public interface CustomerContractMapper {
     @Mapping(target = "days", source = "e.customerService.days")
     ContractDetailsData.ContractServiceDetails fromEntity(LKCustomerContractService e);
 
+    @Mapping(target = "fromTime", source = "from")
+    @Mapping(target = "toTime", source = "to")
     ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData.ContractOperationServiceDetails
-        fromEntity(LKCustomerContractOperationService e);
+        fromEntity(LKCustomerContractOperationService e, LocalTime from, LocalTime to);
 }
 

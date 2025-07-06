@@ -22,6 +22,7 @@ import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.ServiceDetailsRepository;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -196,6 +198,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                         MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}),
                         HttpStatus.NOT_FOUND
                 ));
+        Customer customer = contract.getCustomer();
 
         List<SiteDistribution> siteDistributions = siteDistributionRepository.findDistributionsByContractId(contractId);
 
@@ -224,7 +227,9 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                                                 .flatMap(sd -> sd.getOperationServices().stream())
                                                 .map(os -> {
                                                     totalQnt.updateAndGet(v -> v + os.getQuantity());
-                                                    return contractMapper.fromEntity(os);
+                                                    LocalTime from = DateUtils.toLocalTime(customer.getTimezone(), os.getFromTime());
+                                                    LocalTime to = DateUtils.toLocalTime(customer.getTimezone(), os.getToTime());
+                                                    return contractMapper.fromEntity(os, from, to);
                                                 })
                                                 .toList();
 
