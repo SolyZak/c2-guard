@@ -10,6 +10,7 @@ public class ContractServiceDetailsData {
     private Long id;
     private String serviceName;
     private Boolean serviceMultiSite;
+    private Boolean serviceIsHuman;
     private Long hours;
     private Long days;
     private Long quantity;

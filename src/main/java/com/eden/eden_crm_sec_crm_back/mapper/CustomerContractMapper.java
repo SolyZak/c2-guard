@@ -7,6 +7,7 @@ import com.eden.eden_crm_sec_crm_back.dto.response.ContractDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractWithRules;
+import com.eden.eden_crm_sec_crm_back.enums.UnitEnum;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
@@ -27,6 +28,7 @@ public interface CustomerContractMapper {
     @Mapping(target = "serviceName", source = "cs.customerService.customerService.serviceName")
     @Mapping(target = "serviceActivities", source = "cs.customerService.customerService.activities")
     @Mapping(target = "serviceMultiSite", source = "cs.customerService.customerService.multiSite")
+    @Mapping(target = "serviceIsHuman", expression = "java(isServiceHuman(cs))")
     @Mapping(target = "hours", source = "cs.customerService.hours")
     @Mapping(target = "days", source = "cs.customerService.days")
     @Mapping(target = "distributedQuantity", source = "cs.distributedQuantity")
@@ -59,5 +61,9 @@ public interface CustomerContractMapper {
     @Mapping(target = "toTime", source = "to")
     ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData.ContractOperationServiceDetails
         fromEntity(LKCustomerContractOperationService e, LocalTime from, LocalTime to);
+
+    default Boolean isServiceHuman(LKCustomerContractService cs) {
+        return cs.getCustomerService().getCustomerService().getUnit().equals(UnitEnum.PERSON);
+    }
 }
 
