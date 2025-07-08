@@ -41,4 +41,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             "OR LOWER(c.code) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Customer> findAll(String keyword);
 
+    @Query("SELECT DISTINCT c FROM Customer c " +
+            "JOIN c.customerContracts cc " +
+            "WHERE cc.securityCompanyId = :securityCompanyId")
+    List<Customer> findCustomersBySecurityCompanyId(Long securityCompanyId);
+
 }

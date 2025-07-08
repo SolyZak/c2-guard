@@ -189,4 +189,16 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @Param("customerId") Long customerId
     );
 
+
+    @Query("""
+            SELECT cc.id AS id, cc.agreementName AS name
+            FROM CustomerContract cc
+            WHERE cc.securityCompanyId = :securityCompanyId
+            AND cc.customer.id IN :customerId
+            """)
+    List<GeneralDropdownProjection> contractsDropdown(
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("customerId") List<Long> customerId
+    );
+
 }

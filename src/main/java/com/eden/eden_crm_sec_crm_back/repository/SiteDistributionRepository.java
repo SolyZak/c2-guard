@@ -87,6 +87,20 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
     );
 
     @Query("""
+            SELECT sd.site.id AS id, sd.site.name AS name
+            FROM SiteDistribution sd
+            WHERE sd.customerContract.securityCompanyId = :securityCompanyId
+              AND (:customerId IS NULL OR  sd.site.customer.id IN :customerId)
+              AND (:contractId IS NULL OR sd.customerContract.id IN :contractId)
+            GROUP BY sd.site.id, sd.site.name
+            """)
+    List<GeneralDropdownProjection> operationSitesDropdown(
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("customerId") List<Long> customerId,
+            @Param("contractId") List<Long> contractId
+    );
+
+    @Query("""
                 SELECT sd FROM SiteDistribution sd
                 LEFT JOIN FETCH sd.lkCustomerContractService
                 LEFT JOIN FETCH sd.operationServices

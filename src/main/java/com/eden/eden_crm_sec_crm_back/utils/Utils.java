@@ -44,8 +44,34 @@ public class Utils {
         }
     }
 
+    public static UserData getLoggedInSecurityCompany() {
+        try {
+            String token = TokenUtil.getTokenFromRequest();
+            String id = JwtUtil.getClaimValue(token, "user_id");
+            String name = JwtUtil.getClaimValue(token, "name");
+            String userType = JwtUtil.getClaimValue(token, "user_type");
+            if (id != null && userType != null && userType.equalsIgnoreCase(UserType.SECURITY_COMPANY.name()))
+                return UserData.builder()
+                        .id(id)
+                        .name(name)
+                        .type(UserType.SECURITY_COMPANY)
+                        .build();
+            else
+                throw new UserNotProvided();
+        } catch (UserNotProvided e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception when trying to get logged in security company data exception: {}", e.getMessage());
+            throw new UserNotProvided();
+        }
+    }
+
     public static Long getLoggedInWorkforceId() {
         return Long.valueOf(Objects.requireNonNull(getLoggedInWorkforce()).getId());
+    }
+
+    public static Long getLoggedInSecurityCompanyId() {
+        return Long.valueOf(Objects.requireNonNull(getLoggedInSecurityCompany()).getId());
     }
 
     public static WeekDaysEnum getTodayWeekDayEnum() {
