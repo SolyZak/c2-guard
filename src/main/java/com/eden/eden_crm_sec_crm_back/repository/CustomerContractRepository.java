@@ -32,6 +32,12 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
     );
 
     @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "WHERE cc.agreementNumber = :agreementNumber ")
+    Optional<CustomerContract> findByAgreementNumber(
+            @Param("agreementNumber") String agreementNumber
+    );
+
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
             "WHERE cc.status IN :statuses " +
             "AND cc.customer.id = :customerId")
     List<CustomerContract> listByCustomerIdAndStatus(

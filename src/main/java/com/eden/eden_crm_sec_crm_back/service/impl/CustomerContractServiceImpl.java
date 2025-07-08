@@ -59,6 +59,10 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Transactional
     public String createAgreement(AddContractDto dto) {
         Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
+        Optional<CustomerContract> agreementNumberExists = customerContractRepository.findByAgreementNumber(dto.getAgreementNumber());
+        if (agreementNumberExists.isPresent()) {
+            throw new BusinessException(MessageUtil.getMessage("contract.number.already-exists"), HttpStatus.BAD_REQUEST);
+        }
         SecurityCompanyData securityCompanyData;
         try {
             securityCompanyData = orgUnitClient.getSecurityCompanyDetails(dto.getSecurityCompanyId());
