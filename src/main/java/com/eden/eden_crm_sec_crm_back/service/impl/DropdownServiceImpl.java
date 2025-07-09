@@ -45,7 +45,10 @@ public class DropdownServiceImpl implements DropdownService {
             Long securityCompanyId,
             List<Long> customerId
     ) {
-        return customerContractRepository.contractsDropdown(securityCompanyId, customerId)
+        return customerContractRepository.contractsDropdown(
+                        securityCompanyId,
+                        customerId != null && !customerId.isEmpty() ? customerId : null
+                )
                 .stream()
                 .map(customerContractMapper::toDropdown)
                 .toList();

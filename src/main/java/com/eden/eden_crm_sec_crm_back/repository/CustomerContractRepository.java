@@ -194,7 +194,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             SELECT cc.id AS id, cc.agreementName AS name
             FROM CustomerContract cc
             WHERE cc.securityCompanyId = :securityCompanyId
-            AND cc.customer.id IN :customerId
+            AND (:customerId IS NULL OR cc.customer.id IN :customerId)
             """)
     List<GeneralDropdownProjection> contractsDropdown(
             @Param("securityCompanyId") Long securityCompanyId,
