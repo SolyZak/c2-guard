@@ -48,22 +48,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     public PaginateResponse<Complaint> getComplaintsForCustomer(Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<ComplaintEntity> complaintsPage = complaintRepository.findByCustomer(getLoggedInCustomerId(), pageable);
-
-        List<Complaint> complaintList = complaintsPage.toList().stream()
-                .map(
-                        c -> complaintMapper.toComplaint(
-                                c,
-                                c.getEvidencesPaths().stream().map(e -> oracleStorageUtil.getStorageUrl() + e).toList()
-                        )
-                )
-                .toList();
-
-        return new PaginateResponse<>(complaintList,
-                complaintsPage.getNumber(),
-                complaintsPage.getSize(),
-                complaintsPage.getTotalElements(),
-                (long) complaintsPage.getTotalPages());
+        return mapPageComplaints(complaintRepository.findByCustomer(getLoggedInCustomerId(), pageable));
     }
 
     @Transactional
@@ -100,6 +85,25 @@ public class ComplaintServiceImpl implements ComplaintService {
         return MessageUtil.getMessage("complaint.deleted");
     }
 
+    @Override
+    public PaginateResponse<Complaint> getComplaintsForSecurityCompany(
+            List<Long> customerId,
+            List<Long> contractId,
+            List<Long> operationSiteId,
+            Integer page,
+            Integer size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return mapPageComplaints(complaintRepository.paginate(
+                        List.of(Utils.getLoggedInSecurityCompanyId()),
+                        customerId != null && !customerId.isEmpty() ? customerId : null,
+                        contractId != null && !contractId.isEmpty() ? contractId : null,
+                        operationSiteId != null && !operationSiteId.isEmpty() ? operationSiteId : null,
+                        pageable
+                )
+        );
+    }
+
     private List<String> uploadEvidences(List<MultipartFile> images) {
         return images.stream().map(image -> {
             String evidenceUri = "%s%s/%s".formatted(Constants.COMPLAINT_PATH, Math.random(), image.getOriginalFilename());
@@ -116,5 +120,22 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
+    }
+
+    private PaginateResponse<Complaint> mapPageComplaints(Page<ComplaintEntity> complaintsPage) {
+        List<Complaint> complaintList = complaintsPage.toList().stream()
+                .map(
+                        c -> complaintMapper.toComplaint(
+                                c,
+                                c.getEvidencesPaths().stream().map(e -> oracleStorageUtil.getStorageUrl() + e).toList()
+                        )
+                )
+                .toList();
+
+        return new PaginateResponse<>(complaintList,
+                complaintsPage.getNumber(),
+                complaintsPage.getSize(),
+                complaintsPage.getTotalElements(),
+                (long) complaintsPage.getTotalPages());
     }
 }
