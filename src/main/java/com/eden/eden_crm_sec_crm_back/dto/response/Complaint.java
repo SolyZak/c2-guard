@@ -12,6 +12,8 @@ public class Complaint {
     private String operationSiteName;
     private Long contractId;
     private String contractName;
+    private Long customerId;
+    private String customerName;
     private LocalDateTime creationDate;
     private String description;
     private List<String> images;
