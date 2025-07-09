@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SiteDistributionRepository extends JpaRepository<SiteDistribution, Long> {
@@ -108,5 +109,16 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
                 WHERE sd.customerContract.id = :contractId
             """)
     List<SiteDistribution> findDistributionsByContractId(@Param("contractId") Long contractId);
+
+    @Query("""
+            SELECT DISTINCT sd FROM SiteDistribution sd
+            LEFT JOIN FETCH sd.site
+            WHERE sd.site.id = :id
+            AND sd.customerContract.id = :contractId
+            """)
+    Optional<SiteDistribution> findByIdAndContractId(
+            @Param("id") Long id,
+            @Param("contractId") Long contractId
+    );
 
 }

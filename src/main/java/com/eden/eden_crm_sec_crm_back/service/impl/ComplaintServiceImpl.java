@@ -7,12 +7,12 @@ import com.eden.eden_crm_sec_crm_back.dto.response.Complaint;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.mapper.ComplaintMapper;
-import com.eden.eden_crm_sec_crm_back.models.ComplaintEntity;
-import com.eden.eden_crm_sec_crm_back.models.Customer;
-import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
+import com.eden.eden_crm_sec_crm_back.models.*;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.ComplaintRepository;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
+import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.service.ComplaintService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
 import com.eden.eden_crm_sec_crm_back.utils.Constants;
@@ -37,7 +37,9 @@ import java.util.List;
 public class ComplaintServiceImpl implements ComplaintService {
     private final CustomerRepository customerRepository;
     private final ComplaintRepository complaintRepository;
+    private final CustomerContractRepository customerContractRepository;
     private final CustomerSiteService customerSiteService;
+    private final SiteDistributionRepository siteDistributionRepository;
     private final ComplaintMapper complaintMapper;
     private final OracleStorageUtil oracleStorageUtil;
     private final DocumentsFeignClient documentsFeignClient;
@@ -68,15 +70,22 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     public String addComplaint(AddComplaintRequest request) {
         Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
-        CustomerSite site = customerSiteService.findOne(request.getOperationSiteId(), customer.getId());
+        CustomerContract customerContract = customerContractRepository.findByIdAndCustomerId(request.getContractId(), customer.getId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.BAD_REQUEST)
+                );
+        SiteDistribution site = siteDistributionRepository.findByIdAndContractId(request.getOperationSiteId(), request.getContractId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("operation-site")}), HttpStatus.BAD_REQUEST)
+                );
 
         ComplaintEntity complaint = new ComplaintEntity();
         complaint.setCustomer(customer);
-        complaint.setCustomerSite(site);
+        complaint.setCustomerSite(site.getSite());
+        complaint.setContract(customerContract);
         complaint.setDescription(request.getDescription());
         complaint.setEvidencesPaths(uploadEvidences(request.getImages()));
         complaintRepository.save(complaint);
-        // todo need a way for make this complain related to a security company for easy tracking from sec. comp. portal
         return MessageUtil.getMessage("complaint.created");
     }
 

@@ -29,6 +29,11 @@ public class ComplaintEntity extends BaseAuditEntity {
     private CustomerSite customerSite;
 
     @ManyToOne
+    @JoinColumn(name = "contract_id")
+    @JsonBackReference
+    private CustomerContract contract;
+
+    @ManyToOne
     @JoinColumn(name = "customer_id")
     @JsonBackReference
     private Customer customer;

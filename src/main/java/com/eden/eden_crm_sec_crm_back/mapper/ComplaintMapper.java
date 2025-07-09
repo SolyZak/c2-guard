@@ -9,6 +9,8 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ComplaintMapper {
+    @Mapping(target = "contractName", source = "entity.contract.agreementName")
+    @Mapping(target = "contractId", source = "entity.contract.id")
     @Mapping(target = "operationSiteName", source = "entity.customerSite.name")
     @Mapping(target = "operationSiteId", source = "entity.customerSite.id")
     @Mapping(target = "creationDate", source = "entity.createdDate")

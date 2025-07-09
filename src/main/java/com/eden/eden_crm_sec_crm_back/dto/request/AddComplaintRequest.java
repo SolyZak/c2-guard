@@ -9,6 +9,9 @@ import java.util.List;
 
 @Data
 public class AddComplaintRequest {
+    @NotNull(message = "{validation.complaint.contractId.required}")
+    private Long contractId;
+
     @NotNull(message = "{validation.complaint.operationSiteId.required}")
     private Long operationSiteId;
 

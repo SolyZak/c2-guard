@@ -1,0 +1,1 @@
+ALTER TABLE complaint ADD COLUMN contract_id int8 NULL;
