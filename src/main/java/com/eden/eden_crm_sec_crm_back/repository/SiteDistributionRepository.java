@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
+import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -111,12 +112,11 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
     List<SiteDistribution> findDistributionsByContractId(@Param("contractId") Long contractId);
 
     @Query("""
-            SELECT DISTINCT sd FROM SiteDistribution sd
-            LEFT JOIN FETCH sd.site
+            SELECT DISTINCT sd.site FROM SiteDistribution sd
             WHERE sd.site.id = :id
             AND sd.customerContract.id = :contractId
             """)
-    Optional<SiteDistribution> findByIdAndContractId(
+    Optional<CustomerSite> findByIdAndContractId(
             @Param("id") Long id,
             @Param("contractId") Long contractId
     );

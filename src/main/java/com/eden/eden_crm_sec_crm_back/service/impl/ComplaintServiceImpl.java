@@ -59,14 +59,14 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.BAD_REQUEST)
                 );
-        SiteDistribution site = siteDistributionRepository.findByIdAndContractId(request.getOperationSiteId(), request.getContractId())
+        CustomerSite site = siteDistributionRepository.findByIdAndContractId(request.getOperationSiteId(), request.getContractId())
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("operation-site")}), HttpStatus.BAD_REQUEST)
                 );
 
         ComplaintEntity complaint = new ComplaintEntity();
         complaint.setCustomer(customer);
-        complaint.setCustomerSite(site.getSite());
+        complaint.setCustomerSite(site);
         complaint.setContract(customerContract);
         complaint.setDescription(request.getDescription());
         complaint.setEvidencesPaths(uploadEvidences(request.getImages()));
