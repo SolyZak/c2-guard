@@ -65,6 +65,18 @@ public class ExternalController {
         return externalService.getAttendanceStats(dto);
     }
 
+    @Operation(summary = "Get security company attendance stats for operation site")
+    @GetMapping("/security/attendance/stats")
+    public List<AttendanceStatsData> getSecurityAttendanceStats(
+            @Valid AttendanceStatsDto dto
+    ) {
+        dto.validate();
+
+        // HINT: I have to ignore pagination for now, data is destructed via multiple tables, with aggregation methods needed & loading data.
+        dto.setCustomerId(null);
+        return externalService.getAttendanceStats(dto);
+    }
+
     @Operation(summary = "Get customer attendance stats for operation site")
     @GetMapping("/customer/attendance/working-periods")
     public List<AttendanceWorkingPeriodData> getAttendanceDateWorkingPeriod(
@@ -73,6 +85,16 @@ public class ExternalController {
             @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         return externalService.getAttendanceDateWorkingPeriod(getLoggedInCustomerId(), contractId, operationSiteId, date);
+    }
+
+    @Operation(summary = "Get security company attendance stats for operation site")
+    @GetMapping("/security/attendance/working-periods")
+    public List<AttendanceWorkingPeriodData> getSecurityAttendanceDateWorkingPeriod(
+            @RequestParam(name = "contractId") Long contractId,
+            @RequestParam(name = "operationSiteId") Long operationSiteId,
+            @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return externalService.getSecurityAttendanceDateWorkingPeriod(Utils.getLoggedInSecurityCompanyId(), contractId, operationSiteId, date);
     }
 
     @Operation(summary = "Get customer contracts planned quantities")
@@ -84,6 +106,17 @@ public class ExternalController {
             @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         return externalService.getContractPlannedQnt(getLoggedInCustomerId(), securityCompanyId, contractId, from, to);
+    }
+
+    @Operation(summary = "Get security company contracts planned quantities")
+    @GetMapping("/security/contracts/planned-quantities")
+    public List<ContractPlannedQntDto> getSecurityContractPlannedQnt(
+            @RequestParam(name = "securityCompanyId", required = false) Long securityCompanyId,
+            @RequestParam(name = "contractId", required = false) List<Long> contractId,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return externalService.getContractPlannedQnt(null, securityCompanyId, contractId, from, to);
     }
 
     @Operation(summary = "Get logged in customer user data")

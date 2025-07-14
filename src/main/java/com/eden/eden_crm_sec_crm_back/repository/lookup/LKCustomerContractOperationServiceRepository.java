@@ -21,4 +21,16 @@ public interface LKCustomerContractOperationServiceRepository extends JpaReposit
             @Param("siteId") Long siteId,
             @Param("contractId") Long contractId
     );
+
+    @Query("""
+                SELECT s FROM LKCustomerContractOperationService s
+                WHERE s.siteDistribution.customerContract.securityCompanyId = :securityCompanyId
+                AND s.siteDistribution.site.id = :siteId
+                AND s.siteDistribution.customerContract.id = :contractId
+            """)
+    List<LKCustomerContractOperationService> findSecurityContractOperationServices(
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("siteId") Long siteId,
+            @Param("contractId") Long contractId
+    );
 }

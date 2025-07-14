@@ -155,6 +155,22 @@ public class ExternalServiceImpl implements ExternalService {
     }
 
     @Override
+    public List<AttendanceWorkingPeriodData> getSecurityAttendanceDateWorkingPeriod(Long securityCompanyId, Long contractId, Long operationSiteId, LocalDate date) {
+        WeekDaysEnum todayWeekday = Utils.getWeekdayEnum(date);
+        return contractOperationServiceRepository.findSecurityContractOperationServices(
+                        securityCompanyId, operationSiteId, contractId
+                ).stream()
+                .filter(os -> os.getDays().contains(todayWeekday))
+                .map(os -> AttendanceWorkingPeriodData.builder()
+                        .id(os.getId())
+                        .quantity(os.getQuantity())
+                        .fromTime(DateUtils.toLocalTime(os.getSiteDistribution().getSite().getTimezone(), os.getFromTime()))
+                        .toTime(DateUtils.toLocalTime(os.getSiteDistribution().getSite().getTimezone(), os.getToTime()))
+                        .build())
+                .toList();
+    }
+
+    @Override
     public List<ContractPlannedQntDto> getContractPlannedQnt(
             Long customerId, Long securityCompanyId, List<Long> contractIds, LocalDate from, LocalDate to
     ) {

@@ -14,5 +14,6 @@ public interface ExternalService {
     WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id);
     List<AttendanceStatsData> getAttendanceStats(AttendanceStatsDto dto);
     List<AttendanceWorkingPeriodData> getAttendanceDateWorkingPeriod(Long customerId, Long contractId, Long operationSiteId, LocalDate date);
+    List<AttendanceWorkingPeriodData> getSecurityAttendanceDateWorkingPeriod(Long securityCompanyId, Long contractId, Long operationSiteId, LocalDate date);
     List<ContractPlannedQntDto> getContractPlannedQnt(Long customerId, Long securityCompanyId, List<Long> contractId, LocalDate from, LocalDate to);
 }

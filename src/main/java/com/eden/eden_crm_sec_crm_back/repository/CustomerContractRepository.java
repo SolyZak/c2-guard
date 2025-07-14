@@ -153,7 +153,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             "WHERE (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId) " +
             "AND (:contractIds IS NULL OR c.id IN :contractIds) " +
             "AND (c.startAgreementDate <= :to AND c.endAgreementDate >= :from)" +
-            "AND c.customer.id = :customerId "
+            "AND (:customerId IS NULL OR c.customer.id = :customerId) "
     )
     @EntityGraph(attributePaths = {"customerAgreement", "siteDistributions.operationServices"})
     List<CustomerContract> listContracts(
@@ -167,7 +167,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
     @Query("SELECT c FROM CustomerContract c " +
             "WHERE (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId) " +
             "AND (:contractIds IS NULL OR c.id IN :contractIds) " +
-            "AND c.customer.id = :customerId "
+            "AND (:customerId IS NULL OR c.customer.id = :customerId) "
     )
     @EntityGraph(attributePaths = {"customerAgreement", "siteDistributions.operationServices"})
     List<CustomerContract> listContracts(
