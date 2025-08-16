@@ -18,4 +18,6 @@ public class OperationSiteInfo {
     private Long securityCompanyId;
     private String securityCompanyName;
     private CustomTimezone timezone;
+    private Double latitude;
+    private Double longitude;
 }
