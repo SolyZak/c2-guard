@@ -20,8 +20,4 @@ public class AlertTriggerSeverityService {
                                                                           final Long servicePlatformId) {
         return alertTriggerSeverityRepository.findByTriggerIdAndServicePlatformId(triggerId, servicePlatformId);
     }
-
-    // TODO will be implemented in future
-    /*private void createNewC2AlertEventFromAlertTriggerSeverity(final AlertTriggerSeverity alertTriggerSeverity) {
-    }*/
 }

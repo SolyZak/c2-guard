@@ -3,14 +3,14 @@ CREATE TABLE alert_trigger_severity (
     alert_id INT NOT NULL,
     trigger_id INT NOT NULL,
     service_platform_id INT NOT NULL,
-    severity TEXT,
+    severity TEXT NOT NULL DEFAULT 'LOW',
     db_version INT NOT NULL DEFAULT 0
 );
 
-INSERT INTO alert_trigger_severity (alert_id, trigger_id, service_platform_id, severity, db_version)
+INSERT INTO alert_trigger_severity (id, alert_id, trigger_id, service_platform_id, severity, db_version)
 VALUES
-    (1, 1, 1, 'HIGH', 0),
-    (1, 1, 1, 'LOW', 0);
+    (1, 1, 1, 1, 'HIGH', 0),
+    (1, 1, 1, 1, 'LOW', 0);
 
 CREATE TABLE service_platform (
     id SERIAL PRIMARY KEY,
@@ -35,7 +35,7 @@ CREATE TABLE crm_trigger_log (
     customer_id INT NOT NULL,
     longitude DECIMAL NOT NULL,
     latitude DECIMAL NOT NULL,
-    event_time TIME WITH TIME ZONE,
+    event_time TIME WITH TIME ZONE NOT NULL,
     event_date DATE NOT NULL,
     service_platform_id INT NOT NULL,
     description TEXT
