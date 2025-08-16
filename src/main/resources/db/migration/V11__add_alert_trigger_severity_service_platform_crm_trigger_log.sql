@@ -10,7 +10,7 @@ CREATE TABLE alert_trigger_severity (
 INSERT INTO alert_trigger_severity (id, alert_id, trigger_id, service_platform_id, severity, db_version)
 VALUES
     (1, 1, 1, 1, 'HIGH', 0),
-    (1, 1, 1, 1, 'LOW', 0);
+    (2, 1, 1, 1, 'LOW', 0);
 
 CREATE TABLE service_platform (
     id SERIAL PRIMARY KEY,
