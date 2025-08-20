@@ -3,14 +3,17 @@ CREATE TABLE alert_trigger_severity (
     alert_id INT NOT NULL,
     trigger_id INT NOT NULL,
     service_platform_id INT NOT NULL,
+    customer_id INT NOT NULL,
     severity TEXT NOT NULL DEFAULT 'LOW',
     db_version INT NOT NULL DEFAULT 0
 );
 
-INSERT INTO alert_trigger_severity (id, alert_id, trigger_id, service_platform_id, severity, db_version)
+INSERT INTO alert_trigger_severity (id, alert_id, trigger_id, service_platform_id, customer_id, severity, db_version)
 VALUES
-    (1, 1, 1, 1, 'HIGH', 0),
-    (2, 1, 1, 1, 'LOW', 0);
+    (1, 1, 1, 1, 1, 'HIGH', 0),
+    (2, 1, 1, 1, 1, 'LOW', 0),
+    (3, 1, 1, 3, 1, 'MEDIUM', 0),
+    (4, 2, 2, 4, 1, 'MEDIUM', 0);
 
 CREATE TABLE service_platform (
     id SERIAL PRIMARY KEY,

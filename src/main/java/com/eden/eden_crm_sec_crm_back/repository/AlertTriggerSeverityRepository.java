@@ -9,6 +9,11 @@ import java.util.List;
 @Repository
 public interface AlertTriggerSeverityRepository extends JpaRepository<AlertTriggerSeverity, Long> {
 
-    List<AlertTriggerSeverity> findByTriggerIdAndServicePlatformId(final Long triggerId, final Long servicePlatformId);
+    List<AlertTriggerSeverity> findByTriggerIdAndServicePlatformId(final Long triggerId,
+                                                                   final Long servicePlatformId);
+
+    List<AlertTriggerSeverity> findByTriggerIdAndServicePlatformIdAndCustomerId(final Long triggerId,
+                                                                                final Long servicePlatformId,
+                                                                                final Long customerId);
 
 }

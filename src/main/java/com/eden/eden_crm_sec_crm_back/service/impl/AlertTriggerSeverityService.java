@@ -20,4 +20,12 @@ public class AlertTriggerSeverityService {
                                                                           final Long servicePlatformId) {
         return alertTriggerSeverityRepository.findByTriggerIdAndServicePlatformId(triggerId, servicePlatformId);
     }
+
+    @Transactional
+    public List<AlertTriggerSeverity> findByTriggerIdAndServicePlatformIdAndCustomerId(final Long triggerId,
+                                                                                       final Long servicePlatformId,
+                                                                                       final Long customerId) {
+        return alertTriggerSeverityRepository.findByTriggerIdAndServicePlatformIdAndCustomerId(
+                triggerId, servicePlatformId, customerId);
+    }
 }

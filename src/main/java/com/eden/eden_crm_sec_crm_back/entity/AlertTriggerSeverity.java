@@ -24,6 +24,9 @@ public class AlertTriggerSeverity {
     @Column(name = "trigger_id")
     private Long triggerId;
 
+    @Column(name = "customer_id")
+    private Long customerId;
+
     @OneToOne
     @JoinColumn(name = "service_platform_id")
     private ServicePlatform servicePlatform;
