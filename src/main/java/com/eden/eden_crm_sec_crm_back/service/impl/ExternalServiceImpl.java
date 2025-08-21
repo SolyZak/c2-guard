@@ -54,6 +54,8 @@ public class ExternalServiceImpl implements ExternalService {
                 .name(operationSite.getName())
                 .operationSiteName(operationSite.getName())
                 .operationSiteId(operationSite.getId())
+                .longitude(operationSite.getLongitude())
+                .latitude(operationSite.getLatitude())
                 .customerId(operationSite.getCustomer().getId())
                 .customerName(operationSite.getCustomer().getName())
                 .timezone(operationSite.getTimezone());
