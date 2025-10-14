@@ -42,4 +42,8 @@ public class CustomerSite extends BaseAuditEntity {
     @Column(name = "timezone")
     @Enumerated(EnumType.STRING)
     private CustomTimezone timezone;
+
+    @ManyToOne
+    @JoinColumn(name = "premise_id")
+    Premise premise;
 }
