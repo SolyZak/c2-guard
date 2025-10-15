@@ -106,7 +106,9 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
         List<CustomerSitePremiseResponseDto> customerSiteResponseDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for(CustomerSite cs : resultPage.getContent()) {
-                CustomerSitePremiseResponseDto dto = new CustomerSitePremiseResponseDto(cs.getId(),cs.getName(),cs.getLatitude(),cs.getLongitude(),cs.getTolerance(),cs.getPremise() != null ? cs.getPremise().getName() : "");
+                CustomerSitePremiseResponseDto dto = new CustomerSitePremiseResponseDto(cs.getId(),cs.getName(),cs.getLatitude(),
+                        cs.getLongitude(),cs.getTolerance(),cs.getPremise() != null ? cs.getPremise().getName() : "",
+                        cs.getPremise() != null ? cs.getPremise().getId() : null);
                 customerSiteResponseDtos.add(dto);
             }
         }
