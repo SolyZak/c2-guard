@@ -1,9 +1,8 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckTextDTO;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.util.List;
 
 @Entity
 @Builder
@@ -15,4 +14,13 @@ import java.util.List;
 @DiscriminatorValue("text")
 public class TaskCheckText extends TaskCheck {
     private String notes;
+
+    @Override
+    public TaskCheckTextDTO mapToResponse() {
+        TaskCheckTextDTO dto = new TaskCheckTextDTO();
+        dto.setEvidence(getEvidence());
+        dto.setName(getName());
+        dto.setNotes(notes);
+        return dto;
+    }
 }

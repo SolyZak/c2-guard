@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDTO;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,4 +21,6 @@ public abstract class TaskCheck {
     @ManyToOne
     @JoinColumn(name = "task_id")
     private Task task;
+
+    public abstract TaskCheckDTO mapToResponse();
 }
