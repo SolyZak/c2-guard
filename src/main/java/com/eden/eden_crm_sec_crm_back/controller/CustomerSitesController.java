@@ -2,8 +2,10 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.CustomerSiteRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerSiteRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSitePremiseResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
+import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,5 +49,13 @@ public class CustomerSitesController {
     @DeleteMapping("/{id}")
     ApiResponse<String> deleteCustomerSite(@PathVariable Long id) {
         return ApiResponse.ok(customerSiteService.deleteSiteForCustomer(id));
+    }
+
+    @GetMapping("/paginate")
+    ApiResponse<PaginateResponse<CustomerSitePremiseResponseDto>> getAllPremisesPaginated(
+            @RequestParam(defaultValue = "0", name = "page") Integer page,
+            @RequestParam(defaultValue = "10", name = "size") Integer size,
+            @RequestParam(required = false, name = "search") String search) {
+        return ApiResponse.ok(customerSiteService.getSitesPaginated(search, page, size));
     }
 }

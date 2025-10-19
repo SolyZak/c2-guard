@@ -18,4 +18,7 @@ public class CustomerSiteRequestDto {
 
     @NotNull(message = "{validation.point.tolerance.required}")
     private Double tolerance;
+
+    @NotNull(message = "{validation.point.tolerance.required}")
+    private Long premiseId;
 }
