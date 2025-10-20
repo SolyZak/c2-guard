@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,4 +24,17 @@ public class Task extends BaseEntity{
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     List<TaskCheck> taskChecks;
+
+    @ManyToMany
+    @JoinTable(
+            name = "task_patrol_detail",
+            joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "patrol_detail_id")
+    )
+    List<PatrolDetail> patrolDetails;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id", referencedColumnName = "id", nullable = false)
+    @JsonBackReference
+    private Customer customer;
 }

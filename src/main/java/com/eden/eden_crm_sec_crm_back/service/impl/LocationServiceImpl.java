@@ -6,15 +6,19 @@ import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.PremiseNotProvided;
+import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
+import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.models.projections.LocationProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.QrCodeUtil;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import com.google.zxing.WriterException;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -43,12 +47,15 @@ import java.util.Optional;
 public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
     private final PremiseRepository premiseRepository;
+    private final CustomerRepository customerRepository;
+    private final Utils utils;
 
     private final EntityManager em;
 
     @Override
     @Transactional
     public void addNewLocation(AddLocationRequest request) throws IOException, WriterException {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         Optional<Premise> premiseOptional = premiseRepository.findById(request.getPremiseId());
         if (!premiseOptional.isPresent())
             throw new PremiseNotProvided();
@@ -64,6 +71,7 @@ public class LocationServiceImpl implements LocationService {
                 location.setAccessType(locationDto.getAccessType());
                 location.setLatitude(locationDto.getLatitude());
                 location.setLongitude(locationDto.getLongitude());
+                location.setCustomer(customer);
                 if (location.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType())) {
                     byte[] qr = QrCodeUtil.generateQrCode(location.getName(), 300, 300);
                     location.setQrImage(qr);
@@ -76,8 +84,9 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size) {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<LocationProjection> resultPage = locationRepository.searchByPremiseNameAndLocationNameAndAccessType(search, pageable);
+        Page<LocationProjection> resultPage = locationRepository.searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
         List<PremiseLocationDto> premiseLocationDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (LocationProjection location : resultPage.getContent()) {

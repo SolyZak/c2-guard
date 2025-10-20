@@ -101,8 +101,9 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
 
     @Override
     public PaginateResponse<CustomerSitePremiseResponseDto> getSitesPaginated(String search, int page, int size) {
+        Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<CustomerSite> resultPage = customerSiteRepository.searchByCustomerSiteNameAndPremiseName(search,pageable);
+        Page<CustomerSite> resultPage = customerSiteRepository.searchByCustomerSiteNameAndPremiseName(search,customer.getId(),pageable);
         List<CustomerSitePremiseResponseDto> customerSiteResponseDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for(CustomerSite cs : resultPage.getContent()) {

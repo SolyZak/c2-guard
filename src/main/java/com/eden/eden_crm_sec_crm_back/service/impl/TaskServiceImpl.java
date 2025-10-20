@@ -2,11 +2,15 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
+import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
+import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.models.TaskCheck;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,10 +26,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
+    private final CustomerRepository customerRepository;
+    private final Utils utils;
     @Override
     public PaginateResponse<TaskCheckDto> listTasks(Integer page, Integer size) {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<Task> taskPage = taskRepository.tasksPaginate(pageable);
+        Page<Task> taskPage = taskRepository.tasksPaginate(pageable, customer.getId());
         List<TaskCheckDto> taskCheckDtos = new ArrayList<>();
         if (taskPage.hasContent()) {
             for (Task task : taskPage.getContent()) {
@@ -54,6 +61,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void addTask(AddTaskRequest request) {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         Task task = new Task();
         task.setName(request.getTaskName());
         if (request.getChecks() != null) {
@@ -63,6 +71,7 @@ public class TaskServiceImpl implements TaskService {
             }
             task.setTaskChecks(taskChecks);
         }
+        task.setCustomer(customer);
         taskRepository.save(task);
     }
 }

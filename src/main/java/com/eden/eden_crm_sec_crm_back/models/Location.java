@@ -1,8 +1,11 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Builder
@@ -27,5 +30,19 @@ public class Location extends BaseAuditEntity {
     private Double latitude;
 
     @Lob
+    @Basic(fetch = FetchType.LAZY)
     private byte[] qrImage;
+
+    @ManyToMany
+    @JoinTable(
+            name = "location_patrol_detail",
+            joinColumns = @JoinColumn(name = "location_id"),
+            inverseJoinColumns = @JoinColumn(name = "patrol_detail_id")
+    )
+    List<PatrolDetail> patrolDetails;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id", referencedColumnName = "id", nullable = false)
+    @JsonBackReference
+    private Customer customer;
 }

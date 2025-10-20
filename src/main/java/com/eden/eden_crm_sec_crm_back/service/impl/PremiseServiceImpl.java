@@ -2,8 +2,10 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.PremiseRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseResponseDto;
+import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.exception.ValidationException;
 import com.eden.eden_crm_sec_crm_back.mapper.PremiseMapper;
+import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
@@ -25,12 +27,13 @@ public class PremiseServiceImpl {
     private final Utils utils;
 
     public PremiseResponseDto addPremise(PremiseRequestDto requestDto) {
-        //Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         Premise premise = premiseMapper.toEntity(requestDto);
         Optional<Premise> premiseExists = premiseRepository.findByCodeOrName(premise.getCode(), premise.getName());
         if (premiseExists.isPresent()) {
             throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
         }
+        premise.setCustomer(customer);
 
         premiseRepository.save(premise);
 
@@ -38,6 +41,7 @@ public class PremiseServiceImpl {
     }
 
     public List<PremiseResponseDto> getPremises() {
-        return premiseRepository.findAll().stream().map(premiseMapper::fromEntity).toList();
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        return premiseRepository.getCustomerPremises(customer.getId()).stream().map(premiseMapper::fromEntity).toList();
     }
 }
