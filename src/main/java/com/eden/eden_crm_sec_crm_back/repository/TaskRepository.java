@@ -20,4 +20,9 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
             select t.name from task t INNER JOIN task_patrol_detail tpd on t.id = tpd.task_id where tpd.patrol_detail_id = :detailsId 
             """, nativeQuery = true)
     List<String> getTaskNamesByDetailId(@Param("detailsId") Long detailsId);
+
+    @Query("""
+                SELECT t FROM Task t where t.customer.id = :customerId
+            """)
+    List<Task> tasksPaginate(@Param("customerId") Long customerId);
 }

@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.TaskDto;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.Task;
@@ -56,6 +57,18 @@ public class TaskServiceImpl implements TaskService {
                 taskPage.getTotalElements(),
                 (long) taskPage.getTotalPages()
         );
+    }
+
+    @Override
+    public List<TaskDto> listTasksNoPaginationForLoggedInCustomer() {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        List<Task> tasks = taskRepository.tasksPaginate(customer.getId());
+        List<TaskDto> taskDtos = new ArrayList<>();
+        for (Task task : tasks) {
+            TaskDto taskDto = new TaskDto(task.getName(), task.getId());
+            taskDtos.add(taskDto);
+        }
+        return taskDtos;
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.LocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -104,6 +105,19 @@ public class LocationServiceImpl implements LocationService {
                 (long) resultPage.getTotalPages()
         );
     }
+
+    @Override
+    public List<LocationWithPremiseDto> findLoggedInCustomerLocations() {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        List<LocationProjection> locations = locationRepository.listAllLoggedInCustomerLocations(customer.getId());
+        List<LocationWithPremiseDto> result = new ArrayList<>();
+        for (LocationProjection location : locations) {
+            LocationWithPremiseDto dto = new LocationWithPremiseDto(location.getName() + "-" + location.getPremise().getName(), location.getId());
+            result.add(dto);
+        }
+        return result;
+    }
+
     public byte[] getQrImage(Long id) {
         Session session = em.unwrap(Session.class);
         return session.doReturningWork(connection -> {
