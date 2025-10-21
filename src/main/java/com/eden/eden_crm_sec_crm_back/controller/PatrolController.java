@@ -17,13 +17,13 @@ public class PatrolController {
 
     private final PatrolService patrolService;
     @PostMapping
-    ApiResponse addLocation(@RequestBody @Valid AddPatrolRequest request) throws IOException, WriterException {
+    ApiResponse addPatrol(@RequestBody @Valid AddPatrolRequest request) throws IOException, WriterException {
         patrolService.addPatrol(request);
         return ApiResponse.created();
     }
 
     @GetMapping
-    ApiResponse listLocation(@RequestParam(defaultValue = "0", name = "page") Integer page,
+    ApiResponse listPatrols(@RequestParam(defaultValue = "0", name = "page") Integer page,
                              @RequestParam(defaultValue = "10", name = "size") Integer size,
                              @RequestParam(required = false, name = "search") String search) throws IOException, WriterException {
         return ApiResponse.ok(patrolService.listPatrol(page, size, search));
