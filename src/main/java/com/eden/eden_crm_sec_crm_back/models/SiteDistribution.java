@@ -49,4 +49,8 @@ public class SiteDistribution extends BaseEntity<Long> {
     @JoinColumn(name = "customer_contract_id", nullable = false)
     @JsonBackReference
     private CustomerContract customerContract;
+
+    @OneToOne
+    @JoinColumn(name = "contract_operation_site_distribution_patrol_id", referencedColumnName = "id")
+    ContractOperationSiteDistributionPatrol contractOperationSiteDistributionPatrol;
 }

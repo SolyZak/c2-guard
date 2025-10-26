@@ -118,6 +118,18 @@ public class LocationServiceImpl implements LocationService {
         return result;
     }
 
+    @Override
+    public List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        List<LocationProjection> patrolLocations = locationRepository.listAllLoggedInCustomerLocationsByPatrolId(customer.getId(), patrolId);
+        List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> result = new ArrayList<>();
+        for (LocationProjection locationProjection : patrolLocations) {
+            com.eden.eden_crm_sec_crm_back.dto.response.LocationDto dto = new com.eden.eden_crm_sec_crm_back.dto.response.LocationDto(locationProjection.getId(), locationProjection.getName());
+            result.add(dto);
+        }
+        return result;
+    }
+
     public byte[] getQrImage(Long id) {
         Session session = em.unwrap(Session.class);
         return session.doReturningWork(connection -> {

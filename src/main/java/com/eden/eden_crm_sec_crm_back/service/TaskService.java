@@ -12,4 +12,6 @@ public interface TaskService {
     void addTask(AddTaskRequest request);
     PaginateResponse<TaskCheckDto> listTasks(Integer page, Integer size);
     List<TaskDto> listTasksNoPaginationForLoggedInCustomer();
+
+    List<TaskDto> listTasksNoPaginationForLoggedInCustomerByLocationIdAndPatrolId(Long locationId, Long patrolId);
 }
