@@ -5,8 +5,10 @@ import com.eden.eden_crm_sec_crm_back.dto.request.LocationsTasksForPatrol;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.*;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.projections.LocationProjection;
 import com.eden.eden_crm_sec_crm_back.repository.*;
+import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ContractOperationSiteDistributionPatrolService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -27,7 +29,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
     private final TaskRepository taskRepository;
     private final CustomerRepository customerRepository;
     private final CustomerContractRepository contractRepository;
-    private final CustomerServiceRepository serviceRepository;
+    private final LKCustomerContractServiceRepository contractServiceRepository;
     private final Utils utils;
     @Override
     @Transactional
@@ -37,9 +39,9 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
             throw new BusinessException("validation.contract.invalid", HttpStatus.NOT_FOUND);
         }
 
-        Optional<CustomerService> optionalCustomerService = serviceRepository.findById(serviceId);
+        Optional<LKCustomerContractService> optionalCustomerService = contractServiceRepository.findById(serviceId);
         if (!optionalCustomerService.isPresent()) {
-            throw new BusinessException("validation.service.invalid", HttpStatus.NOT_FOUND);
+            throw new BusinessException(MessageUtil.getMessage("validation.service.invalid"), HttpStatus.NOT_FOUND);
         }
 
         if (requestList != null && requestList.size() > 0) {

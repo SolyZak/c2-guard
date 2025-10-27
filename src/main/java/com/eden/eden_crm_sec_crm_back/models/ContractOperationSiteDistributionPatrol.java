@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,8 +37,8 @@ public class ContractOperationSiteDistributionPatrol {
     Map<Long, List<Long>> locations;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "customer_service_id", nullable = false)
-    private CustomerService customerService;
+    @JoinColumn(name = "customer_contract_service_id", nullable = false)
+    private LKCustomerContractService customerService;
 
     @ManyToOne
     @JoinColumn(name = "customer_contract_id", nullable = false)
