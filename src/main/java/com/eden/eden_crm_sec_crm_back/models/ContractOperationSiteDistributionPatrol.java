@@ -1,11 +1,12 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
-import com.eden.eden_crm_sec_crm_back.config.MapJsonConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,9 +32,14 @@ public class ContractOperationSiteDistributionPatrol {
     LocalDate startDate;
 
     @Column(columnDefinition = "jsonb")
-    @Convert(converter = MapJsonConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     Map<Long, List<Long>> locations;
 
-    @OneToOne(mappedBy = "contractOperationSiteDistributionPatrol")
-    private SiteDistribution siteDistribution;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_service_id", nullable = false)
+    private CustomerService customerService;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_contract_id", nullable = false)
+    private CustomerContract customerContract;
 }

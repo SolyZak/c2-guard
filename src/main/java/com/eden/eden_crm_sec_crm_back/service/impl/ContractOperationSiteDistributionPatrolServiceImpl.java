@@ -26,10 +26,21 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
     private final LocationRepository locationRepository;
     private final TaskRepository taskRepository;
     private final CustomerRepository customerRepository;
+    private final CustomerContractRepository contractRepository;
+    private final CustomerServiceRepository serviceRepository;
     private final Utils utils;
     @Override
     @Transactional
     public void add(List<ContractDistributionForPatrol> requestList, Long contractId, Long serviceId) {
+        Optional<CustomerContract> optionalCustomerContract =  contractRepository.findById(contractId);
+        if (!optionalCustomerContract.isPresent()) {
+            throw new BusinessException("validation.contract.invalid", HttpStatus.NOT_FOUND);
+        }
+
+        Optional<CustomerService> optionalCustomerService = serviceRepository.findById(serviceId);
+        if (!optionalCustomerService.isPresent()) {
+            throw new BusinessException("validation.service.invalid", HttpStatus.NOT_FOUND);
+        }
 
         if (requestList != null && requestList.size() > 0) {
             for (ContractDistributionForPatrol request : requestList) {
@@ -63,8 +74,11 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                 ContractOperationSiteDistributionPatrol contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol();
                 contractDistributionForPatrol.setPatrolId(request.getPatrolId());
                 contractDistributionForPatrol.setSiteId(request.getSiteId());
+                contractDistributionForPatrol.setStartDate(request.getStartDate());
 
                 contractDistributionForPatrol.setLocations(locations);
+                contractDistributionForPatrol.setCustomerContract(optionalCustomerContract.get());
+                contractDistributionForPatrol.setCustomerService(optionalCustomerService.get());
 
                 repository.save(contractDistributionForPatrol);
             }
