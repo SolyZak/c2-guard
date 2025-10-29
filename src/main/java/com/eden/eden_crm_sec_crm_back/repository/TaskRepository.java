@@ -8,13 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Set;
 
 public interface TaskRepository extends JpaRepository<Task,Long> {
 
     @Query("""
                 SELECT t FROM Task t where t.customer.id = :customerId
             """)
-    Page<Task> tasksPaginate(Pageable pageable, @Param("customerId") Long customerId);
+    Page<Task> listTasks(Pageable pageable, @Param("customerId") Long customerId);
 
     @Query(value = """
             select t.name from task t INNER JOIN task_patrol_detail tpd on t.id = tpd.task_id where tpd.patrol_detail_id = :detailsId 
@@ -24,5 +25,21 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
     @Query("""
                 SELECT t FROM Task t where t.customer.id = :customerId
             """)
-    List<Task> tasksPaginate(@Param("customerId") Long customerId);
+    List<Task> listTasks(@Param("customerId") Long customerId);
+
+    @Query("""
+                SELECT t FROM Task t where t.customer.id = :customerId and id in :taskIds
+            """)
+    List<Task> listTasksByIds(@Param("customerId") Long customerId, @Param("taskIds") Set<Long> tasksIds);
+
+    @Query("""
+                SELECT DISTINCT t
+                FROM PatrolDetail pd
+                JOIN pd.tasks t
+                JOIN pd.locations l
+                WHERE pd.patrol.id = :patrolId
+                  AND l.id = :locationId
+                  AND t.customer.id = :customerId
+            """)
+    List<Task> listLoggedInTasksByPatrolIdAndLocationId(@Param("customerId") Long customerId, @Param("patrolId") Long patrolId, @Param("locationId") Long locationId);
 }

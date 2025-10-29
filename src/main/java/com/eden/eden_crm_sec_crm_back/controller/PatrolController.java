@@ -28,4 +28,9 @@ public class PatrolController {
                              @RequestParam(required = false, name = "search") String search) throws IOException, WriterException {
         return ApiResponse.ok(patrolService.listPatrol(page, size, search));
     }
+
+    @GetMapping("/all")
+    ApiResponse listPatrolsNoPagination() throws IOException, WriterException {
+        return ApiResponse.ok(patrolService.listAllPatrols());
+    }
 }

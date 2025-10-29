@@ -33,7 +33,7 @@ public class TaskServiceImpl implements TaskService {
     public PaginateResponse<TaskCheckDto> listTasks(Integer page, Integer size) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<Task> taskPage = taskRepository.tasksPaginate(pageable, customer.getId());
+        Page<Task> taskPage = taskRepository.listTasks(pageable, customer.getId());
         List<TaskCheckDto> taskCheckDtos = new ArrayList<>();
         if (taskPage.hasContent()) {
             for (Task task : taskPage.getContent()) {
@@ -62,7 +62,19 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public List<TaskDto> listTasksNoPaginationForLoggedInCustomer() {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        List<Task> tasks = taskRepository.tasksPaginate(customer.getId());
+        List<Task> tasks = taskRepository.listTasks(customer.getId());
+        List<TaskDto> taskDtos = new ArrayList<>();
+        for (Task task : tasks) {
+            TaskDto taskDto = new TaskDto(task.getName(), task.getId());
+            taskDtos.add(taskDto);
+        }
+        return taskDtos;
+    }
+
+    @Override
+    public List<TaskDto> listTasksNoPaginationForLoggedInCustomerByLocationIdAndPatrolId(Long locationId, Long patrolId) {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        List<Task> tasks = taskRepository.listLoggedInTasksByPatrolIdAndLocationId(customer.getId(), patrolId, locationId);
         List<TaskDto> taskDtos = new ArrayList<>();
         for (Task task : tasks) {
             TaskDto taskDto = new TaskDto(task.getName(), task.getId());
