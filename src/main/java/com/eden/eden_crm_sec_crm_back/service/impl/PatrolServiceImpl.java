@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.base.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
+import com.eden.eden_crm_sec_crm_back.dto.response.PatrolKeyValueDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolResponseDetail;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolResponseDto;
 import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
@@ -140,6 +141,18 @@ public class PatrolServiceImpl implements PatrolService {
                 resultPage.getTotalElements(),
                 (long) resultPage.getTotalPages()
         );
+    }
+
+    @Override
+    public List<PatrolKeyValueDto> listAllPatrols() {
+        Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
+        List<Patrol> patrols = patrolRepository.listAllLoggedInCustomerPatrols(customer.getId());
+        List<PatrolKeyValueDto> result = new ArrayList<>();
+        for (Patrol patrol : patrols) {
+            PatrolKeyValueDto dto = new PatrolKeyValueDto(patrol.getId(), patrol.getName());
+            result.add(dto);
+        }
+        return result;
     }
 
     static boolean isNumeric(String str) {

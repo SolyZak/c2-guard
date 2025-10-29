@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 
 public interface PatrolRepository extends JpaRepository<Patrol,Long> {
 
@@ -38,5 +40,10 @@ public interface PatrolRepository extends JpaRepository<Patrol,Long> {
     Page<Patrol> patrolPaginate(Pageable pageable,
                                           @Param("search") String search,
                                           @Param("customerId") Long customerId);
+
+    @Query("""
+            select p from Patrol p where p.customer.id = :customerId
+            """)
+    List<Patrol> listAllLoggedInCustomerPatrols(@Param("customerId") Long customerId);
 
 }
