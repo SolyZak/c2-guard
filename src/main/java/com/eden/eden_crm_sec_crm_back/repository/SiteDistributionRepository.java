@@ -24,6 +24,13 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
 
     @Query("""
             SELECT sd FROM SiteDistribution sd
+            WHERE sd.customerContract.id = :contractId
+            AND sd.lkCustomerContractService.id = :lkCustomerServiceId
+            """)
+    Optional<SiteDistribution> findOneByContractAndLKCustomerService(Long contractId, Long lkCustomerServiceId);
+
+    @Query("""
+            SELECT sd FROM SiteDistribution sd
             LEFT JOIN FETCH sd.site
             WHERE sd.site.id = :siteId
             AND sd.customerContract.startAgreementDate <= :today

@@ -33,13 +33,11 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
     List<Task> listTasksByIds(@Param("customerId") Long customerId, @Param("taskIds") Set<Long> tasksIds);
 
     @Query("""
-                SELECT DISTINCT t
+                SELECT DISTINCT pd.task
                 FROM PatrolDetail pd
-                JOIN pd.tasks t
-                JOIN pd.locations l
                 WHERE pd.patrol.id = :patrolId
-                  AND l.id = :locationId
-                  AND t.customer.id = :customerId
+                  AND pd.location.id = :locationId
+                  AND pd.task.customer.id = :customerId
             """)
     List<Task> listLoggedInTasksByPatrolIdAndLocationId(@Param("customerId") Long customerId, @Param("patrolId") Long patrolId, @Param("locationId") Long locationId);
 }

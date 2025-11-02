@@ -1,17 +1,15 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
+import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
+import java.time.OffsetTime;
 
 @Entity
 @Table(name = "contract_operation_distribution_site_patrol")
@@ -31,10 +29,8 @@ public class ContractOperationSiteDistributionPatrol {
     Long siteId;
 
     LocalDate startDate;
-
-    @Column(columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    Map<Long, List<Long>> locations;
+    private Long locationId;
+    private Long taskId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_contract_service_id", nullable = false)
@@ -43,4 +39,15 @@ public class ContractOperationSiteDistributionPatrol {
     @ManyToOne
     @JoinColumn(name = "customer_contract_id", nullable = false)
     private CustomerContract customerContract;
+
+    private OffsetTime fromTime;
+    private OffsetTime toTime;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    Customer customer;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private TaskDistributionStatus status;
 }
