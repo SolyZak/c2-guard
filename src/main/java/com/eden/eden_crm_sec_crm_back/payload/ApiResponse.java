@@ -31,6 +31,9 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> ok(T payload) {
         return status(HttpStatus.OK, payload, null);
     }
+    public static <T> ApiResponse<T> created() {
+        return status(HttpStatus.CREATED, null, null);
+    }
 
     public static <T> ApiResponse<T> error(T payload) {
         return status(HttpStatus.BAD_REQUEST, payload, null);

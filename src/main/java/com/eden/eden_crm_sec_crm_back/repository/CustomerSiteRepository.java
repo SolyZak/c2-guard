@@ -2,6 +2,8 @@ package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -67,5 +69,13 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     List<GeneralDropdownProjection> findBySecurityCompanyId(
             @Param("securityCompanyId") Long securityCompanyId,
             @Param("today") LocalDate today
+    );
+
+    @Query("""
+                SELECT cs FROM CustomerSite cs JOIN Premise p on p.id = cs.premise.id where cs.customer.id = :customerId AND lower(p.name) like lower(concat('%', :search, '%')) OR lower(cs.name) like lower(concat('%',:search,'%')) OR :search is null
+            """)
+    Page<CustomerSite> searchByCustomerSiteNameAndPremiseName(
+            @Param("search") String search, @Param("customerId") Long customerId,
+            Pageable pageable
     );
 }
