@@ -42,4 +42,6 @@ public class CustomerSite extends BaseAuditEntity {
     @Column(name = "timezone")
     @Enumerated(EnumType.STRING)
     private CustomTimezone timezone;
+    @Column
+    private String jobDescription;
 }
