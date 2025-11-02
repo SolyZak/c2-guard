@@ -46,4 +46,6 @@ public class CustomerSite extends BaseAuditEntity {
     @ManyToOne
     @JoinColumn(name = "premise_id")
     Premise premise;
+    @Column
+    private String jobDescription;
 }
