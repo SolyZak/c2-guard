@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.CustomerSiteRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerSiteRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteJobDescResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSitePremiseResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -28,7 +29,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -120,6 +123,12 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
                 resultPage.getTotalElements(),
                 (long) resultPage.getTotalPages()
         );
+    }
+
+    @Override
+    public CustomerSiteJobDescResponseDto getCustomerSiteJobDescriptionById(Long id) {
+        CustomerSite customerSite = customerSiteRepository.findById(id).orElseThrow(() -> new BusinessException(MessageUtil.getMessage("not-found"), HttpStatus.NOT_FOUND));
+        return new CustomerSiteJobDescResponseDto(Arrays.stream(customerSite.getJobDescription().split(",")).toList());
     }
 
     private Long getLoggedInCustomerId() {

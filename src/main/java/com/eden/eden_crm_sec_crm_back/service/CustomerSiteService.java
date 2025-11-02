@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.CustomerSiteRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerSiteRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteJobDescResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSitePremiseResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
@@ -18,4 +19,6 @@ public interface CustomerSiteService {
     CustomerSite findOne(Long id, Long customerId);
 
     PaginateResponse<CustomerSitePremiseResponseDto>  getSitesPaginated(String search, int page, int size);
+
+    CustomerSiteJobDescResponseDto getCustomerSiteJobDescriptionById(Long id);
 }

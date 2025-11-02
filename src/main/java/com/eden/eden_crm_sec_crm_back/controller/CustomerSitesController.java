@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.CustomerSiteRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerSiteRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteJobDescResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSitePremiseResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
@@ -57,5 +58,11 @@ public class CustomerSitesController {
             @RequestParam(defaultValue = "10", name = "size") Integer size,
             @RequestParam(required = false, name = "search") String search) {
         return ApiResponse.ok(customerSiteService.getSitesPaginated(search, page, size));
+    }
+
+    @Operation(summary = "Get operation site job desc By Id")
+    @GetMapping("/{id}")
+    ApiResponse<CustomerSiteJobDescResponseDto> getCustomerSiteJobDesc(@PathVariable Long id) {
+        return ApiResponse.ok(customerSiteService.getCustomerSiteJobDescriptionById(id));
     }
 }
