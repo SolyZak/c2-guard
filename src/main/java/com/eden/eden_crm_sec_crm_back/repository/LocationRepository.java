@@ -13,7 +13,7 @@ import java.util.Set;
 
 public interface LocationRepository extends JpaRepository<Location,Long> {
     @Query("""
-                SELECT l.id as id,l.premise as premise,l.name as name,l.accessType as accessType,l.longitude as longitude,l.latitude as latitude FROM Location l JOIN Premise p on p.id = l.premise.id where l.customer.id = :customerId AND lower(p.name) like lower(concat('%', :search, '%')) OR lower(l.name) like lower(concat('%', :search, '%')) OR lower(l.accessType) like lower(concat('%', :search, '%')) OR :search is null
+                SELECT l.id as id,l.premise as premise,l.name as name,l.accessType as accessType,l.longitude as longitude,l.latitude as latitude FROM Location l JOIN Premise p on p.id = l.premise.id where l.customer.id = :customerId AND (lower(p.name) like lower(concat('%', :search, '%')) OR lower(l.name) like lower(concat('%', :search, '%')) OR lower(l.accessType) like lower(concat('%', :search, '%')) OR :search is null)
             """)
     Page<LocationProjection> searchByPremiseNameAndLocationNameAndAccessType(@Param("search") String search, @Param("customerId") Long customerId,
                                                                              Pageable pageable);
