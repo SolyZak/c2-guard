@@ -144,7 +144,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             CustomTimezone customerTimezone,
             Long serviceHours
     ) {
-        ZoneId customerZone = DateUtils.getTimeWithTimezone(customerTimezone);
+        ZoneId customerZone = ZoneId.of(customerTimezone.name());
 
         ZonedDateTime fromZoned = rawFromTime.atDate(LocalDate.now()).atZone(customerZone);
         ZonedDateTime toZoned = fromZoned.plusHours(serviceHours);
