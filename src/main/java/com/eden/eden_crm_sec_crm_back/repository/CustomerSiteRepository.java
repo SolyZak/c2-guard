@@ -72,7 +72,7 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     );
 
     @Query("""
-                SELECT cs FROM CustomerSite cs JOIN Premise p on p.id = cs.premise.id where cs.customer.id = :customerId AND lower(p.name) like lower(concat('%', :search, '%')) OR lower(cs.name) like lower(concat('%',:search,'%')) OR :search is null
+                SELECT cs FROM CustomerSite cs JOIN Premise p on p.id = cs.premise.id where cs.customer.id = :customerId AND (lower(p.name) like lower(concat('%', :search, '%')) OR lower(cs.name) like lower(concat('%',:search,'%')) OR :search is null)
             """)
     Page<CustomerSite> searchByCustomerSiteNameAndPremiseName(
             @Param("search") String search, @Param("customerId") Long customerId,
