@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
+import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
 import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
@@ -180,13 +181,23 @@ public class TaskServiceImpl implements TaskService {
         if (todayTasks.getPeriodStatus().equals(TaskDistributionStatus.FINISHED.name()) || todayTasks.getPeriodStatus().equals(TaskDistributionStatus.MISSED.name())) {
             return todayTasks.getPeriodStatus();
         }
-        OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
-        if (current.isBefore(todayTasks.getEndTime()) && current.isAfter(todayTasks.getStartTime())) {
-            return TaskDistributionStatus.CURRENT.name();
-        } else if (current.isAfter(todayTasks.getEndTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
-            return TaskDistributionStatus.MISSED.name();
+        if (todayTasks.getPatrolFreqType().equals(PatrolFrequencyEnum.EVERY_PERIOD.name())) {
+            OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
+            if (current.isBefore(todayTasks.getEndTime()) && current.isAfter(todayTasks.getStartTime())) {
+                return TaskDistributionStatus.CURRENT.name();
+            } else if (current.isAfter(todayTasks.getEndTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
+                return TaskDistributionStatus.MISSED.name();
+            }
+            return TaskDistributionStatus.CREATED.name();
+        } else {
+            OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
+            if (LocalDate.now().equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime())) {
+                return TaskDistributionStatus.MISSED.name();
+            } else if (LocalDate.now().equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getStartTime()) && current.isBefore(todayTasks.getEndTime())) {
+                return TaskDistributionStatus.CURRENT.name();
+            }
+            return TaskDistributionStatus.CREATED.name();
         }
-        return TaskDistributionStatus.CREATED.name();
     }
 
     @Override
