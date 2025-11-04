@@ -23,7 +23,7 @@ public class PatrolDetail {
     @JoinColumn(name = "patrol_id", nullable = false)
     Patrol patrol;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id", nullable = false)
     private Location location;
 

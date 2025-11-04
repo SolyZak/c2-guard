@@ -128,4 +128,16 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             @Param("contractId") Long contractId
     );
 
+    @Query("""
+            SELECT sd FROM SiteDistribution sd
+            WHERE sd.site.id = :siteId
+            AND sd.customerContract.id = :contractId
+            AND sd.lkCustomerContractService.id = :serviceId
+            """)
+    Optional<SiteDistribution> findBySiteIdAndContractIdAndServiceId(
+            @Param("siteId") Long siteId,
+            @Param("contractId") Long contractId,
+            @Param("serviceId") Long serviceId
+    );
+
 }

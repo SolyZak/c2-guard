@@ -22,17 +22,15 @@ public interface PatrolRepository extends JpaRepository<Patrol,Long> {
                       or exists (
                         select 1
                         from location l
-                        join location_patrol_detail lpd on l.id = lpd.location_id
-                        join patrol_detail pd on pd.id = lpd.patrol_detail_id
-                        where pd.patrol_id = p.id
+                        join patrol_detail lpd on l.id = lpd.location_id
+                        where lpd.patrol_id = p.id
                         and lower(l.name) like lower(concat('%', :search, '%'))
                       )
                       or exists (
                         select 1
                         from task t
-                        join task_patrol_detail tpd on t.id = tpd.task_id
-                        join patrol_detail pd on pd.id = tpd.patrol_detail_id
-                        where pd.patrol_id = p.id
+                        join patrol_detail tpd on t.id = tpd.task_id
+                        where tpd.patrol_id = p.id
                         and lower(t.name) like lower(concat('%', :search, '%'))
                       )
                     )

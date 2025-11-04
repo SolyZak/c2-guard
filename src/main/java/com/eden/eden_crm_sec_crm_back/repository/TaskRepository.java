@@ -1,12 +1,14 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.models.Task;
+import com.eden.eden_crm_sec_crm_back.models.projections.TodayTasksProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -18,7 +20,7 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
     Page<Task> listTasks(Pageable pageable, @Param("customerId") Long customerId);
 
     @Query(value = """
-            select t.name from task t INNER JOIN task_patrol_detail tpd on t.id = tpd.task_id where tpd.patrol_detail_id = :detailsId 
+            select t.name from task t INNER JOIN patrol_detail tpd on t.id = tpd.task_id where tpd.id = :detailsId 
             """, nativeQuery = true)
     List<String> getTaskNamesByDetailId(@Param("detailsId") Long detailsId);
 
@@ -40,4 +42,21 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
                   AND pd.task.customer.id = :customerId
             """)
     List<Task> listLoggedInTasksByPatrolIdAndLocationId(@Param("customerId") Long customerId, @Param("patrolId") Long patrolId, @Param("locationId") Long locationId);
+
+    @Query("""
+            SELECT t.name as taskName, p.name as patrolName, l.name as locationName, pr.name as premiseName, d.endDate as endDate, d.fromTime as startTime, d.toTime as endTime, d.patrolFrequencyType as patrolFreqType
+            FROM Task t JOIN t.patrolDetails pd 
+            JOIN pd.patrol p  
+            JOIN pd.location l 
+            JOIN l.premise pr
+            JOIN ContractOperationSiteDistributionPatrol d on t.id = d.taskId 
+            AND l.id = d.locationId
+            AND p.id = d.patrolId
+            where d.customer.id = :customerId AND d.customerContract.id = :contractId 
+            AND d.customerService.id = :serviceId AND d.siteId = :siteId
+            AND :currentDate BETWEEN d.startDate AND d.endDate
+            AND d.uniqueId = :uniqueId
+            """)
+    List<TodayTasksProjection> getTodayTasksByServiceIdAndContractId(@Param("customerId") Long customerId, @Param("contractId") Long contractId
+            , @Param("serviceId") Long serviceId, @Param("siteId") Long siteId, @Param("currentDate") LocalDate currentDate, @Param("uniqueId") String uniqueId);
 }

@@ -36,7 +36,7 @@ public interface LKCustomerContractOperationServiceRepository extends JpaReposit
     );
 
     @Query("""
-                SELECT s.fromTime as startTime, s.toTime as endTime FROM LKCustomerContractOperationService s
+                SELECT s.id as id, s.fromTime as startTime, s.toTime as endTime FROM LKCustomerContractOperationService s
                 WHERE s.siteDistribution.id = :distributionId
             """)
     List<DistributionTimesProjection> findAllOffsetStartAndEndByDistributionId(

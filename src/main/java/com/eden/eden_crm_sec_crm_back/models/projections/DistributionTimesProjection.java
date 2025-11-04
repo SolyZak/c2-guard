@@ -5,4 +5,5 @@ import java.time.OffsetTime;
 public interface DistributionTimesProjection {
     OffsetTime getStartTime();
     OffsetTime getEndTime();
+    Long getId();
 }

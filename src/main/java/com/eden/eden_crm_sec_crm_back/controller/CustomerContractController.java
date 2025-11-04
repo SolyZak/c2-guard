@@ -107,6 +107,16 @@ public class CustomerContractController {
         return ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistribution(id));
     }
 
+    @Operation(summary = "Get times for a distribution (repeat with quantity more than one)")
+    @GetMapping("/distribute/quantity/{contractId}/{serviceId}/{siteId}")
+    public ApiResponse<List<DistributionTimesWithQuantity>> getTimesForDistributionWithQuantity(
+            @PathVariable("contractId") Long contractId,
+            @PathVariable("serviceId") Long serviceId,
+            @PathVariable("siteId") Long siteId
+    ) {
+        return ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistributionWithQuantity(contractId, serviceId, siteId));
+    }
+
     @Operation(summary = "Get distributed operation sites for a selected contract & contract service API")
     @GetMapping("/distributed/operation-sites")
     public ApiResponse<List<DistributedOperationSite>> distributedOperationSites(

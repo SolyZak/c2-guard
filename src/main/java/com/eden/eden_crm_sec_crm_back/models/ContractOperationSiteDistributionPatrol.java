@@ -1,6 +1,5 @@
 package com.eden.eden_crm_sec_crm_back.models;
 
-import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,6 +28,7 @@ public class ContractOperationSiteDistributionPatrol {
     Long siteId;
 
     LocalDate startDate;
+    LocalDate endDate;
     private Long locationId;
     private Long taskId;
 
@@ -47,7 +47,7 @@ public class ContractOperationSiteDistributionPatrol {
     @JoinColumn(name = "customer_id")
     Customer customer;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private TaskDistributionStatus status;
+    private String patrolFrequencyType;
+    private String status;
+    private String uniqueId;
 }

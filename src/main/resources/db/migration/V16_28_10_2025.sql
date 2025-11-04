@@ -73,7 +73,7 @@ FOREIGN KEY (task_id) REFERENCES task(id);
 
 ALTER TABLE contract_operation_site_distribution
 ADD CONSTRAINT uq_contract_operation_site_distribution_contract_and_service
-UNIQUE (customer_contract_id, customer_contract_service_id);
+UNIQUE (customer_contract_id, customer_contract_service_id, operation_site_id);
 
 -- 1. Drop the old JSONB column since it's no longer used
 ALTER TABLE contract_operation_distribution_site_patrol
