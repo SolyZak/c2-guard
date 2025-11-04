@@ -18,7 +18,7 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     Page<LocationProjection> searchByPremiseNameAndLocationNameAndAccessType(@Param("search") String search, @Param("customerId") Long customerId,
                                                                              Pageable pageable);
     @Query(value = """
-            select l.name from location l INNER JOIN location_patrol_detail lpd on l.id = lpd.location_id where lpd.patrol_detail_id = :detailsId 
+            select l.name from location l INNER JOIN patrol_detail lpd on l.id = lpd.location_id where lpd.id = :detailsId 
             """, nativeQuery = true)
     List<String> getLocationNamesByDetailId(@Param("detailsId") Long detailsId);
 

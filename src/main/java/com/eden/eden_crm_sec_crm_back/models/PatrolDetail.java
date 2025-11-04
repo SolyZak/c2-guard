@@ -23,10 +23,15 @@ public class PatrolDetail {
     @JoinColumn(name = "patrol_id", nullable = false)
     Patrol patrol;
 
-    @ManyToMany(mappedBy = "patrolDetails")
-    private List<Location> locations;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id", nullable = false)
+    private Location location;
 
-    @ManyToMany(mappedBy = "patrolDetails")
-    List<Task> tasks;
+    @ManyToOne
+    @JoinColumn(name = "task_id", nullable = false)
+    Task task;
+
+    @OneToMany(mappedBy = "patrolDetail")
+    List<PatrolAssignment> patrolAssignments;
 
 }

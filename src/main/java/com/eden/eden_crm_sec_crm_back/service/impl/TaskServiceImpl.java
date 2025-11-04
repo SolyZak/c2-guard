@@ -1,14 +1,21 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
-import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.TaskDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
+import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
+import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
+import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.models.TaskCheck;
+import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskCheckPatrolExecution;
+import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecution;
+import com.eden.eden_crm_sec_crm_back.models.projections.TodayTasksProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
+import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -17,17 +24,24 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
+    private final TaskPatrolExecutionRepository taskPatrolExecutionRepository;
     private final CustomerRepository customerRepository;
+    private final ContractOperationSiteDistributionPatrolRepository repository;
     private final Utils utils;
     @Override
     public PaginateResponse<TaskCheckDto> listTasks(Integer page, Integer size) {
@@ -81,6 +95,160 @@ public class TaskServiceImpl implements TaskService {
             taskDtos.add(taskDto);
         }
         return taskDtos;
+    }
+
+    @Override
+    public TodayTasksResponseDto getTodayTasks(Long contractId, Long serviceId, Long siteId, String uniqueId) {
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        List<TodayTasksProjection> todayTasksProjections = taskRepository.getTodayTasksByServiceIdAndContractId(
+                customer.getId(), contractId, serviceId, siteId, LocalDate.now(), uniqueId
+                );
+        Map<TodayTasks, List<TodayTasks>> map = new HashMap<>();
+        for (TodayTasksProjection projection : todayTasksProjections) {
+            TodayTasks search = new TodayTasks(
+                    projection.getTaskName(),
+                    projection.getPatrolName(),
+                    projection.getLocationName(),
+                    projection.getPremiseName(),
+                    projection.getEndDate(),
+                    projection.getPatrolFreqType(),
+                    projection.getTaskId(),
+                    projection.getPatrolDistributionId(),
+                    projection.getPeriodStatus()
+            );
+            if (map.get(search) == null) {
+                List<TodayTasks> list = new ArrayList<>();
+                list.add(new TodayTasks(
+                        projection.getTaskName(),
+                        projection.getPatrolName(),
+                        projection.getLocationName(),
+                        projection.getPremiseName(),
+                        projection.getEndDate(),
+                        projection.getStartTime(),
+                        projection.getEndTime(),
+                        projection.getPatrolFreqType(),
+                        projection.getTaskId(),
+                        projection.getPatrolDistributionId(),
+                        projection.getPeriodStatus()
+                ));
+                map.put(search, list);
+            } else {
+                map.get(search).add(new TodayTasks(
+                        projection.getTaskName(),
+                        projection.getPatrolName(),
+                        projection.getLocationName(),
+                        projection.getPremiseName(),
+                        projection.getEndDate(),
+                        projection.getStartTime(),
+                        projection.getEndTime(),
+                        projection.getPatrolFreqType(),
+                        projection.getTaskId(),
+                        projection.getPatrolDistributionId(),
+                        projection.getPeriodStatus()
+                ));
+            }
+        }
+        List<TodayTaskEntryDto> tasks = new ArrayList<>();
+        List<Long> missedIds = new ArrayList<>();
+        for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
+            List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
+                    .map(tt -> new TodayTaskEntryTimesDto(tt.getStartTime(),tt.getEndTime(), getTimePeriodStatus(tt), tt.getPatrolDistributionId())).sorted(Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)).collect(Collectors.toList());
+            TodayTaskEntryDto task = new TodayTaskEntryDto(
+                    entry.getKey().getTaskName(),
+                    entry.getKey().getPatrolName(),
+                    entry.getKey().getLocationName(),
+                    entry.getKey().getPremiseName(),
+                    entry.getKey().getPatrolFreqType(),
+                    entry.getKey().getEndDate(),
+                    times,
+                    entry.getKey().getTaskId()
+            );
+            tasks.add(task);
+            missedIds.addAll(times.stream().filter(t -> t.getStatus().equals(TaskDistributionStatus.MISSED.name())).map(t -> t.getPatrolDistributionId()).collect(Collectors.toList()));
+        }
+        if (missedIds.size() > 0) {
+            List<ContractOperationSiteDistributionPatrol> distributionPatrols = repository.findAllById(missedIds);
+            for (int i = 0; i < distributionPatrols.size() ; i++) {
+                distributionPatrols.get(i).setStatus(TaskDistributionStatus.MISSED.name());
+            }
+            repository.saveAll(distributionPatrols);
+        }
+        return new TodayTasksResponseDto(tasks);
+    }
+
+    private String getTimePeriodStatus(TodayTasks todayTasks) {
+        if (todayTasks.getPeriodStatus().equals(TaskDistributionStatus.FINISHED.name()) || todayTasks.getPeriodStatus().equals(TaskDistributionStatus.MISSED.name())) {
+            return todayTasks.getPeriodStatus();
+        }
+        OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
+        if (current.isBefore(todayTasks.getEndTime()) && current.isAfter(todayTasks.getStartTime())) {
+            return TaskDistributionStatus.CURRENT.name();
+        } else if (current.isAfter(todayTasks.getEndTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
+            return TaskDistributionStatus.MISSED.name();
+        }
+        return TaskDistributionStatus.CREATED.name();
+    }
+
+    @Override
+    public TaskCheckDto getTaskById(Long taskId) {
+        Optional<Task> optionalTask = taskRepository.findById(taskId);
+        if (!optionalTask.isPresent()){
+            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
+        }
+        Task task = optionalTask.get();
+        TaskCheckDto dto = null;
+        if (task.getTaskChecks() != null && task.getTaskChecks().size() > 0) {
+            List<TaskCheckDTO> taskCheckDTOS = new ArrayList<>();
+            for (TaskCheck taskCheck : task.getTaskChecks())
+                taskCheckDTOS.add(taskCheck.mapToResponse());
+            dto = new TaskCheckDto(task.getName(), taskCheckDTOS);
+        } else {
+            dto = new TaskCheckDto(task.getName(), null);
+        }
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void executeTask(AddTaskDistributionRequest request) {
+        Optional<ContractOperationSiteDistributionPatrol> optionalDistribution =  repository.findById(request.getPatrolDistributionId());
+        if (!optionalDistribution.isPresent()) {
+            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
+        }
+        Optional<Task> optionalTask = taskRepository.findById(request.getTaskId());
+        if (!optionalTask.isPresent()) {
+            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
+        }
+        ContractOperationSiteDistributionPatrol patrolDistribution = optionalDistribution.get();
+        Task task = optionalTask.get();
+
+        if (!patrolDistribution.getTaskId().equals(task.getId())) {
+            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
+        }
+
+        if (task.getTaskChecks().size() != request.getChecks().size()) {
+            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
+        } else {
+            for (int i=0;i<task.getTaskChecks().size();i++) {
+                if (!task.getTaskChecks().get(i).mapToResponse().getClass().equals(request.getChecks().get(i).getClass()))
+                    throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
+            }
+        }
+
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        TaskPatrolExecution taskPatrolExecution = new TaskPatrolExecution();
+        taskPatrolExecution.setId(request.getTaskId());
+        taskPatrolExecution.setName(task.getName());
+        if (request.getChecks() != null) {
+            List<TaskCheckPatrolExecution> taskChecksPatrolExecution = new ArrayList<>(request.getChecks().size());
+            for (TaskCheckDTO dto : request.getChecks()) {
+                taskChecksPatrolExecution.add(dto.mapToExecutionEntity(taskPatrolExecution));
+            }
+            taskPatrolExecution.setTaskCheckPatrolExecutions(taskChecksPatrolExecution);
+        }
+        taskPatrolExecution.setCustomer(customer);
+        taskPatrolExecutionRepository.save(taskPatrolExecution);
+        patrolDistribution.setStatus(TaskDistributionStatus.FINISHED.name());
     }
 
     @Override

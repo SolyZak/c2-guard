@@ -5,14 +5,20 @@ import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteJobDescResponseDt
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
+import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskDistributionRequest;
+import com.eden.eden_crm_sec_crm_back.dto.response.DistributionTimesWithQuantity;
+import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.TodayTasksResponseDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
+import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
+import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
+import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,6 +33,8 @@ public class WorkforceController {
 
     private final WorkforceService workforceService;
     private final CustomerSiteService customerSiteService;
+    private final TaskService taskService;
+    private final ContractDistributeService contractDistributeService;
 
     @Operation(summary = "Get customers dropdown list, that's workforce security company contracted with")
     @GetMapping("/customers/dropdown")
@@ -67,5 +75,30 @@ public class WorkforceController {
     @GetMapping("/{id}")
     ApiResponse<CustomerSiteJobDescResponseDto> getCustomerSiteJobDesc(@PathVariable Long id) {
         return ApiResponse.ok(customerSiteService.getCustomerSiteJobDescriptionById(id));
+    }
+    @GetMapping("/today/{contractId}/{serviceId}/{siteId}/{periodId}")
+    public ApiResponse<TodayTasksResponseDto> getTodayTasks(@PathVariable("contractId") Long contractId, @PathVariable("serviceId") Long serviceId, @PathVariable("siteId") Long siteId, @PathVariable("periodId") String periodId) {
+        return ApiResponse.ok(taskService.getTodayTasks(contractId, serviceId, siteId, periodId));
+    }
+
+    @Operation(summary = "Get times for a distribution (repeat with quantity more than one)")
+    @GetMapping("/distribute/quantity/{contractId}/{serviceId}/{siteId}")
+    public com.eden.eden_crm_sec_crm_back.base.util.ApiResponse<List<DistributionTimesWithQuantity>> getTimesForDistributionWithQuantity(
+            @PathVariable("contractId") Long contractId,
+            @PathVariable("serviceId") Long serviceId,
+            @PathVariable("siteId") Long siteId
+    ) {
+        return com.eden.eden_crm_sec_crm_back.base.util.ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistributionWithQuantity(contractId, serviceId, siteId));
+    }
+
+    @GetMapping("/{taskId}")
+    public ApiResponse<TaskCheckDto> getTaskById(@PathVariable("taskId") Long taskId) {
+        return ApiResponse.ok(taskService.getTaskById(taskId));
+    }
+
+    @PostMapping("/execute")
+    public ApiResponse<TaskCheckDto> executeTask(@Valid @RequestBody AddTaskDistributionRequest request) {
+        taskService.executeTask(request);
+        return ApiResponse.created();
     }
 }

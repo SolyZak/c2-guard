@@ -33,12 +33,7 @@ public class Location extends BaseAuditEntity {
     @Basic(fetch = FetchType.LAZY)
     private byte[] qrImage;
 
-    @ManyToMany
-    @JoinTable(
-            name = "location_patrol_detail",
-            joinColumns = @JoinColumn(name = "location_id"),
-            inverseJoinColumns = @JoinColumn(name = "patrol_detail_id")
-    )
+    @OneToMany(mappedBy = "location")
     List<PatrolDetail> patrolDetails;
 
     @ManyToOne

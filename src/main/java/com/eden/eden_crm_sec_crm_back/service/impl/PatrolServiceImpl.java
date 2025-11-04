@@ -65,10 +65,17 @@ public class PatrolServiceImpl implements PatrolService {
             if (tasks.size() != detailRequest.getTasks().size()) {
                 throw new BusinessException(MessageUtil.getMessage("validation.patrol.tasks.invalid"), HttpStatus.BAD_REQUEST);
             }
-            patrolDetail.setLocations(locations);
-            patrolDetail.setTasks(tasks);
-            patrolDetail.setPatrol(patrol);
-            patrolDetails.add(patrolDetail);
+//            Map<Long, Location> locationsToBeSaved = new HashMap<>();
+//            Map<Long, Task> tasksToBeSaved = new HashMap<>();
+            for (Location location : locations) {
+                for (Task task : tasks) {
+                    patrolDetail.setLocation(location);
+                    patrolDetail.setTask(task);
+                    patrolDetail.setPatrol(patrol);
+                    patrolDetails.add(patrolDetail);
+                    patrolDetail = new PatrolDetail();
+                }
+            }
         }
         patrol.setName(request.getPatrolName());
         patrol.setPatrolDetails(patrolDetails);
@@ -92,21 +99,6 @@ public class PatrolServiceImpl implements PatrolService {
             );
         patrol.setCustomer(customer);
         patrolRepository.save(patrol);
-
-        List<Location> locations = new ArrayList<>();
-        List<Task> tasks = new ArrayList<>();
-        for (PatrolDetail patrolDetail : patrol.getPatrolDetails()) {
-            for (Location location : patrolDetail.getLocations()) {
-                location.getPatrolDetails().add(patrolDetail);
-                locations.add(location);
-            }
-            for (Task task : patrolDetail.getTasks()) {
-                task.getPatrolDetails().add(patrolDetail);
-                tasks.add(task);
-            }
-        }
-        locationRepository.saveAll(locations);
-        taskRepository.saveAll(tasks);
     }
 
     @Override
