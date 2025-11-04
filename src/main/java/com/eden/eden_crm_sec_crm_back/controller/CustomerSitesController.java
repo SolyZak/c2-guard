@@ -59,10 +59,4 @@ public class CustomerSitesController {
             @RequestParam(required = false, name = "search") String search) {
         return ApiResponse.ok(customerSiteService.getSitesPaginated(search, page, size));
     }
-
-    @Operation(summary = "Get operation site job desc By Id")
-    @GetMapping("/{id}")
-    ApiResponse<CustomerSiteJobDescResponseDto> getCustomerSiteJobDesc(@PathVariable Long id) {
-        return ApiResponse.ok(customerSiteService.getCustomerSiteJobDescriptionById(id));
-    }
 }

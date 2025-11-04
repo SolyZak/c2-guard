@@ -1,8 +1,10 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteJobDescResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
+import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +26,7 @@ import java.util.List;
 public class WorkforceController {
 
     private final WorkforceService workforceService;
+    private final CustomerSiteService customerSiteService;
 
     @Operation(summary = "Get customers dropdown list, that's workforce security company contracted with")
     @GetMapping("/customers/dropdown")
@@ -58,5 +61,11 @@ public class WorkforceController {
             @PathVariable("id") Long id
     ) {
         return ApiResponse.ok(workforceService.operationSiteServicesDropdown(id));
+    }
+
+    @Operation(summary = "Get operation site job desc By Id")
+    @GetMapping("/{id}")
+    ApiResponse<CustomerSiteJobDescResponseDto> getCustomerSiteJobDesc(@PathVariable Long id) {
+        return ApiResponse.ok(customerSiteService.getCustomerSiteJobDescriptionById(id));
     }
 }
