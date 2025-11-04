@@ -13,5 +13,5 @@ public class ContractDistributionForPatrol {
     private LocalDate startDate;
     private List<LocationsTasksForPatrol> locations;
 
-    private Long timePeriodId;
+    private String timePeriodId;
 }

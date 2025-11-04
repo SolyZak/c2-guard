@@ -1,7 +1,9 @@
-package com.eden.eden_crm_sec_crm_back.models;
+package com.eden.eden_crm_sec_crm_back.models.patrol_execution;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDecimalDTO;
-import jakarta.persistence.*;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
 
 @Entity
@@ -10,9 +12,9 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "task_check_decimal")
+@Table(name = "task_check_decimal_patrol_execution")
 @DiscriminatorValue("decimal")
-public class TaskCheckDecimal extends TaskCheck {
+public class TaskCheckPatrolExecutionDecimal extends TaskCheckPatrolExecution {
     private String unit;
     private String operator;
     private Double value;

@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.service;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskDistributionRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.TaskDto;
@@ -17,4 +18,8 @@ public interface TaskService {
     List<TaskDto> listTasksNoPaginationForLoggedInCustomerByLocationIdAndPatrolId(Long locationId, Long patrolId);
 
     TodayTasksResponseDto getTodayTasks(Long contractId, Long serviceId, Long siteId, String uniqueId);
+
+    TaskCheckDto getTaskById(Long taskId);
+
+    void executeTask(AddTaskDistributionRequest request);
 }

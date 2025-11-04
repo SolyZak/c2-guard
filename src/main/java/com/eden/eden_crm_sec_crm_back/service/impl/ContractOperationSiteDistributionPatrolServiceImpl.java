@@ -112,7 +112,10 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
         }
         List<ContractOperationSiteDistributionPatrol> distributionForPatrols = new ArrayList<>();
         LKCustomerContractOperationService details = sd.get().getOperationServices().stream().
-                filter(os -> os.getId().equals(request.getTimePeriodId())).findFirst().get();
+                filter(os -> os.getId().equals(
+                        Long.parseLong(request.getTimePeriodId().split("_")[0])
+                        )
+                ).findFirst().get();
         ContractOperationSiteDistributionPatrol contractDistributionForPatrol = null;
 
         Set<String> weekDays = details.getDays().stream().map(dayEnum -> dayEnum.getCode()).collect(Collectors.toSet());
@@ -128,7 +131,6 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
             for (Long tId : entry.getValue()) {
                 for (LocalDate date : executionDates) {
                     for (int x = 0; x < executionTimes.size(); x++) {
-                        for (int q = 0 ; q < details.getQuantity(); q ++) {
                             contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol(
                                     null,
                                     request.getPatrolId(),
@@ -144,10 +146,9 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                                     customer,
                                     patrolOptional.get().getFrequency(),
                                     TaskDistributionStatus.CREATED.name(),
-                                    details.getId() + "_" + q
+                                    request.getTimePeriodId()
                             );
                             distributionForPatrols.add(contractDistributionForPatrol);
-                        }
                     }
                 }
             }
@@ -167,7 +168,10 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
             throw new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST);
         }
         LKCustomerContractOperationService details = sd.get().getOperationServices().stream().
-                filter(os -> os.getId().equals(request.getTimePeriodId())).findFirst().get();
+                filter(os -> os.getId().equals(
+                        Long.parseLong(request.getTimePeriodId().split("_")[0])
+                        )
+                ).findFirst().get();
 
         ContractOperationSiteDistributionPatrol contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol();
         contractDistributionForPatrol.setStartDate(request.getStartDate());
@@ -180,7 +184,6 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
             for (Long tId : entry.getValue()) {
                 for (long i = 0; i < count; i++) {
 
-                    for (int q = 0; q < details.getQuantity(); q++) {
                         contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol(
                                 null,
                                 request.getPatrolId(),
@@ -196,7 +199,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                                 customer,
                                 patrolOptional.get().getFrequency(),
                                 TaskDistributionStatus.CREATED.name(),
-                                details.getId() + "_" + q
+                                request.getTimePeriodId()
                         );
                         if (i == 0) {
                             if (weekDays.contains(contractDistributionForPatrol.getStartDate().getDayOfWeek().name().toUpperCase()))
@@ -216,7 +219,6 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
 
                         if (weekDays.contains(contractDistributionForPatrol.getStartDate().getDayOfWeek().name().toUpperCase()))
                             distributionForPatrols.add(contractDistributionForPatrol);
-                    }
                 }
             }
         }

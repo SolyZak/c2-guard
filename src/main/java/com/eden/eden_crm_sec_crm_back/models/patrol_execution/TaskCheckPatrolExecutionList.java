@@ -1,7 +1,9 @@
-package com.eden.eden_crm_sec_crm_back.models;
+package com.eden.eden_crm_sec_crm_back.models.patrol_execution;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckListDTO;
-import jakarta.persistence.*;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
 
 import java.util.List;
@@ -12,9 +14,9 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "task_check_list")
+@Table(name = "task_check_list_patrol_execution")
 @DiscriminatorValue("list")
-public class TaskCheckList extends TaskCheck{
+public class TaskCheckPatrolExecutionList extends TaskCheckPatrolExecution {
     private List<String> listItems;
 
     @Override

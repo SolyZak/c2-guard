@@ -12,4 +12,8 @@ public interface TodayTasksProjection {
     OffsetTime getStartTime();
     OffsetTime getEndTime();
     String getPatrolFreqType();
+
+    Long getPatrolDistributionId();
+    Long getTaskId();
+    String getPeriodStatus();
 }

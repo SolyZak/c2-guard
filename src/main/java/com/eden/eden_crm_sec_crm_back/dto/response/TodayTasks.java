@@ -19,13 +19,21 @@ public class TodayTasks {
     OffsetTime endTime;
     String patrolFreqType;
 
-    public TodayTasks(String taskName, String patrolName, String locationName, String premiseName, LocalDate endDate, String patrolFreqType) {
+    Long taskId;
+    Long patrolDistributionId;
+
+    String periodStatus;
+
+    public TodayTasks(String taskName, String patrolName, String locationName, String premiseName, LocalDate endDate, String patrolFreqType, Long taskId, Long patrolDistributionId, String periodStatus) {
         this.taskName = taskName;
         this.patrolName = patrolName;
         this.locationName = locationName;
         this.premiseName = premiseName;
         this.endDate = endDate;
         this.patrolFreqType = patrolFreqType;
+        this.taskId = taskId;
+        this.patrolDistributionId = patrolDistributionId;
+        this.periodStatus = periodStatus;
     }
 
     @Override

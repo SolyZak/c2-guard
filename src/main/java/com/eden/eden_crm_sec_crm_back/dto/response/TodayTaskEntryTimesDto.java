@@ -10,4 +10,7 @@ import java.time.OffsetTime;
 public class TodayTaskEntryTimesDto {
     private OffsetTime startTime;
     private OffsetTime endTime;
+
+    private String status;
+    private Long patrolDistributionId;
 }

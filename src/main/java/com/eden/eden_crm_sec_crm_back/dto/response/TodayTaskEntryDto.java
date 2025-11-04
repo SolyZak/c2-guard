@@ -16,4 +16,5 @@ public class TodayTaskEntryDto {
     private String patrolFreqType;
     private LocalDate endDate;
     private List<TodayTaskEntryTimesDto> times;
+    private Long taskId;
 }
