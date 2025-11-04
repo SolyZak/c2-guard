@@ -25,12 +25,7 @@ public class Task extends BaseEntity{
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     List<TaskCheck> taskChecks;
 
-    @ManyToMany
-    @JoinTable(
-            name = "task_patrol_detail",
-            joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "patrol_detail_id")
-    )
+    @OneToMany(mappedBy = "task")
     List<PatrolDetail> patrolDetails;
 
     @ManyToOne

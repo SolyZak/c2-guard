@@ -5,10 +5,8 @@ import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ContractDistributionForPatrol;
-import com.eden.eden_crm_sec_crm_back.dto.response.ContractDetailsData;
-import com.eden.eden_crm_sec_crm_back.dto.response.ContractRowDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.ContractServiceDetailsData;
-import com.eden.eden_crm_sec_crm_back.dto.response.DistributedOperationSite;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
+import com.eden.eden_crm_sec_crm_back.models.projections.DistributionTimesProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
 import com.eden.eden_crm_sec_crm_back.service.ContractOperationSiteDistributionPatrolService;
@@ -82,7 +80,7 @@ public class CustomerContractController {
 
     @Operation(summary = "Distribute A Contract Service & Operation Site API")
     @PutMapping("/{id}/distribute/{serviceId}")
-    public ApiResponse<String> contractDistribute(
+    public ApiResponse<ContractDistributionResponseDto> contractDistribute(
             @PathVariable("id") Long contractId,
             @PathVariable("serviceId") Long serviceId,
             @RequestBody @Valid List<SiteDistributionDto> listDto
@@ -99,6 +97,14 @@ public class CustomerContractController {
     ) {
         contractOperationSiteDistributionPatrolService.add(requestList, contractId, serviceId);
         return ApiResponse.created(null);
+    }
+
+    @Operation(summary = "Get times for a distribution")
+    @GetMapping("/distribute/{id}")
+    public ApiResponse<List<DistributionTimesProjection>> getTimesForDistribution(
+            @PathVariable("id") Long id
+    ) {
+        return ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistribution(id));
     }
 
     @Operation(summary = "Get distributed operation sites for a selected contract & contract service API")

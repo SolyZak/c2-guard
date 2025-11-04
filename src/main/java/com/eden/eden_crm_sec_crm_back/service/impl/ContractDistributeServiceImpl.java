@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractOperationServiceDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ContractDistributionResponseDto;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
@@ -12,6 +13,7 @@ import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.ServiceDetails;
+import com.eden.eden_crm_sec_crm_back.models.projections.DistributionTimesProjection;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
@@ -31,6 +33,7 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -48,7 +51,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
 
     @Override
     @Transactional
-    public String contractDistribute(Long contractId, Long serviceId, List<SiteDistributionDto> listDto) {
+    public ContractDistributionResponseDto contractDistribute(Long contractId, Long serviceId, List<SiteDistributionDto> listDto) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         CustomerContract contract = customerContractRepository.findWithDetailsByIdAndCustomerId(contractId, customer.getId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
@@ -73,6 +76,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
 
         // create site distributions
         List<LKCustomerContractOperationService> operationServices = new ArrayList<>();
+        AtomicLong distributionId = new AtomicLong();
         listDto.forEach(dto -> {
             CustomerSite customerSite = customerSites.get(dto.getSiteId());
             SiteDistribution siteDistribution = new SiteDistribution();
@@ -80,12 +84,13 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             siteDistribution.setSite(customerSite);
             siteDistribution.setActivities(dto.getActivities());
             siteDistribution.setLkCustomerContractService(service);
-            siteDistributionRepository.save(siteDistribution);
+            SiteDistribution temp = siteDistributionRepository.save(siteDistribution);
+            distributionId.set(temp.getId());
 
             dto.getOperationServices().forEach(lkCustomerContractOperationServiceDto -> {
                 OffsetTime[] times = getTimes(
                         lkCustomerContractOperationServiceDto.getFromTime(),
-                        customer.getTimezone(),
+                        CustomTimezone.UTC,
                         service.getCustomerService().getHours()
                 );
                 LKCustomerContractOperationService lkCustomerContractOperationService = new LKCustomerContractOperationService();
@@ -103,7 +108,12 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
         service.setDistributedQuantity(service.getQuantity());
         contractServiceRepository.save(service);
 
-        return MessageUtil.getMessage("contract-service.distributed");
+        return new ContractDistributionResponseDto(MessageUtil.getMessage("contract-service.distributed"), distributionId.get());
+    }
+
+    @Override
+    public List<DistributionTimesProjection> getAllStartEndTimesForDistribution(Long distributionId) {
+        return contractOperationServiceRepository.findAllOffsetStartAndEndByDistributionId(distributionId);
     }
 
     private Map<Long, CustomerSite> getCustomerSiteMap(List<SiteDistributionDto> listDto, Customer customer) {
@@ -134,7 +144,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             CustomTimezone customerTimezone,
             Long serviceHours
     ) {
-        ZoneId customerZone = DateUtils.getTimeWithTimezone(customerTimezone);
+        ZoneId customerZone = ZoneId.of(customerTimezone.name());
 
         ZonedDateTime fromZoned = rawFromTime.atDate(LocalDate.now()).atZone(customerZone);
         ZonedDateTime toZoned = fromZoned.plusHours(serviceHours);
