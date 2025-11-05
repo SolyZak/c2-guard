@@ -70,3 +70,10 @@ CREATE TABLE task_check_list_patrol_execution (
 
 ALTER TABLE task_check_patrol_execution
 ADD COLUMN image TEXT;
+
+
+ALTER TABLE task_check_number_patrol_execution
+DROP COLUMN operator;
+
+ALTER TABLE task_check_decimal_patrol_execution
+DROP COLUMN IF EXISTS operator;
