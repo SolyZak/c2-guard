@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dto.request.task;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.markers.OnAddTask;
 import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.models.TaskCheck;
 import com.eden.eden_crm_sec_crm_back.models.TaskCheckDecimal;
@@ -15,7 +16,7 @@ import lombok.Setter;
 public class TaskCheckDecimalDTO extends TaskCheckDTO {
     @NotNull(message = "{validation.distribution.task-check.unit}")
     private String unit;
-    @NotNull(message = "{validation.distribution.task-check.operator}")
+    @NotNull(groups = OnAddTask.class, message = "{validation.distribution.task-check.operator}")
     private String operator;
     @NotNull(message = "{validation.distribution.task-check.value}")
     private Double value;
@@ -36,7 +37,6 @@ public class TaskCheckDecimalDTO extends TaskCheckDTO {
     public TaskCheckPatrolExecution mapToExecutionEntity(TaskPatrolExecution taskPatrolExecution) {
         TaskCheckPatrolExecutionDecimal entity = new TaskCheckPatrolExecutionDecimal();
         entity.setId(getId());
-        entity.setOperator(operator);
         entity.setUnit(unit);
         entity.setValue(value);
         entity.setName(getName());

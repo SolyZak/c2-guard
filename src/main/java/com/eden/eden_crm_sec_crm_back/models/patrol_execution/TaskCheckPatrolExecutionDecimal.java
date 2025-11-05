@@ -16,7 +16,6 @@ import lombok.*;
 @DiscriminatorValue("decimal")
 public class TaskCheckPatrolExecutionDecimal extends TaskCheckPatrolExecution {
     private String unit;
-    private String operator;
     private Double value;
 
     @Override
@@ -26,7 +25,6 @@ public class TaskCheckPatrolExecutionDecimal extends TaskCheckPatrolExecution {
         dto.setName(getName());
         dto.setEvidence(getEvidence());
         dto.setUnit(unit);
-        dto.setOperator(operator);
         dto.setValue(value);
         return dto;
     }

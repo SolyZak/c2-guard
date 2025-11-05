@@ -38,10 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -123,9 +120,12 @@ public class LocationServiceImpl implements LocationService {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         List<LocationProjection> patrolLocations = locationRepository.listAllLoggedInCustomerLocationsByPatrolId(customer.getId(), patrolId);
         List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> result = new ArrayList<>();
+        Map<Long, String> locationIds = new HashMap<>();
         for (LocationProjection locationProjection : patrolLocations) {
-            com.eden.eden_crm_sec_crm_back.dto.response.LocationDto dto = new com.eden.eden_crm_sec_crm_back.dto.response.LocationDto(locationProjection.getId(), locationProjection.getName());
-            result.add(dto);
+            locationIds.put(locationProjection.getId(), locationProjection.getName());
+        }
+        for (Map.Entry<Long, String> entry : locationIds.entrySet()) {
+            result.add(new com.eden.eden_crm_sec_crm_back.dto.response.LocationDto(entry.getKey(), entry.getValue()));
         }
         return result;
     }

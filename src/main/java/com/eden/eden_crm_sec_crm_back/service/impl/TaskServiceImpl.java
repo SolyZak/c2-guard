@@ -181,7 +181,7 @@ public class TaskServiceImpl implements TaskService {
         if (todayTasks.getPeriodStatus().equals(TaskDistributionStatus.FINISHED.name()) || todayTasks.getPeriodStatus().equals(TaskDistributionStatus.MISSED.name())) {
             return todayTasks.getPeriodStatus();
         }
-        if (todayTasks.getPatrolFreqType().equals(PatrolFrequencyEnum.EVERY_PERIOD.name())) {
+        if (todayTasks.getPatrolFreqType().equals(PatrolFrequencyEnum.EVERY_PERIOD.getFreq())) {
             OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
             if (current.isBefore(todayTasks.getEndTime()) && current.isAfter(todayTasks.getStartTime())) {
                 return TaskDistributionStatus.CURRENT.name();
@@ -226,12 +226,19 @@ public class TaskServiceImpl implements TaskService {
         if (!optionalDistribution.isPresent()) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
         }
+        if (!optionalDistribution.get().getStatus().equals(TaskDistributionStatus.CREATED.name())) {
+            throw new BusinessException("Can't execute task", HttpStatus.BAD_REQUEST);
+        }
         Optional<Task> optionalTask = taskRepository.findById(request.getTaskId());
         if (!optionalTask.isPresent()) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
         }
         ContractOperationSiteDistributionPatrol patrolDistribution = optionalDistribution.get();
         Task task = optionalTask.get();
+
+        if (patrolDistribution.getPatrolFrequencyType().equals(PatrolFrequencyEnum.EVERY_PERIOD.getFreq()) && !LocalDate.now().equals(optionalDistribution.get().getStartDate())) {
+            throw new BusinessException("Too early to start task", HttpStatus.BAD_REQUEST);
+        }
 
         if (!patrolDistribution.getTaskId().equals(task.getId())) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);

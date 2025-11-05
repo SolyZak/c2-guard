@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dto.request.task;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.markers.OnAddTask;
 import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.models.TaskCheck;
 import com.eden.eden_crm_sec_crm_back.models.TaskCheckNumber;
@@ -15,7 +16,7 @@ import lombok.Setter;
 public class TaskCheckNumberDTO extends TaskCheckDTO {
     @NotNull(message = "{validation.distribution.task-check.unit}")
     private String unit;
-    @NotNull(message = "{validation.distribution.task-check.operator}")
+    @NotNull(groups = OnAddTask.class, message = "{validation.distribution.task-check.operator}")
     private String operator;
     @NotNull(message = "{validation.distribution.task-check.value}")
     private Integer value;
@@ -37,7 +38,6 @@ public class TaskCheckNumberDTO extends TaskCheckDTO {
     public TaskCheckPatrolExecution mapToExecutionEntity(TaskPatrolExecution taskPatrolExecution) {
         TaskCheckPatrolExecutionNumber entity = new TaskCheckPatrolExecutionNumber();
         entity.setId(getId());
-        entity.setOperator(operator);
         entity.setUnit(unit);
         entity.setValue(value);
         entity.setName(getName());
