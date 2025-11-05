@@ -11,6 +11,7 @@ import java.time.LocalTime;
 @Builder
 public class WorkforceSiteDistributionWorkingPeriodDto {
     private Long id;
+    private String patrolPeriodId;
     private LocalTime fromTime;
     private LocalTime toTime;
     private Boolean isWorking;

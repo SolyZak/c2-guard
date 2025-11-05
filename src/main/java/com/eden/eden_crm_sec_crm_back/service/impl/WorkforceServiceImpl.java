@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 @Slf4j
 @Service
@@ -183,15 +184,19 @@ public class WorkforceServiceImpl implements WorkforceService {
                                     .periods(
                                             d.getOperationServices().stream()
                                                     .filter(os -> os.getDays().contains(weekDaysEnum))
-                                                    .map(os -> WorkforceSiteDistributionWorkingPeriodDto.builder()
-                                                            .id(os.getId())
-                                                            .fromTime(DateUtils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os)))
-                                                            .toTime(DateUtils.toLocalTime(site.getTimezone(), getToTime(os)))
-                                                            .isWorking(isWorkingPeriod(contractOperationRule, os))
-                                                            .checkInStatus(checkInStatus(contractOperationRule, os))
-                                                            .checkOutStatus(checkOutStatus(contractOperationRule, os))
-                                                            .presenceMode(getPresenceMode(contractOperationRule))
-                                                            .build()
+                                                    .flatMap(os ->
+                                                            LongStream.range(0, os.getQuantity())  // repeat for quantity times
+                                                                    .mapToObj(i -> WorkforceSiteDistributionWorkingPeriodDto.builder()
+                                                                            .id(os.getId())
+                                                                            .patrolPeriodId(os.getId() + "_" + i)
+                                                                            .fromTime(DateUtils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os)))
+                                                                            .toTime(DateUtils.toLocalTime(site.getTimezone(), getToTime(os)))
+                                                                            .isWorking(isWorkingPeriod(contractOperationRule, os))
+                                                                            .checkInStatus(checkInStatus(contractOperationRule, os))
+                                                                            .checkOutStatus(checkOutStatus(contractOperationRule, os))
+                                                                            .presenceMode(getPresenceMode(contractOperationRule))
+                                                                            .build()
+                                                                    )
                                                     )
                                                     .toList()
                                     )
