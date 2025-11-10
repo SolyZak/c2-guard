@@ -11,7 +11,8 @@ public class DateUtils {
         final Map<CustomTimezone, ZoneId> ZONE_MAP = Map.of(
                 CustomTimezone.EGYPT, ZoneId.of("Africa/Cairo"),
                 CustomTimezone.SAUDI_ARABIA, ZoneId.of("Asia/Riyadh"),
-                CustomTimezone.EMIRATES, ZoneId.of("Asia/Dubai")
+                CustomTimezone.EMIRATES, ZoneId.of("Asia/Dubai"),
+                CustomTimezone.UTC, ZoneId.of("UTC")
         );
         return ZONE_MAP.get(timezone);
     }
