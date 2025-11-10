@@ -16,7 +16,6 @@ import lombok.*;
 @DiscriminatorValue("number")
 public class TaskCheckPatrolExecutionNumber extends TaskCheckPatrolExecution {
     private String unit;
-    private String operator;
     private Integer value;
 
     @Override
@@ -26,7 +25,6 @@ public class TaskCheckPatrolExecutionNumber extends TaskCheckPatrolExecution {
         dto.setName(getName());
         dto.setEvidence(getEvidence());
         dto.setUnit(unit);
-        dto.setOperator(operator);
         dto.setValue(value);
         return dto;
     }

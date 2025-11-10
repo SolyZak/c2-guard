@@ -1,8 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.models.patrol_execution;
 
-import com.eden.eden_crm_sec_crm_back.models.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
-import com.eden.eden_crm_sec_crm_back.models.PatrolDetail;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
