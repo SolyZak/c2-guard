@@ -125,6 +125,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getLocationName(),
                         projection.getPremiseName(),
                         projection.getEndDate(),
+                        projection.getStartDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
@@ -140,6 +141,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getLocationName(),
                         projection.getPremiseName(),
                         projection.getEndDate(),
+                        projection.getStartDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
@@ -190,10 +192,15 @@ public class TaskServiceImpl implements TaskService {
             }
             return TaskDistributionStatus.CREATED.name();
         } else {
+            LocalDate currentDate = LocalDate.now();
             OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
-            if (LocalDate.now().equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime())) {
+            if (currentDate.equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime())) {
                 return TaskDistributionStatus.MISSED.name();
-            } else if (LocalDate.now().equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getStartTime()) && current.isBefore(todayTasks.getEndTime())) {
+            } else if (
+                    ( currentDate.equals(todayTasks.getEndDate()) || currentDate.equals(todayTasks.getStartDate()) ) ||
+                            ( currentDate.isBefore(todayTasks.getEndDate()) && currentDate.isAfter(todayTasks.getStartDate()) )
+                            && current.isAfter(todayTasks.getStartTime()) && current.isBefore(todayTasks.getEndTime())
+            ) {
                 return TaskDistributionStatus.CURRENT.name();
             }
             return TaskDistributionStatus.CREATED.name();
