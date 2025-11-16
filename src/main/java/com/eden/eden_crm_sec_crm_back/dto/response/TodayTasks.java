@@ -15,6 +15,7 @@ public class TodayTasks {
     String locationName;
     String premiseName;
     LocalDate endDate;
+    LocalDate startDate;
     OffsetTime startTime;
     OffsetTime endTime;
     String patrolFreqType;

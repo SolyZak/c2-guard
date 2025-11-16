@@ -9,6 +9,7 @@ public interface TodayTasksProjection {
     String getLocationName();
     String getPremiseName();
     LocalDate getEndDate();
+    LocalDate getStartDate();
     OffsetTime getStartTime();
     OffsetTime getEndTime();
     String getPatrolFreqType();
