@@ -135,8 +135,15 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                 .orElseThrow(
                         () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
                 );
-        return contractServiceRepository.getContractNotFullyDistributedServices(contractId)
+        List<ContractServiceDetailsData> result = contractServiceRepository.getContractNotFullyDistributedServices(contractId)
                 .stream().map(contractMapper::toContractServiceDetailsData).toList();
+        for (ContractServiceDetailsData contractServiceDetailsData : result) {
+            if (contractServiceDetailsData.getQuantity() == null || contractServiceDetailsData.getQuantity().equals(0L))
+                contractServiceDetailsData.setDistributed(false);
+            else
+                contractServiceDetailsData.setDistributed(true);
+        }
+        return result;
     }
 
     @Override

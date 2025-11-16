@@ -25,7 +25,6 @@ public interface LKCustomerContractServiceRepository extends JpaRepository<LKCus
             LEFT JOIN FETCH lkContService.customerService serviceDetails
             LEFT JOIN FETCH serviceDetails.customerService
             WHERE lkContService.customerContract.id = :contractId
-            AND lkContService.quantity > COALESCE(lkContService.distributedQuantity, 0)
             """)
     List<LKCustomerContractService> getContractNotFullyDistributedServices(
             @Param("contractId") Long contractId
