@@ -275,7 +275,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
         }
 
         OffsetTime current = start;
-        while (!current.isAfter(end)) {
+        while (current.isBefore(end)) {
             result.add(current);
             current = current.plusMinutes(minutesStep);
         }
