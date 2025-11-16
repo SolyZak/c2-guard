@@ -138,7 +138,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         List<ContractServiceDetailsData> result = contractServiceRepository.getContractNotFullyDistributedServices(contractId)
                 .stream().map(contractMapper::toContractServiceDetailsData).toList();
         for (ContractServiceDetailsData contractServiceDetailsData : result) {
-            if (contractServiceDetailsData.getQuantity() == null || contractServiceDetailsData.getQuantity().equals(0L))
+            if (contractServiceDetailsData.getDistributedQuantity() == null || contractServiceDetailsData.getDistributedQuantity().equals(0L))
                 contractServiceDetailsData.setDistributed(false);
             else
                 contractServiceDetailsData.setDistributed(true);
