@@ -29,10 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -125,6 +122,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getLocationName(),
                         projection.getPremiseName(),
                         projection.getEndDate(),
+                        projection.getStartDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
@@ -140,6 +138,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getLocationName(),
                         projection.getPremiseName(),
                         projection.getEndDate(),
+                        projection.getStartDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
@@ -153,7 +152,7 @@ public class TaskServiceImpl implements TaskService {
         List<Long> missedIds = new ArrayList<>();
         for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
             List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
-                    .map(tt -> new TodayTaskEntryTimesDto(tt.getStartTime(),tt.getEndTime(), getTimePeriodStatus(tt), tt.getPatrolDistributionId())).sorted(Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)).collect(Collectors.toList());
+                    .map(tt -> new TodayTaskEntryTimesDto(tt.getStartTime().toLocalTime(),tt.getEndTime().toLocalTime(), getTimePeriodStatus(tt), tt.getPatrolDistributionId())).sorted(Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)).collect(Collectors.toList());
             TodayTaskEntryDto task = new TodayTaskEntryDto(
                     entry.getKey().getTaskName(),
                     entry.getKey().getPatrolName(),
@@ -182,18 +181,23 @@ public class TaskServiceImpl implements TaskService {
             return todayTasks.getPeriodStatus();
         }
         if (todayTasks.getPatrolFreqType().equals(PatrolFrequencyEnum.EVERY_PERIOD.getFreq())) {
-            OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
-            if (current.isBefore(todayTasks.getEndTime()) && current.isAfter(todayTasks.getStartTime())) {
+            LocalTime current = LocalTime.now();
+            if (current.isBefore(todayTasks.getEndTime().toLocalTime()) && current.isAfter(todayTasks.getStartTime().toLocalTime())) {
                 return TaskDistributionStatus.CURRENT.name();
-            } else if (current.isAfter(todayTasks.getEndTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
+            } else if (current.isAfter(todayTasks.getEndTime().toLocalTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
                 return TaskDistributionStatus.MISSED.name();
             }
             return TaskDistributionStatus.CREATED.name();
         } else {
-            OffsetTime current = OffsetDateTime.now(ZoneOffset.UTC).toOffsetTime();
-            if (LocalDate.now().equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime())) {
+            LocalDate currentDate = LocalDate.now();
+            LocalTime current = LocalTime.now();
+            if (currentDate.equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime().toLocalTime())) {
                 return TaskDistributionStatus.MISSED.name();
-            } else if (LocalDate.now().equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getStartTime()) && current.isBefore(todayTasks.getEndTime())) {
+            } else if (
+                    ( currentDate.equals(todayTasks.getEndDate()) || currentDate.equals(todayTasks.getStartDate()) ) ||
+                            ( currentDate.isBefore(todayTasks.getEndDate()) && currentDate.isAfter(todayTasks.getStartDate()) )
+                            && current.isAfter(todayTasks.getStartTime().toLocalTime()) && current.isBefore(todayTasks.getEndTime().toLocalTime())
+            ) {
                 return TaskDistributionStatus.CURRENT.name();
             }
             return TaskDistributionStatus.CREATED.name();

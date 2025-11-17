@@ -17,4 +17,6 @@ public class ContractServiceDetailsData {
     private Long distributedQuantity;
     private Double unitPrice;
     private List<ActivityEnum> serviceActivities;
+
+    private boolean distributed;
 }

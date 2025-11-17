@@ -72,7 +72,7 @@ public class WorkforceController {
     }
 
     @Operation(summary = "Get operation site job desc By Id")
-    @GetMapping("/{id}")
+    @GetMapping("/job-desc/{id}")
     ApiResponse<CustomerSiteJobDescResponseDto> getCustomerSiteJobDesc(@PathVariable Long id) {
         return ApiResponse.ok(customerSiteService.getCustomerSiteJobDescriptionById(id));
     }

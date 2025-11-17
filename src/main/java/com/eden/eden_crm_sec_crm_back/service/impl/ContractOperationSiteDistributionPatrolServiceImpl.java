@@ -106,7 +106,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                                                   Long contractId, Long serviceId
     ) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        Optional<SiteDistribution> sd = siteDistributionRepository.findOneByContractAndLKCustomerService(contractId, serviceId);
+        Optional<SiteDistribution> sd = siteDistributionRepository.findOneByContractAndLKCustomerServiceAndSiteId(contractId, serviceId, request.getSiteId());
         if (!sd.isPresent()) {
             throw new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST);
         }
@@ -163,7 +163,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                                            Long contractId, Long serviceId
     ) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        Optional<SiteDistribution> sd = siteDistributionRepository.findOneByContractAndLKCustomerService(contractId, serviceId);
+        Optional<SiteDistribution> sd = siteDistributionRepository.findOneByContractAndLKCustomerServiceAndSiteId(contractId, serviceId, request.getSiteId());
         if (!sd.isPresent()) {
             throw new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST);
         }
@@ -275,7 +275,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
         }
 
         OffsetTime current = start;
-        while (!current.isAfter(end)) {
+        while (current.isBefore(end)) {
             result.add(current);
             current = current.plusMinutes(minutesStep);
         }
