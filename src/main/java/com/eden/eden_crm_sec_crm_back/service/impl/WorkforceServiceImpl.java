@@ -206,7 +206,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                 .build();
     }
 
-    private WorkforceFullDataDto getLoggedInWorkforce() {
+    public WorkforceFullDataDto getLoggedInWorkforce() {
         Integer workforceId = Utils.getLoggedInWorkforceId().intValue();
         try {
             // int, for better performance we can cache result here for some time like 15 minutes

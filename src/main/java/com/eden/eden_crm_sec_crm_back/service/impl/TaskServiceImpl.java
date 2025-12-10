@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
+import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
@@ -19,6 +20,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
+import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,6 +43,7 @@ public class TaskServiceImpl implements TaskService {
     private final CustomerRepository customerRepository;
     private final ContractOperationSiteDistributionPatrolRepository repository;
     private final Utils utils;
+    private final WorkforceService workforceService;
     @Override
     public PaginateResponse<TaskCheckDto> listTasks(Integer page, Integer size) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
@@ -97,7 +100,8 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TodayTasksResponseDto getTodayTasks(Long contractId, Long serviceId, Long siteId, String uniqueId) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
+        Customer customer = customerRepository.findById(workforceFullDataDto.securityCompany().id()).orElseThrow(UserNotProvided::new);
         List<TodayTasksProjection> todayTasksProjections = taskRepository.getTodayTasksByServiceIdAndContractId(
                 customer.getId(), contractId, serviceId, siteId, LocalDate.now(), uniqueId
                 );
@@ -257,7 +261,9 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
+
+        Customer customer = customerRepository.findById(workforceFullDataDto.securityCompany().id()).orElseThrow(UserNotProvided::new);
         TaskPatrolExecution taskPatrolExecution = new TaskPatrolExecution();
         taskPatrolExecution.setId(request.getTaskId());
         taskPatrolExecution.setName(task.getName());
