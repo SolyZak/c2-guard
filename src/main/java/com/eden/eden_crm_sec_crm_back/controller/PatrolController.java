@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
+import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
 import com.eden.eden_crm_sec_crm_back.service.PatrolService;
 import com.google.zxing.WriterException;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import java.io.IOException;
 public class PatrolController {
 
     private final PatrolService patrolService;
+    private final PatrolReportService patrolReportService;
     @PostMapping
     ApiResponse addPatrol(@RequestBody @Valid AddPatrolRequest request) throws IOException, WriterException {
         patrolService.addPatrol(request);
@@ -32,5 +34,10 @@ public class PatrolController {
     @GetMapping("/all")
     ApiResponse listPatrolsNoPagination() throws IOException, WriterException {
         return ApiResponse.ok(patrolService.listAllPatrols());
+    }
+
+    @GetMapping("/report/{securityCompanyId}/{contractId}")
+    ApiResponse getPatrolReport(@PathVariable Long securityCompanyId, @PathVariable Long contractId) {
+        return ApiResponse.ok(patrolReportService.generatePatrolReport(securityCompanyId, contractId));
     }
 }

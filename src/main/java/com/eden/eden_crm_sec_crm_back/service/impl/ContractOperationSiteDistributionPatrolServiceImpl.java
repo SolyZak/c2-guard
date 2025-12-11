@@ -127,18 +127,24 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
         int frequencyRate = Integer.parseInt(patrolOptional.get().getFrequencyRate());
         List<OffsetTime> executionTimes = getTimeSteps(details.getFromTime(), details.getToTime(), frequencyRate);
 
+        CustomerSite customerSite = new CustomerSite();
+        customerSite.setId(request.getSiteId());
         for (Map.Entry<Long, List<Long>> entry : locations.entrySet()) {
+            Location location = new Location();
+            location.setId(entry.getKey());
             for (Long tId : entry.getValue()) {
+                Task task = new Task();
+                task.setId(tId);
                 for (LocalDate date : executionDates) {
                     for (int x = 0; x < executionTimes.size(); x++) {
                             contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol(
                                     null,
-                                    request.getPatrolId(),
-                                    request.getSiteId(),
+                                    patrolOptional.get(),
+                                    customerSite,
                                     date,
                                     date,
-                                    entry.getKey(),
-                                    tId,
+                                    location,
+                                    task,
                                     optionalCustomerService.get(),
                                     optionalCustomerContract.get(),
                                     executionTimes.get(x),
@@ -180,18 +186,24 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
         long count = getCountByFrequencyRateBetweenTwoDates(patrolOptional.get().getFrequencyRate(), request.getStartDate(), optionalCustomerContract.get().getEndAgreementDate());
         List<ContractOperationSiteDistributionPatrol> distributionForPatrols = new ArrayList<>();
 
+        CustomerSite customerSite = new CustomerSite();
+        customerSite.setId(request.getSiteId());
         for (Map.Entry<Long, List<Long>> entry : locations.entrySet()) {
+            Location location = new Location();
+            location.setId(entry.getKey());
             for (Long tId : entry.getValue()) {
+                Task task = new Task();
+                task.setId(tId);
                 for (long i = 0; i < count; i++) {
 
                         contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol(
                                 null,
-                                request.getPatrolId(),
-                                request.getSiteId(),
+                                patrolOptional.get(),
+                                customerSite,
                                 contractDistributionForPatrol.getStartDate(),
                                 calculateEndDateForOncePatrolType(patrolOptional.get().getFrequencyRate(), contractDistributionForPatrol.getStartDate()),
-                                entry.getKey(),
-                                tId,
+                                location,
+                                task,
                                 optionalCustomerService.get(),
                                 optionalCustomerContract.get(),
                                 details.getFromTime(),

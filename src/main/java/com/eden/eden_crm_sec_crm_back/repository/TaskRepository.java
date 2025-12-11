@@ -49,11 +49,11 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
             JOIN pd.patrol p  
             JOIN pd.location l 
             JOIN l.premise pr
-            JOIN ContractOperationSiteDistributionPatrol d on t.id = d.taskId 
-            AND l.id = d.locationId
-            AND p.id = d.patrolId
+            JOIN ContractOperationSiteDistributionPatrol d on t.id = d.task.id 
+            AND l.id = d.location.id
+            AND p.id = d.patrol.id
             where d.customer.id = :customerId AND d.customerContract.id = :contractId 
-            AND d.customerService.id = :serviceId AND d.siteId = :siteId
+            AND d.customerService.id = :serviceId AND d.site.id = :siteId
             AND :currentDate BETWEEN d.startDate AND d.endDate
             AND d.uniqueId = :uniqueId
             """)
