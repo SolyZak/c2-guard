@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolReportResponseDto;
+import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.Location;
@@ -15,6 +16,7 @@ import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -66,43 +68,114 @@ public class PatrolReportServiceImpl implements PatrolReportService {
 
         // prepare premises list (only those referenced)
         Set<Long> premiseIds = new HashSet<>(locationToPremise.values());
+        // also include premises referenced directly by patrol.site
+        for (ContractOperationSiteDistributionPatrol p : patrols) {
+            if (p.getSite() != null && p.getSite().getPremise() != null) {
+                premiseIds.add(p.getSite().getPremise().getId());
+            }
+        }
+
         List<PremiseResponseDto> premises;
         if (premiseIds.isEmpty()) {
             // fallback: all customer's premises
             List<Premise> customerPremises = premiseRepository.getCustomerPremises(contract.getCustomer().getId());
             premises = customerPremises.stream()
-                    .map(p -> new PremiseResponseDto(p.getId(), p.getName(), p.getCode()))
+                    .map(p -> new PremiseResponseDto(p.getId(), p.getName(), p.getCode(), Collections.emptyList()))
                     .collect(Collectors.toList());
         } else {
             List<Premise> customerPremises = premiseRepository.findAllById(premiseIds);
             premises = customerPremises.stream()
-                    .map(p -> new PremiseResponseDto(p.getId(), p.getName(), p.getCode()))
+                    .map(p -> new PremiseResponseDto(p.getId(), p.getName(), p.getCode(), Collections.emptyList()))
                     .collect(Collectors.toList());
         }
 
-        Map<Long, List<Map<String, Object>>> patrolsByPremise = new HashMap<>();
+        // Aggregate patrol distributions by premiseId and patrolId (one entry per patrol per premise)
+        Map<Long, Map<Long, AggregatedPatrol>> aggByPremise = new HashMap<>();
 
+        // determine premise id helper
         for (ContractOperationSiteDistributionPatrol p : patrols) {
             Long premiseId = null;
-            if (p.getLocation() != null) premiseId = locationToPremise.get(p.getLocation().getPremise().getId());
-            Long keyId = premiseId != null ? premiseId : Optional.ofNullable(p.getSite().getPremise().getId()).orElse(-1L);
-            List<Map<String, Object>> list = patrolsByPremise.computeIfAbsent(keyId, k -> new ArrayList<>());
-            Map<String, Object> entry = new HashMap<>();
-            entry.put("patrolId", Optional.ofNullable(p.getPatrol().getId()).orElse(0L));
-            entry.put("patrolName", Optional.ofNullable(p.getPatrol().getName()).orElse(""));
-            entry.put("patrolStartDate", Optional.ofNullable(p.getStartDate()).map(Object::toString).orElse(null));
-            entry.put("patrolFrequencyType", p.getPatrolFrequencyType());
-            entry.put("patrolAssignedTasksCount", 0);
-            entry.put("patrolFinishedTasksCount", 0);
-            list.add(entry);
+            if (p.getLocation() != null) {
+                // use location id to lookup mapped premise
+                premiseId = locationToPremise.get(p.getLocation().getId());
+            }
+            if (premiseId == null && p.getSite() != null && p.getSite().getPremise() != null) {
+                premiseId = p.getSite().getPremise().getId();
+            }
+            if (premiseId == null) premiseId = -1L;
+
+            Long patrolId = Optional.ofNullable(p.getPatrol()).map(pl -> pl.getId()).orElse(0L);
+
+            Map<Long, AggregatedPatrol> inner = aggByPremise.computeIfAbsent(premiseId, k -> new HashMap<>());
+            AggregatedPatrol agg = inner.get(patrolId);
+            if (agg == null) {
+                agg = new AggregatedPatrol();
+                agg.patrolId = patrolId;
+                agg.patrolName = Optional.ofNullable(p.getPatrol()).map(pl -> pl.getName()).orElse("");
+                agg.patrolFrequencyType = p.getPatrolFrequencyType();
+                agg.patrolStartDate = p.getStartDate();
+                agg.assignedCount = 0;
+                agg.finishedCount = 0;
+                inner.put(patrolId, agg);
+            }
+
+            // increment assigned
+            agg.assignedCount++;
+            // increment finished if status is FINISHED
+            if (p.getStatus() != null && p.getStatus().equals(TaskDistributionStatus.FINISHED.name())) {
+                agg.finishedCount++;
+            }
+            // pick the smallest startDate
+            if (p.getStartDate() != null) {
+                if (agg.patrolStartDate == null || p.getStartDate().isBefore(agg.patrolStartDate)) {
+                    agg.patrolStartDate = p.getStartDate();
+                }
+            }
+            // ensure frequency and name are set if missing
+            if ((agg.patrolFrequencyType == null || agg.patrolFrequencyType.isEmpty()) && p.getPatrolFrequencyType() != null) {
+                agg.patrolFrequencyType = p.getPatrolFrequencyType();
+            }
+            if ((agg.patrolName == null || agg.patrolName.isEmpty()) && p.getPatrol() != null && p.getPatrol().getName() != null) {
+                agg.patrolName = p.getPatrol().getName();
+            }
         }
 
-        // convert map keys to strings to match requested JSON structure
-        Map<String, List<Map<String, Object>>> patrolsByPremiseStringKey = new HashMap<>();
-        for (Map.Entry<Long, List<Map<String, Object>>> e : patrolsByPremise.entrySet()) {
-            patrolsByPremiseStringKey.put(String.valueOf(e.getKey()), e.getValue());
+        // Build patrol summaries per premise
+        Map<Long, List<com.eden.eden_crm_sec_crm_back.dto.response.PatrolSummaryDto>> patrolsPerPremise = new HashMap<>();
+        for (Map.Entry<Long, Map<Long, AggregatedPatrol>> e : aggByPremise.entrySet()) {
+            Long premiseId = e.getKey();
+            List<com.eden.eden_crm_sec_crm_back.dto.response.PatrolSummaryDto> list = new ArrayList<>();
+            for (AggregatedPatrol agg : e.getValue().values()) {
+                com.eden.eden_crm_sec_crm_back.dto.response.PatrolSummaryDto summary = new com.eden.eden_crm_sec_crm_back.dto.response.PatrolSummaryDto(
+                        Optional.ofNullable(agg.patrolId).orElse(0L),
+                        Optional.ofNullable(agg.patrolName).orElse(""),
+                        Optional.ofNullable(agg.patrolStartDate).map(LocalDate::toString).orElse(null),
+                        agg.patrolFrequencyType,
+                        agg.assignedCount,
+                        agg.finishedCount
+                );
+                list.add(summary);
+            }
+            patrolsPerPremise.put(premiseId, list);
         }
 
-        return new PatrolReportResponseDto(patrolsByPremiseStringKey, premises);
+        // attach patrols to premises
+        List<com.eden.eden_crm_sec_crm_back.dto.response.PremiseResponseDto> premisesWithPatrols = premises.stream()
+                .map(pr -> new com.eden.eden_crm_sec_crm_back.dto.response.PremiseResponseDto(
+                        pr.id(), pr.name(), pr.code(), patrolsPerPremise.getOrDefault(pr.id(), Collections.emptyList())
+                ))
+                .collect(Collectors.toList());
+
+        return new PatrolReportResponseDto(premisesWithPatrols);
+    }
+
+    // small holder for aggregation
+    private static class AggregatedPatrol {
+        Long patrolId;
+        String patrolName;
+        LocalDate patrolStartDate;
+        String patrolFrequencyType;
+        int assignedCount;
+        int finishedCount;
     }
 }
