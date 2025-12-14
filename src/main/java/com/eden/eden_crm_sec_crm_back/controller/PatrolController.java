@@ -36,8 +36,11 @@ public class PatrolController {
         return ApiResponse.ok(patrolService.listAllPatrols());
     }
 
-    @GetMapping("/report/{securityCompanyId}/{contractId}")
-    ApiResponse getPatrolReport(@PathVariable Long securityCompanyId, @PathVariable Long contractId) {
+    @GetMapping("/report")
+    ApiResponse getPatrolReport(
+        @RequestParam Long securityCompanyId,
+        @RequestParam Long contractId
+    ) {
         return ApiResponse.ok(patrolReportService.generatePatrolReport(securityCompanyId, contractId));
     }
 }

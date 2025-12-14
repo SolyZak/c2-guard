@@ -1,22 +1,13 @@
 package com.eden.eden_crm_sec_crm_back.dto.response;
 
+import lombok.Builder;
+
 import java.util.List;
 
-public class PatrolReportResponseDto {
-    private List<PremiseResponseDto> premises;
-
-    public PatrolReportResponseDto() {
-    }
-
-    public PatrolReportResponseDto(List<PremiseResponseDto> premises) {
-        this.premises = premises;
-    }
-
-    public List<PremiseResponseDto> getPremises() {
-        return premises;
-    }
-
-    public void setPremises(List<PremiseResponseDto> premises) {
-        this.premises = premises;
-    }
-}
+@Builder
+public record PatrolReportResponseDto(
+        Long id,
+        String name,
+        String code,
+        List<PatrolSummaryDto> patrols
+) {}
