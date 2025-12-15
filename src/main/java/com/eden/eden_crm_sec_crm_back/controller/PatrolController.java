@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.PatrolReportRequest;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
 import com.eden.eden_crm_sec_crm_back.service.PatrolService;
@@ -36,11 +37,8 @@ public class PatrolController {
         return ApiResponse.ok(patrolService.listAllPatrols());
     }
 
-    @GetMapping("/report")
-    ApiResponse getPatrolReport(
-        @RequestParam Long securityCompanyId,
-        @RequestParam Long contractId
-    ) {
-        return ApiResponse.ok(patrolReportService.generatePatrolReport(securityCompanyId, contractId));
+    @PostMapping("/report")
+    ApiResponse getPatrolReport(@Valid @RequestBody PatrolReportRequest patrolReportRequest) {
+        return ApiResponse.ok(patrolReportService.generatePatrolReport(patrolReportRequest));
     }
 }

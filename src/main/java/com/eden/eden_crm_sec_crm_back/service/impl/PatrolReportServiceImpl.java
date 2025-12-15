@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.PatrolReportRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolSummaryDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolReportResponseDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -11,13 +12,16 @@ import com.eden.eden_crm_sec_crm_back.repository.PatrolPremiseAggregation;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
 import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PatrolReportServiceImpl implements PatrolReportService {
@@ -28,13 +32,22 @@ public class PatrolReportServiceImpl implements PatrolReportService {
 
     @Override
     @Transactional
-    public List<PatrolReportResponseDto> generatePatrolReport(Long securityCompanyId, Long contractId) {
-        Optional<CustomerContract> contractOpt = customerContractRepository.findById(contractId);
-        if (contractOpt.isEmpty() || !Objects.equals(contractOpt.get().getSecurityCompanyId(), securityCompanyId))
+    public List<PatrolReportResponseDto> generatePatrolReport(PatrolReportRequest reportRequest) {
+        Optional<CustomerContract> contractOpt = customerContractRepository.findById(reportRequest.contractId());
+        if (contractOpt.isEmpty() || !Objects.equals(contractOpt.get().getSecurityCompanyId(), reportRequest.securityCompanyId()))
             throw new BusinessException("Contract not found for given security company", HttpStatus.BAD_REQUEST);
 
+        LocalDate startDate = LocalDate.now().withMonth(reportRequest.month()).withDayOfMonth(1);
+        LocalDate endDate = startDate.plusMonths(1).minusDays(1);
         CustomerContract contract = contractOpt.get();
-        List<PatrolPremiseAggregation> aggs = patrolRepository.aggregatePatrolsByPremiseAndPatrol(contract.getId());
+        List<PatrolPremiseAggregation> aggs = patrolRepository.aggregatePatrolsByPremiseAndPatrol(
+                contract.getId(),
+                reportRequest.premiseId(),
+                reportRequest.patrolId(),
+                reportRequest.locationIds(),
+                startDate,
+                endDate
+        );
 
         Set<Long> premiseIds = aggs.stream()
             .map(PatrolPremiseAggregation::getPremiseId)
