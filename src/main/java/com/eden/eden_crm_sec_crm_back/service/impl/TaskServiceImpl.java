@@ -248,7 +248,7 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException("Too early to start task", HttpStatus.BAD_REQUEST);
         }
 
-        if (!patrolDistribution.getTaskId().equals(task.getId())) {
+        if (!patrolDistribution.getTask().getId().equals(task.getId())) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
         }
 
