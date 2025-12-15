@@ -30,8 +30,8 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
          LEFT JOIN p.location l
          LEFT JOIN p.site s
          WHERE p.customerContract.id = :contractId
-           AND COALESCE(s.premise.id, l.premise.id) = COALESCE(:premiseId, COALESCE(s.premise.id, l.premise.id))
-           AND p.patrol.id = COALESCE(:patrolId, p.patrol.id)
+           AND (:premiseIds IS NULL OR COALESCE(s.premise.id, l.premise.id) IN :premiseIds)
+           AND (:patrolIds IS NULL OR p.patrol.id IN :patrolIds)
            AND (:locationIds IS NULL OR l.id IN :locationIds)
            AND p.startDate >= COALESCE(:startDate, p.startDate)
            AND p.startDate <= COALESCE(:endDate,   p.startDate)
@@ -39,8 +39,8 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
     """)
     List<PatrolPremiseAggregation> aggregatePatrolsByPremiseAndPatrol(
             @Param("contractId") Long contractId,
-            @Param("premiseId") Long premiseId,
-            @Param("patrolId") Long patrolId,
+            @Param("premiseIds") Set<Long> premiseId,
+            @Param("patrolIds") Set<Long> patrolIds,
             @Param("locationIds") Set<Long> locationIds,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate

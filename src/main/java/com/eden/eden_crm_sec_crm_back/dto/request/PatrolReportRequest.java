@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import org.hibernate.validator.constraints.Range;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Builder
@@ -14,12 +15,13 @@ public record PatrolReportRequest(
     @NotNull
     Long contractId,
     @Nullable
-    Long premiseId,
+    Set<Long> premiseIds,
     @Nullable
-    Long patrolId,
+    Set<Long> patrolIds,
     @Nullable
     Set<Long> locationIds,
     @NotNull
-    @Range(min = 1, max = 12)
-    Integer month
+    LocalDate fromDate,
+    @NotNull
+    LocalDate toDate
 ) {}
