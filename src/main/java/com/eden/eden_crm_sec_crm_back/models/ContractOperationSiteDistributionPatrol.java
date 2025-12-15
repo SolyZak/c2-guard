@@ -23,14 +23,24 @@ public class ContractOperationSiteDistributionPatrol {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "contract_operation_site_distribution_patrol_seq")
     private Long id;
 
-    Long patrolId;
+    @ManyToOne
+    @JoinColumn(name = "patrol_id", nullable = false)
+    private Patrol patrol;
 
-    Long siteId;
+    @ManyToOne
+    @JoinColumn(name = "site_id", nullable = false)
+    private CustomerSite site;
 
     LocalDate startDate;
     LocalDate endDate;
-    private Long locationId;
-    private Long taskId;
+
+    @ManyToOne
+    @JoinColumn(name = "location_id", nullable = false)
+    private Location location;
+
+    @ManyToOne
+    @JoinColumn(name = "task_id", nullable = false)
+    private Task task;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_contract_service_id", nullable = false)
