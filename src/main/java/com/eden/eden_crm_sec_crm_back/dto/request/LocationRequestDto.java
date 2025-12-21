@@ -5,7 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class LocationDto {
+public class LocationRequestDto {
     String locationName;
     String accessType;
     BigDecimal longitude;

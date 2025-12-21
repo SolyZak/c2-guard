@@ -1,10 +1,12 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.request.LocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.LocationRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.PremiseNotProvided;
@@ -61,17 +63,17 @@ public class LocationServiceImpl implements LocationService {
             throw new PremiseNotProvided();
         List<Location> locations = new ArrayList<>();
         if (request.getLocations() != null) {
-            for(LocationDto locationDto : request.getLocations()) {
+            for(LocationRequestDto locationRequestDto : request.getLocations()) {
                 Location location = new Location();
                 location.setPremise(premiseOptional.get());
-                location.setName(locationDto.getLocationName());
-                if (locationDto.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType()) && locationDto.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
+                location.setName(locationRequestDto.getLocationName());
+                if (locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType()) && locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
                     throw new BusinessException(MessageUtil.getMessage("validation.location.locations.accessType.invalid"), HttpStatus.BAD_REQUEST);
                 }
-                location.setAccessType(locationDto.getAccessType());
+                location.setAccessType(locationRequestDto.getAccessType());
                 // Convert BigDecimal to Double for storage in the entity
-                location.setLatitude(locationDto.getLatitude());
-                location.setLongitude(locationDto.getLongitude());
+                location.setLatitude(locationRequestDto.getLatitude());
+                location.setLongitude(locationRequestDto.getLongitude());
                 location.setCustomer(customer);
                 if (location.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType())) {
                     byte[] qr = QrCodeUtil.generateQrCode(location.getName(), 300, 300);
@@ -166,5 +168,35 @@ public class LocationServiceImpl implements LocationService {
                 return null;
             }
         });
+
     }
-}
+    @Override
+    public ValidateQrResponse validateQr(ValidateQrRequest request) {
+
+        final String payload = request.getPayload();   // extract text
+
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        Optional<Location> opt = locationRepository
+                .findByNameAndAccessTypeAndCustomerId(
+                        payload,
+                        LocationAccessTypeEnum.QR_CODE.getType(),
+                        customer.getId());
+
+        if (opt.isPresent()) {
+            Location loc  = opt.get();
+            String msg    = MessageUtil.getMessage("validation.qr.success");
+            return new ValidateQrResponse(
+                    true,
+                    msg,
+                    loc.getId(),
+                    loc.getName()
+            );
+        }
+
+        String msg = MessageUtil.getMessage("validation.qr.invalid");
+        return new ValidateQrResponse(false, msg, null, "");
+    }
+        }

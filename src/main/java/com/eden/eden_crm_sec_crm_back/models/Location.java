@@ -28,10 +28,18 @@ public class Location extends BaseAuditEntity {
     private String name;
     private String accessType;
 
-    @Column(precision = 13, scale = 10)
+    @Column(name = "longitude",
+            precision = 13,
+            scale     = 10,
+            nullable  = true,
+            columnDefinition = "DECIMAL(13,10)")
     private BigDecimal longitude;
 
-    @Column(precision = 13, scale = 10)
+    @Column(name = "latitude",
+            precision = 13,
+            scale     = 10,
+            nullable  = true,
+            columnDefinition = "DECIMAL(13,10)")
     private BigDecimal latitude;
 
     @Lob
