@@ -1,9 +1,11 @@
 package com.eden.eden_crm_sec_crm_back.service;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
+import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.google.zxing.WriterException;
 
@@ -16,5 +18,7 @@ public interface LocationService {
 
     List<LocationWithPremiseDto> findLoggedInCustomerLocations();
 
-    List<LocationDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId);
+    List<LocationResponseDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId);
+
+    ValidateQrResponse validateQr(ValidateQrRequest request);
 }

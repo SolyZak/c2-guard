@@ -1,15 +1,19 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
+import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
 import com.google.zxing.WriterException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -40,7 +44,17 @@ public class LocationController {
     }
 
     @GetMapping("/all/{patrolId}")
-    ApiResponse<List<LocationDto>> listLocationsNoPaginationByPatrolId(@PathVariable("patrolId") Long patrolId) {
+    ApiResponse<List<LocationResponseDto>> listLocationsNoPaginationByPatrolId(@PathVariable("patrolId") Long patrolId) {
         return ApiResponse.ok(locationService.findLoggedInCustomerLocationsByPatrolId(patrolId));
+    }
+    @PostMapping("/validate-qr")
+    public ResponseEntity<ValidateQrResponse> validateQr(
+            @Valid @RequestBody ValidateQrRequest req) {
+
+        ValidateQrResponse resp = locationService.validateQr(req);   // <-- pass DTO
+
+        return resp.isSuccess()
+                ? ResponseEntity.ok(resp)
+                : ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
     }
 }
