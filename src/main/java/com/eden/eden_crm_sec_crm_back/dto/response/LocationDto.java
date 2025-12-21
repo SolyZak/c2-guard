@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 public record LocationDto(
         Long locationId,
         String locationName,
-        Double longitude,
-        Double latitude
+        BigDecimal longitude,
+        BigDecimal latitude
 ) {
 }

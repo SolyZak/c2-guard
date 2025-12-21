@@ -116,29 +116,15 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto>
-    findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
-
-        /* ================= ORIGINAL CODE ================= */
-    /*
-    Customer customer = customerRepository
-            .findById(utils.getLoggedInUser().getCustomerId())
-            .orElseThrow(UserNotProvided::new);
-    */
-        /* ================================================= */
-
-        /* ---------- LOCAL TESTING ONLY ------------------- */
-        Long customerId = 1L;   // hardcoded for local testing
-        Long localPatrolId = 4L; // hardcoded for local testing
-        /* ------------------------------------------------- */
+    public List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
 
         Customer customer = customerRepository
-                .findById(customerId)
+                .findById(utils.getLoggedInUser().getCustomerId())
                 .orElseThrow(UserNotProvided::new);
 
         List<LocationProjection> patrolLocations =
                 locationRepository.listAllLoggedInCustomerLocationsByPatrolId(
-                        customer.getId(), localPatrolId);
+                        customer.getId(), patrolId);
 
         /* Using a LinkedHashMap just to keep insertion order and ensure uniqueness */
         Map<Long, LocationProjection> uniqueById = new LinkedHashMap<>();
@@ -155,10 +141,8 @@ public class LocationServiceImpl implements LocationService {
                     lp.getLatitude()
             ));
         }
-
         return result;
     }
-
 
     public byte[] getQrImage(Long id) {
         Session session = em.unwrap(Session.class);
