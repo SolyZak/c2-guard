@@ -159,12 +159,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                 .orElseThrow(
                         () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
                 );
-        return customerSiteRepository.findAvailableSitesForContract(
-                        getLoggedInCustomerId(),
-                        contractId,
-                        contract.getStartAgreementDate(),
-                        contract.getEndAgreementDate()
-                )
+        return customerSiteRepository.findByCustomerId(getLoggedInCustomerId())
                 .stream()
                 .map(customerSiteMapper::toDropdown)
                 .toList();

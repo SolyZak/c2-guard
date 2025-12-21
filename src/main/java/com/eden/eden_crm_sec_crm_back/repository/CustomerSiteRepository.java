@@ -27,30 +27,6 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     List<CustomerSite> listByIdAndCustomerId(@Param("ids") List<Long> ids, @Param("customerId") Long customerId);
 
     @Query("""
-            SELECT DISTINCT cs FROM CustomerSite cs
-            WHERE cs.customer.id = :customerId AND (
-                EXISTS (
-                    SELECT sd FROM SiteDistribution sd
-                    WHERE sd.site = cs AND sd.customerContract.id = :contractId
-                )
-                OR NOT EXISTS (
-                    SELECT sd FROM SiteDistribution sd
-                    WHERE sd.site = cs AND (
-                        sd.customerContract.startAgreementDate <= :endDate AND
-                        sd.customerContract.endAgreementDate >= :startDate AND
-                        sd.customerContract.id <> :contractId
-                    )
-                )
-            )
-            """)
-    List<CustomerSite> findAvailableSitesForContract(
-            @Param("customerId") Long customerId,
-            @Param("contractId") Long contractId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
-    );
-
-    @Query("""
             SELECT cs.id as id, cs.name as name FROM CustomerSite cs
             WHERE cs.customer.id = :customerId
             """)
