@@ -10,5 +10,5 @@ public class AddLocationRequest {
     @NotNull(message = "{validation.location.premise.required}")
     Long premiseId;
     @NotNull(message = "{validation.location.locations.required}")
-    List<LocationDto> locations;
+    List<LocationRequestDto> locations;
 }

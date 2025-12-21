@@ -1,9 +1,12 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.request.LocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.LocationRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
+import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.PremiseNotProvided;
@@ -36,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
@@ -59,16 +63,17 @@ public class LocationServiceImpl implements LocationService {
             throw new PremiseNotProvided();
         List<Location> locations = new ArrayList<>();
         if (request.getLocations() != null) {
-            for(LocationDto locationDto : request.getLocations()) {
+            for(LocationRequestDto locationRequestDto : request.getLocations()) {
                 Location location = new Location();
                 location.setPremise(premiseOptional.get());
-                location.setName(locationDto.getLocationName());
-                if (locationDto.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType()) && locationDto.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
+                location.setName(locationRequestDto.getLocationName());
+                if (locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType()) && locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
                     throw new BusinessException(MessageUtil.getMessage("validation.location.locations.accessType.invalid"), HttpStatus.BAD_REQUEST);
                 }
-                location.setAccessType(locationDto.getAccessType());
-                location.setLatitude(locationDto.getLatitude());
-                location.setLongitude(locationDto.getLongitude());
+                location.setAccessType(locationRequestDto.getAccessType());
+                // Convert BigDecimal to Double for storage in the entity
+                location.setLatitude(locationRequestDto.getLatitude());
+                location.setLongitude(locationRequestDto.getLongitude());
                 location.setCustomer(customer);
                 if (location.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType())) {
                     byte[] qr = QrCodeUtil.generateQrCode(location.getName(), 300, 300);
@@ -116,29 +121,15 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto>
-    findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
-
-        /* ================= ORIGINAL CODE ================= */
-    /*
-    Customer customer = customerRepository
-            .findById(utils.getLoggedInUser().getCustomerId())
-            .orElseThrow(UserNotProvided::new);
-    */
-        /* ================================================= */
-
-        /* ---------- LOCAL TESTING ONLY ------------------- */
-        Long customerId = 1L;   // hardcoded for local testing
-        Long localPatrolId = 4L; // hardcoded for local testing
-        /* ------------------------------------------------- */
+    public List<LocationResponseDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
 
         Customer customer = customerRepository
-                .findById(customerId)
+                .findById(utils.getLoggedInUser().getCustomerId())
                 .orElseThrow(UserNotProvided::new);
 
         List<LocationProjection> patrolLocations =
                 locationRepository.listAllLoggedInCustomerLocationsByPatrolId(
-                        customer.getId(), localPatrolId);
+                        customer.getId(), patrolId);
 
         /* Using a LinkedHashMap just to keep insertion order and ensure uniqueness */
         Map<Long, LocationProjection> uniqueById = new LinkedHashMap<>();
@@ -146,19 +137,17 @@ public class LocationServiceImpl implements LocationService {
             uniqueById.putIfAbsent(lp.getId(), lp);
         }
 
-        List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> result = new ArrayList<>();
+        List<LocationResponseDto> result = new ArrayList<>();
         for (LocationProjection lp : uniqueById.values()) {
-            result.add(new com.eden.eden_crm_sec_crm_back.dto.response.LocationDto(
+            result.add(new LocationResponseDto(
                     lp.getId(),
                     lp.getName(),
-                    lp.getLongitude(),
-                    lp.getLatitude()
+                    BigDecimal.valueOf(lp.getLongitude()),
+                    BigDecimal.valueOf(lp.getLatitude())
             ));
         }
-
         return result;
     }
-
 
     public byte[] getQrImage(Long id) {
         Session session = em.unwrap(Session.class);
@@ -179,5 +168,35 @@ public class LocationServiceImpl implements LocationService {
                 return null;
             }
         });
+
     }
-}
+    @Override
+    public ValidateQrResponse validateQr(ValidateQrRequest request) {
+
+        final String payload = request.getPayload();   // extract text
+
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        Optional<Location> opt = locationRepository
+                .findByNameAndAccessTypeAndCustomerId(
+                        payload,
+                        LocationAccessTypeEnum.QR_CODE.getType(),
+                        customer.getId());
+
+        if (opt.isPresent()) {
+            Location loc  = opt.get();
+            String msg    = MessageUtil.getMessage("validation.qr.success");
+            return new ValidateQrResponse(
+                    true,
+                    msg,
+                    loc.getId(),
+                    loc.getName()
+            );
+        }
+
+        String msg = MessageUtil.getMessage("validation.qr.invalid");
+        return new ValidateQrResponse(false, msg, null, "");
+    }
+        }
