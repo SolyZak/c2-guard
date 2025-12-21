@@ -116,19 +116,49 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        List<LocationProjection> patrolLocations = locationRepository.listAllLoggedInCustomerLocationsByPatrolId(customer.getId(), patrolId);
+    public List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto>
+    findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
+
+        /* ================= ORIGINAL CODE ================= */
+    /*
+    Customer customer = customerRepository
+            .findById(utils.getLoggedInUser().getCustomerId())
+            .orElseThrow(UserNotProvided::new);
+    */
+        /* ================================================= */
+
+        /* ---------- LOCAL TESTING ONLY ------------------- */
+        Long customerId = 1L;   // hardcoded for local testing
+        Long localPatrolId = 4L; // hardcoded for local testing
+        /* ------------------------------------------------- */
+
+        Customer customer = customerRepository
+                .findById(customerId)
+                .orElseThrow(UserNotProvided::new);
+
+        List<LocationProjection> patrolLocations =
+                locationRepository.listAllLoggedInCustomerLocationsByPatrolId(
+                        customer.getId(), localPatrolId);
+
+        /* Using a LinkedHashMap just to keep insertion order and ensure uniqueness */
+        Map<Long, LocationProjection> uniqueById = new LinkedHashMap<>();
+        for (LocationProjection lp : patrolLocations) {
+            uniqueById.putIfAbsent(lp.getId(), lp);
+        }
+
         List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> result = new ArrayList<>();
-        Map<Long, String> locationIds = new HashMap<>();
-        for (LocationProjection locationProjection : patrolLocations) {
-            locationIds.put(locationProjection.getId(), locationProjection.getName());
+        for (LocationProjection lp : uniqueById.values()) {
+            result.add(new com.eden.eden_crm_sec_crm_back.dto.response.LocationDto(
+                    lp.getId(),
+                    lp.getName(),
+                    lp.getLongitude(),
+                    lp.getLatitude()
+            ));
         }
-        for (Map.Entry<Long, String> entry : locationIds.entrySet()) {
-            result.add(new com.eden.eden_crm_sec_crm_back.dto.response.LocationDto(entry.getKey(), entry.getValue()));
-        }
+
         return result;
     }
+
 
     public byte[] getQrImage(Long id) {
         Session session = em.unwrap(Session.class);
