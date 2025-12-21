@@ -1,7 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
@@ -40,7 +40,7 @@ public class LocationController {
     }
 
     @GetMapping("/all/{patrolId}")
-    ApiResponse<List<LocationDto>> listLocationsNoPaginationByPatrolId(@PathVariable("patrolId") Long patrolId) {
+    ApiResponse<List<LocationResponseDto>> listLocationsNoPaginationByPatrolId(@PathVariable("patrolId") Long patrolId) {
         return ApiResponse.ok(locationService.findLoggedInCustomerLocationsByPatrolId(patrolId));
     }
 }

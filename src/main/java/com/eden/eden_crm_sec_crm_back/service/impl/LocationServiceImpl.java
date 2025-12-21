@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.LocationDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
@@ -67,6 +69,7 @@ public class LocationServiceImpl implements LocationService {
                     throw new BusinessException(MessageUtil.getMessage("validation.location.locations.accessType.invalid"), HttpStatus.BAD_REQUEST);
                 }
                 location.setAccessType(locationDto.getAccessType());
+                // Convert BigDecimal to Double for storage in the entity
                 location.setLatitude(locationDto.getLatitude());
                 location.setLongitude(locationDto.getLongitude());
                 location.setCustomer(customer);
@@ -116,7 +119,7 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
+    public List<LocationResponseDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId) {
 
         Customer customer = customerRepository
                 .findById(utils.getLoggedInUser().getCustomerId())
@@ -132,13 +135,13 @@ public class LocationServiceImpl implements LocationService {
             uniqueById.putIfAbsent(lp.getId(), lp);
         }
 
-        List<com.eden.eden_crm_sec_crm_back.dto.response.LocationDto> result = new ArrayList<>();
+        List<LocationResponseDto> result = new ArrayList<>();
         for (LocationProjection lp : uniqueById.values()) {
-            result.add(new com.eden.eden_crm_sec_crm_back.dto.response.LocationDto(
+            result.add(new LocationResponseDto(
                     lp.getId(),
                     lp.getName(),
-                    lp.getLongitude(),
-                    lp.getLatitude()
+                    BigDecimal.valueOf(lp.getLongitude()),
+                    BigDecimal.valueOf(lp.getLatitude())
             ));
         }
         return result;

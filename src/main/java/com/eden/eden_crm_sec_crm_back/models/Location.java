@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -26,8 +27,12 @@ public class Location extends BaseAuditEntity {
     private Premise premise;
     private String name;
     private String accessType;
-    private Double longitude;
-    private Double latitude;
+
+    @Column(precision = 13, scale = 10)
+    private BigDecimal longitude;
+
+    @Column(precision = 13, scale = 10)
+    private BigDecimal latitude;
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
