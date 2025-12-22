@@ -20,7 +20,7 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     List<CustomerSite> findByCustomerId(Long customerId);
 
     @Query("""
-       select new com.eden.eden_crm_sec_crm_back.dto.response.OperationSiteData(
+       select new com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData(
                 cs.id,
                 concat(cs.name, ' - ', coalesce(p.name, '')),
                 cs.latitude,
