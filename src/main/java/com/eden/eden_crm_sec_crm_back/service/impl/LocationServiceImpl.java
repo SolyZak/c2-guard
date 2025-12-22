@@ -2,11 +2,9 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.LocationRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.ValidateLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.PremiseNotProvided;
@@ -20,6 +18,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
+import com.eden.eden_crm_sec_crm_back.utils.LocationUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.QrCodeUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -75,8 +74,9 @@ public class LocationServiceImpl implements LocationService {
                 location.setLatitude(locationRequestDto.getLatitude());
                 location.setLongitude(locationRequestDto.getLongitude());
                 location.setCustomer(customer);
+                location.setTolerance(locationRequestDto.getTolerance());
                 if (location.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType())) {
-                    byte[] qr = QrCodeUtil.generateQrCode(location.getName(), 300, 300);
+                    byte[] qr = QrCodeUtil.generateQrCode(location.getId().toString(), 300, 300);
                     location.setQrImage(qr);
                 }
                 locations.add(location);
@@ -170,18 +170,19 @@ public class LocationServiceImpl implements LocationService {
         });
 
     }
+
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
 
-        final String payload = request.getPayload();   // extract text
+        final Long id = Long.valueOf(request.getPayload());   // extract text
 
         Customer customer = customerRepository
                 .findById(utils.getLoggedInUser().getCustomerId())
                 .orElseThrow(UserNotProvided::new);
 
         Optional<Location> opt = locationRepository
-                .findByNameAndAccessTypeAndCustomerId(
-                        payload,
+                .findByIdAndAccessTypeAndCustomerId(
+                        id,
                         LocationAccessTypeEnum.QR_CODE.getType(),
                         customer.getId());
 
@@ -199,4 +200,31 @@ public class LocationServiceImpl implements LocationService {
         String msg = MessageUtil.getMessage("validation.qr.invalid");
         return new ValidateQrResponse(false, msg, null, "");
     }
+
+    @Override
+    public ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest request) {
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        Optional<Location> opt = locationRepository
+                .findByIdAndAccessTypeAndCustomerId(
+                        locationId,
+                        LocationAccessTypeEnum.SPECIFIC_POINT.getType(),
+                        customer.getId()
+                );
+
+        boolean isSuccess = false;
+
+        if (opt.isPresent()) {
+            Location loc = opt.get();
+            isSuccess = LocationUtils.isWithinTolerance(
+                    request.latitude(), request.longitude(), loc.getLatitude(), loc.getLongitude(), loc.getTolerance()
+            );
         }
+
+        return ValidateLocationResponse.builder()
+                .success(isSuccess)
+                .build();
+    }
+}

@@ -41,13 +41,13 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     @Query("""
     SELECT l
     FROM Location l
-    WHERE l.name = :name
+    WHERE l.id = :id
       AND l.accessType = :accessType
       AND l.customer.id = :customerId
       AND l.deleted = false
 """)
-    Optional<Location> findByNameAndAccessTypeAndCustomerId(
-            @Param("name") String name,
+    Optional<Location> findByIdAndAccessTypeAndCustomerId(
+            @Param("id") Long id,
             @Param("accessType") String accessType,
             @Param("customerId") Long customerId
     );

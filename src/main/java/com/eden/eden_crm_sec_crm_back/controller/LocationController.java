@@ -1,11 +1,9 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.ValidateLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
@@ -47,6 +45,7 @@ public class LocationController {
     ApiResponse<List<LocationResponseDto>> listLocationsNoPaginationByPatrolId(@PathVariable("patrolId") Long patrolId) {
         return ApiResponse.ok(locationService.findLoggedInCustomerLocationsByPatrolId(patrolId));
     }
+
     @PostMapping("/validate-qr")
     public ResponseEntity<ValidateQrResponse> validateQr(
             @Valid @RequestBody ValidateQrRequest req) {
@@ -54,6 +53,17 @@ public class LocationController {
         ValidateQrResponse resp = locationService.validateQr(req);   // <-- pass DTO
 
         return resp.isSuccess()
+                ? ResponseEntity.ok(resp)
+                : ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
+    }
+
+    @PostMapping("/{id}/validate-location")
+    public ResponseEntity<ValidateLocationResponse> validateLocation(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody ValidateLocationRequest req
+    ) {
+        ValidateLocationResponse resp = locationService.validateLocation(id, req);
+        return resp.success()
                 ? ResponseEntity.ok(resp)
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
     }
