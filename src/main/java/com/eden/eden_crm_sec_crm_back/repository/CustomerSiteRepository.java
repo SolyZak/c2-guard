@@ -26,6 +26,8 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             """)
     List<CustomerSite> listByIdAndCustomerId(@Param("ids") List<Long> ids, @Param("customerId") Long customerId);
 
+
+    //this was used before
     @Query("""
             SELECT cs.id as id, cs.name as name FROM CustomerSite cs
             WHERE cs.customer.id = :customerId
@@ -54,4 +56,14 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             @Param("search") String search, @Param("customerId") Long customerId,
             Pageable pageable
     );
+    @Query("""
+       select cs.id                                             as id,
+              concat(cs.name, ' - ', coalesce(p.name, ''))      as name
+       from   CustomerSite cs
+       left  join cs.premise p
+       where  cs.customer.id = :customerId
+       """)
+    List<GeneralDropdownProjection> findCustomerSitesForDropdown(@Param("customerId") Long customerId);
+
+
 }

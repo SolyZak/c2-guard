@@ -155,11 +155,14 @@ public class CustomerContractServiceImpl implements CustomerContractService {
 
     @Override
     public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
-        CustomerContract contract = customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId())
-                .orElseThrow(
-                        () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
-                );
-        return customerSiteRepository.findByCustomerId(getLoggedInCustomerId())
+
+        customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("contract")}),
+                        HttpStatus.NOT_FOUND));
+
+        return customerSiteRepository.findCustomerSitesForDropdown(getLoggedInCustomerId())   // <<--
                 .stream()
                 .map(customerSiteMapper::toDropdown)
                 .toList();

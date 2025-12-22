@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface LocationRepository extends JpaRepository<Location,Long> {
@@ -36,4 +37,19 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
             SELECT l.id as id,l.premise as premise,l.name as name,l.accessType as accessType,l.longitude as longitude,l.latitude as latitude FROM Location l JOIN l.patrolDetails pd where l.customer.id = :customerId AND pd.patrol.id = :patrolId
             """)
     List<LocationProjection> listAllLoggedInCustomerLocationsByPatrolId(@Param("customerId") Long customerId, @Param("patrolId") Long patrolId);
+
+    @Query("""
+    SELECT l
+    FROM Location l
+    WHERE l.name = :name
+      AND l.accessType = :accessType
+      AND l.customer.id = :customerId
+      AND l.deleted = false
+""")
+    Optional<Location> findByNameAndAccessTypeAndCustomerId(
+            @Param("name") String name,
+            @Param("accessType") String accessType,
+            @Param("customerId") Long customerId
+    );
+
 }
