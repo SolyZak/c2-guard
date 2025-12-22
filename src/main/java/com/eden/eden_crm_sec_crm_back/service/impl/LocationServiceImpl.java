@@ -166,6 +166,8 @@ public class LocationServiceImpl implements LocationService {
                     return data;
                 }
                 return null;
+            } catch (Exception e) {
+                return new byte[0];
             }
         });
 
