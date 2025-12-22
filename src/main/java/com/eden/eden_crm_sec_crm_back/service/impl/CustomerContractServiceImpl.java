@@ -153,37 +153,38 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                 .map(contractMapper::toContractRowDto).toList();
     }
 
-//    @Override
-//    public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
-//
-//        customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId())
-//                .orElseThrow(() -> new BusinessException(
-//                        MessageUtil.getMessage("entity.not-found",
-//                                new Object[]{MessageUtil.getMessage("contract")}),
-//                        HttpStatus.NOT_FOUND));
-//
-//        return customerSiteRepository.findCustomerSitesForDropdown(getLoggedInCustomerId())   // <<--
-//                .stream()
-//                .map(customerSiteMapper::toDropdown)
-//                .toList();
-//    }
-@Override
-public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
+    @Override
+    public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
 
-    // make sure the contract really belongs to the logged-in customer
-    customerContractRepository
-            .findByIdAndCustomerId(contractId, getLoggedInCustomerId())
-            .orElseThrow(() -> new BusinessException(
-                    MessageUtil.getMessage("entity.not-found",
-                            new Object[]{MessageUtil.getMessage("contract")}),
-                    HttpStatus.NOT_FOUND));
+        customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("contract")}),
+                        HttpStatus.NOT_FOUND));
 
-    return customerSiteRepository
-            .findOperationSitesForDropdown(contractId, getLoggedInCustomerId())
-            .stream()
-            .map(customerSiteMapper::toDropdown)
-            .toList();
-}
+        return customerSiteRepository.findCustomerSitesForDropdown(getLoggedInCustomerId())   // <<--
+                .stream()
+                .map(customerSiteMapper::toDropdown)
+                .toList();
+    }
+
+//@Override
+//public List<GeneralDropdown> availableOperationSitesList(Long contractId) {
+//
+//    // make sure the contract really belongs to the logged-in customer
+//    customerContractRepository
+//            .findByIdAndCustomerId(contractId, getLoggedInCustomerId())
+//            .orElseThrow(() -> new BusinessException(
+//                    MessageUtil.getMessage("entity.not-found",
+//                            new Object[]{MessageUtil.getMessage("contract")}),
+//                    HttpStatus.NOT_FOUND));
+//
+//    return customerSiteRepository
+//            .findOperationSitesForDropdown(contractId, getLoggedInCustomerId())
+//            .stream()
+//            .map(customerSiteMapper::toDropdown)
+//            .toList();
+//}
 
     @Override
     public List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId) {
