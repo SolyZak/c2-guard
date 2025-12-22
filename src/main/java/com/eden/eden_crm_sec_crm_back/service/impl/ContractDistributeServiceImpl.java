@@ -22,6 +22,7 @@ import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -163,7 +164,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             CustomTimezone customerTimezone,
             Long serviceHours
     ) {
-        ZoneId customerZone = ZoneId.of(customerTimezone.name());
+        ZoneId customerZone = DateUtils.getTimeWithTimezone(customerTimezone);
 
         ZonedDateTime fromZoned = rawFromTime.atDate(LocalDate.now()).atZone(customerZone);
         ZonedDateTime toZoned = fromZoned.plusHours(serviceHours);
