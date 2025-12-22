@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,22 @@ import java.util.Optional;
 public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long>, JpaSpecificationExecutor<CustomerSite> {
 
     List<CustomerSite> findByCustomerId(Long customerId);
+
+    @Query("""
+           select new com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto(
+                    cs.id,
+                    concat(cs.name, ' - ', coalesce(p.name, '')),
+                    cs.latitude,
+                    cs.longitude,
+                    cs.tolerance
+           )
+           from   CustomerSite cs
+           left  join cs.premise p
+           where  cs.customer.id = :customerId
+           """)
+    List<CustomerSiteResponseDto> findSitesForVisitorDropdown(@Param("customerId") Long customerId);
+
+
 
     Optional<CustomerSite> findByIdAndCustomerId(Long id, Long customerId);
 
@@ -56,14 +73,55 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             @Param("search") String search, @Param("customerId") Long customerId,
             Pageable pageable
     );
-    @Query("""
-       select cs.id                                             as id,
-              concat(cs.name, ' - ', coalesce(p.name, ''))      as name
-       from   CustomerSite cs
-       left  join cs.premise p
-       where  cs.customer.id = :customerId
-       """)
-    List<GeneralDropdownProjection> findCustomerSitesForDropdown(@Param("customerId") Long customerId);
+//    @Query("""
+//       select cs.id                                             as id,
+//              concat(cs.name, ' - ', coalesce(p.name, ''))      as name
+//       from   CustomerSite cs
+//       left  join cs.premise p
+//       where  cs.customer.id = :customerId
+//       """)
+//    List<GeneralDropdownProjection> findCustomerSitesForDropdown(@Param("customerId") Long customerId);
 
+    @Query(value = """
+    ---------------------------------------------------------------------------
+    --  Purpose
+    --  -------
+    --  Return the list of operation-sites that
+    --      • belong to the supplied customer-contract  (:contractId)
+    --      • belong to the current customer             (:customerId)
+    --      • have at least one patrol row attached
+    --
+    --  The projection we return is:
+    --      id   -> site id              (hidden value used by the UI)
+    --      name -> "<site name> - <premise name>"   (text shown to user)
+    ---------------------------------------------------------------------------
+    SELECT DISTINCT
+           cs.id                                             AS id,   -- dropdown value
+           CONCAT( cs.name, ' - ',
+                   COALESCE(pr.name, '') )                   AS name -- dropdown label (NO premise-id)
+    FROM   contract_operation_site_distribution sd           -- link: contract ➜ site
+           JOIN customer_site cs
+             ON sd.operation_site_id = cs.id                 -- the actual site entity
+           LEFT JOIN premise pr
+             ON cs.premise_id = pr.id                        -- optional premise for a site
+    ---------------------------------------------------------------------------
+    --  Filters
+    ---------------------------------------------------------------------------
+    WHERE  sd.customer_contract_id = :contractId             -- site belongs to contract
+      AND  cs.customer_id          = :customerId             -- site belongs to customer
+      -------------------------------------------------------------------------
+      --  keep the site only if at least one patrol exists for the same
+      --  contract (and obviously on that site)
+      -------------------------------------------------------------------------
+      AND  EXISTS (
+              SELECT 1
+              FROM   contract_operation_distribution_site_patrol sp
+              WHERE  sp.site_id              = cs.id
+                AND  sp.customer_contract_id = :contractId
+           )
+    """,
+            nativeQuery = true)
+    List<GeneralDropdownProjection> findOperationSitesForDropdown(@Param("contractId") Long contractId,
+                                                                  @Param("customerId")  Long customerId);
 
 }
