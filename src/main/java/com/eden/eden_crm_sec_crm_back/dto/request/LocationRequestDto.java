@@ -10,4 +10,5 @@ public class LocationRequestDto {
     String accessType;
     BigDecimal longitude;
     BigDecimal latitude;
+    BigDecimal tolerance;
 }
