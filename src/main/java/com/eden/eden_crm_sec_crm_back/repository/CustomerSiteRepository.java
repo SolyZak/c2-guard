@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,22 @@ import java.util.Optional;
 public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long>, JpaSpecificationExecutor<CustomerSite> {
 
     List<CustomerSite> findByCustomerId(Long customerId);
+
+    @Query("""
+           select new com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto(
+                    cs.id,
+                    concat(cs.name, ' - ', coalesce(p.name, '')),
+                    cs.latitude,
+                    cs.longitude,
+                    cs.tolerance
+           )
+           from   CustomerSite cs
+           left  join cs.premise p
+           where  cs.customer.id = :customerId
+           """)
+    List<CustomerSiteResponseDto> findSitesForVisitorDropdown(@Param("customerId") Long customerId);
+
+
 
     Optional<CustomerSite> findByIdAndCustomerId(Long id, Long customerId);
 

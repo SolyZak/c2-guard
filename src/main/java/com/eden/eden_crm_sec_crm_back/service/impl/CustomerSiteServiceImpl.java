@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -76,7 +75,8 @@ public class CustomerSiteServiceImpl implements CustomerSiteService {
 
     @Override
     public List<CustomerSiteResponseDto> getSitesForCustomer() {
-        return customerSiteRepository.findByCustomerId(getLoggedInCustomerId()).stream().map(customerSiteMapper::fromEntity).toList();
+        return customerSiteRepository
+                .findSitesForVisitorDropdown(getLoggedInCustomerId());
     }
 
     @Override
