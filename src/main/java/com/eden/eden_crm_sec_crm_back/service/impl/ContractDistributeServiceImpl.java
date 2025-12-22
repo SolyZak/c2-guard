@@ -91,7 +91,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             dto.getOperationServices().forEach(lkCustomerContractOperationServiceDto -> {
                 OffsetTime[] times = getTimes(
                         lkCustomerContractOperationServiceDto.getFromTime(),
-                        CustomTimezone.UTC,
+                        customer.getTimezone(),
                         service.getCustomerService().getHours()
                 );
                 LKCustomerContractOperationService lkCustomerContractOperationService = new LKCustomerContractOperationService();
