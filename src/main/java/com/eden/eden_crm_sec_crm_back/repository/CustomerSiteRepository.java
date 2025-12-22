@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
+import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
@@ -19,18 +20,18 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     List<CustomerSite> findByCustomerId(Long customerId);
 
     @Query("""
-           select new com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto(
-                    cs.id,
-                    concat(cs.name, ' - ', coalesce(p.name, '')),
-                    cs.latitude,
-                    cs.longitude,
-                    cs.tolerance
-           )
-           from   CustomerSite cs
-           left  join cs.premise p
-           where  cs.customer.id = :customerId
-           """)
-    List<CustomerSiteResponseDto> findSitesForVisitorDropdown(@Param("customerId") Long customerId);
+       select new com.eden.eden_crm_sec_crm_back.dto.response.OperationSiteData(
+                cs.id,
+                concat(cs.name, ' - ', coalesce(p.name, '')),
+                cs.latitude,
+                cs.longitude,
+                cs.tolerance
+       )
+       from   CustomerSite cs
+       left  join cs.premise p
+       where  cs.customer.id = :customerId
+       """)
+    List<OperationSiteData> findSitesForVisitorDropdown(@Param("customerId") Long customerId);
 
 
 

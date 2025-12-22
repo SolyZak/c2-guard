@@ -74,7 +74,7 @@ public class ExternalServiceImpl implements ExternalService {
 
     @Override
     public List<OperationSiteData> getCustomerOperationSites(Long customerId) {
-        return customerSiteRepository.findByCustomerId(customerId).stream().map(externalMapper::fromEntity).toList();
+        return customerSiteRepository.findSitesForVisitorDropdown(customerId);
     }
 
     @Override
