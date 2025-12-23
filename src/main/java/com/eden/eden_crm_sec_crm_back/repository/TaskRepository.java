@@ -44,7 +44,22 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
     List<Task> listLoggedInTasksByPatrolIdAndLocationId(@Param("customerId") Long customerId, @Param("patrolId") Long patrolId, @Param("locationId") Long locationId);
 
     @Query("""
-            SELECT t.name as taskName, p.name as patrolName, l.name as locationName, pr.name as premiseName, d.endDate as endDate, d.startDate as startDate, d.fromTime as startTime, d.toTime as endTime, d.patrolFrequencyType as patrolFreqType, d.id as patrolDistributionId, t.id as taskId, d.status as periodStatus
+            SELECT 
+                t.name as taskName,
+                p.id as patrolId,
+                p.name as patrolName,
+                l.id as locationId,
+                l.name as locationName,
+                pr.id as premiseId,
+                pr.name as premiseName,
+                d.endDate as endDate,
+                d.startDate as startDate,
+                d.fromTime as startTime,
+                d.toTime as endTime,
+                d.patrolFrequencyType as patrolFreqType,
+                d.id as patrolDistributionId,
+                t.id as taskId,
+                d.status as periodStatus
             FROM Task t JOIN t.patrolDetails pd 
             JOIN pd.patrol p  
             JOIN pd.location l 

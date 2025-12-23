@@ -109,10 +109,16 @@ public class TaskServiceImpl implements TaskService {
         for (TodayTasksProjection projection : todayTasksProjections) {
             TodayTasks search = new TodayTasks(
                     projection.getTaskName(),
+                    projection.getPatrolId(),
                     projection.getPatrolName(),
+                    projection.getLocationId(),
                     projection.getLocationName(),
+                    projection.getPremiseId(),
                     projection.getPremiseName(),
+                    projection.getStartDate(),
                     projection.getEndDate(),
+                    projection.getStartTime(),
+                    projection.getEndTime(),
                     projection.getPatrolFreqType(),
                     projection.getTaskId(),
                     projection.getPatrolDistributionId(),
@@ -122,11 +128,14 @@ public class TaskServiceImpl implements TaskService {
                 List<TodayTasks> list = new ArrayList<>();
                 list.add(new TodayTasks(
                         projection.getTaskName(),
+                        projection.getPatrolId(),
                         projection.getPatrolName(),
+                        projection.getLocationId(),
                         projection.getLocationName(),
+                        projection.getPremiseId(),
                         projection.getPremiseName(),
-                        projection.getEndDate(),
                         projection.getStartDate(),
+                        projection.getEndDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
@@ -138,11 +147,14 @@ public class TaskServiceImpl implements TaskService {
             } else {
                 map.get(search).add(new TodayTasks(
                         projection.getTaskName(),
+                        projection.getPatrolId(),
                         projection.getPatrolName(),
+                        projection.getLocationId(),
                         projection.getLocationName(),
+                        projection.getPremiseId(),
                         projection.getPremiseName(),
-                        projection.getEndDate(),
                         projection.getStartDate(),
+                        projection.getEndDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
