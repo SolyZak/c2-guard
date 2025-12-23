@@ -175,22 +175,13 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
-
-        final Long id = Long.valueOf(request.getPayload());   // extract text
-
-        Customer customer = customerRepository
-                .findById(utils.getLoggedInUser().getCustomerId())
-                .orElseThrow(UserNotProvided::new);
-
+        final Long id = Long.valueOf(request.getPayload());
         Optional<Location> opt = locationRepository
-                .findByIdAndAccessTypeAndCustomerId(
-                        id,
-                        LocationAccessTypeEnum.QR_CODE.getType(),
-                        customer.getId());
+                .findByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
         if (opt.isPresent()) {
-            Location loc  = opt.get();
-            String msg    = MessageUtil.getMessage("validation.qr.success");
+            Location loc = opt.get();
+            String msg = MessageUtil.getMessage("validation.qr.success");
             return new ValidateQrResponse(
                     true,
                     msg,
@@ -205,15 +196,10 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest request) {
-        Customer customer = customerRepository
-                .findById(utils.getLoggedInUser().getCustomerId())
-                .orElseThrow(UserNotProvided::new);
-
         Optional<Location> opt = locationRepository
-                .findByIdAndAccessTypeAndCustomerId(
+                .findByIdAndAccessType(
                         locationId,
-                        LocationAccessTypeEnum.SPECIFIC_POINT.getType(),
-                        customer.getId()
+                        LocationAccessTypeEnum.SPECIFIC_POINT.getType()
                 );
 
         boolean isSuccess = false;
