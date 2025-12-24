@@ -26,6 +26,8 @@ public class TaskCheckNumber extends TaskCheck {
         dto.setUnit(unit);
         dto.setOperator(operator);
         dto.setValue(value);
+        dto.setCommentCheck(getCommentCheck());
+        dto.setComment(getComment());
         return dto;
     }
 }
