@@ -24,7 +24,7 @@ public class TaskCheckNumberDTO extends TaskCheckDTO {
     @Override
     public TaskCheck mapToEntity(Task task) {
         TaskCheckNumber entity = new TaskCheckNumber();
-        entity.setId(getId());
+
         entity.setOperator(operator);
         entity.setUnit(unit);
         entity.setValue(value);
