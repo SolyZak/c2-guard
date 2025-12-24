@@ -8,6 +8,7 @@ import com.eden.eden_crm_sec_crm_back.dto.response.TodayTasksResponseDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class TaskController {
 
     private final TaskService taskService;
     @PostMapping
-    public ApiResponse createTask(@RequestBody AddTaskRequest taskRequest) {
+    public ApiResponse createTask(@Valid @RequestBody AddTaskRequest taskRequest) {
         taskService.addTask(taskRequest);
         return ApiResponse.created();
     }

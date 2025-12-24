@@ -30,6 +30,8 @@ public class TaskCheckDecimalDTO extends TaskCheckDTO {
         entity.setName(getName());
         entity.setEvidence(getEvidence());
         entity.setTask(task);
+        entity.setCommentCheck(getCommentCheck());
+        entity.setComment(getComment());
         return entity;
     }
 
