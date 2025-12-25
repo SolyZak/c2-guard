@@ -24,6 +24,7 @@ public class TaskCheckList extends TaskCheck{
         dto.setListItems(listItems);
         dto.setName(getName());
         dto.setEvidence(getEvidence());
+        dto.setCommentCheck(getCommentCheck());
         return dto;
     }
 }

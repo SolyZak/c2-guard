@@ -18,7 +18,8 @@ public abstract class TaskCheckPatrolExecution {
     private Long id;
     private String name;
     private Boolean evidence;
-
+    private Boolean commentCheck;
+    private String comment;
     // ✅ Base64-encoded image string (optional)
     private String image;
     @ManyToOne

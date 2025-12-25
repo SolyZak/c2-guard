@@ -21,6 +21,7 @@ import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -294,11 +295,15 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void addTask(AddTaskRequest request) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
         Task task = new Task();
         task.setName(request.getTaskName());
+
         if (request.getChecks() != null) {
             List<TaskCheck> taskChecks = new ArrayList<>(request.getChecks().size());
+
             for (TaskCheckDTO dto : request.getChecks()) {
                 taskChecks.add(dto.mapToEntity(task));
             }
