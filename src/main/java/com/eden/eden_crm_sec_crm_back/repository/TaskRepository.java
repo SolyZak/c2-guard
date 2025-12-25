@@ -49,6 +49,7 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
                 p.id as patrolId,
                 p.name as patrolName,
                 l.id as locationId,
+                l.accessType as locationAccessType,
                 l.name as locationName,
                 pr.id as premiseId,
                 pr.name as premiseName,
