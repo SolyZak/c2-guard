@@ -31,10 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -128,8 +125,13 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
         List<LKCustomerContractOperationService> operationServices = siteDistributionOptional.get().getOperationServices();
         if (operationServices != null) {
             for (LKCustomerContractOperationService service : operationServices) {
+                CustomTimezone timezone = service.getSiteDistribution().getSite().getTimezone();
                 for (int i = 0; i < service.getQuantity(); i++) {
-                    result.add(new DistributionTimesWithQuantity(service.getFromTime(), service.getToTime(), service.getId() + "_" + i));
+                    result.add(new DistributionTimesWithQuantity(
+                            DateUtils.withTimeZone(timezone, service.getFromTime()),
+                            DateUtils.withTimeZone(timezone, service.getToTime()),
+                            service.getId() + "_" + i
+                    ));
                 }
             }
         }
