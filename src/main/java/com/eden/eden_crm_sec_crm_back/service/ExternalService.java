@@ -11,7 +11,7 @@ public interface ExternalService {
     OperationSiteInfo getOperationSiteDetails(Long id);
     List<OperationSiteData> getCustomerOperationSites(Long customerId);
     CustomerInfo getCustomerInfo(Long id);
-    WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id);
+    WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id, Long contractId);
     List<AttendanceStatsData> getAttendanceStats(AttendanceStatsDto dto);
     List<AttendanceWorkingPeriodData> getAttendanceDateWorkingPeriod(Long customerId, Long contractId, Long operationSiteId, LocalDate date);
     List<AttendanceWorkingPeriodData> getSecurityAttendanceDateWorkingPeriod(Long securityCompanyId, Long contractId, Long operationSiteId, LocalDate date);

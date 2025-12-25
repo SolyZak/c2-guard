@@ -48,9 +48,10 @@ public class ExternalController {
     @Operation(summary = "Get operation site distributions for the logged in workforce")
     @GetMapping("/workforce/operation-sites/{id}/distributions")
     public WorkforceSiteDistributionDto operationSiteServicesDropdown(
-            @PathVariable("id") Long id
+            @PathVariable("id") Long id,
+            @RequestParam(value = "contractId", required = false) Long contractId
     ) {
-        return externalService.operationSiteServicesDropdown(id);
+        return externalService.operationSiteServicesDropdown(id, contractId);
     }
 
     @Operation(summary = "Get customer attendance stats for operation site")
