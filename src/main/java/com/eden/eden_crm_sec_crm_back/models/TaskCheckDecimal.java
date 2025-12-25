@@ -27,7 +27,6 @@ public class TaskCheckDecimal extends TaskCheck {
         dto.setOperator(operator);
         dto.setValue(value);
         dto.setCommentCheck(getCommentCheck());
-        dto.setComment(getComment());
         return dto;
     }
 }

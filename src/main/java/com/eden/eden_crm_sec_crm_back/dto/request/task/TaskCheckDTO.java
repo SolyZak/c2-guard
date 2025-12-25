@@ -34,7 +34,7 @@ public abstract class TaskCheckDTO {
     @NotNull(message = "{validation.distribution.task-check.evidence}")
     private Boolean evidence;
 
-    @NotNull(message = "comment_check is required")
+    @NotNull(message = "commentCheck is required")
     private Boolean commentCheck;
 
     @Size(max = 500)

@@ -22,9 +22,6 @@ public abstract class TaskCheck {
     @Column(name = "comment_check", nullable = false)
     private Boolean commentCheck = false;
 
-    @Column(name = "comment", length = 500)
-    private String comment;
-
     @ManyToOne
 
     @JoinColumn(name = "task_id")
