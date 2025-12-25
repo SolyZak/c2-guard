@@ -31,7 +31,6 @@ public class TaskCheckDecimalDTO extends TaskCheckDTO {
         entity.setEvidence(getEvidence());
         entity.setTask(task);
         entity.setCommentCheck(getCommentCheck());
-        entity.setComment(getComment());
         return entity;
     }
 
@@ -42,6 +41,8 @@ public class TaskCheckDecimalDTO extends TaskCheckDTO {
         entity.setUnit(unit);
         entity.setValue(value);
         entity.setName(getName());
+        entity.setCommentCheck(getCommentCheck());
+        entity.setComment(getComment());
         entity.setEvidence(getEvidence());
         if (getEvidence()) {
             entity.setImage(getImageBase64());

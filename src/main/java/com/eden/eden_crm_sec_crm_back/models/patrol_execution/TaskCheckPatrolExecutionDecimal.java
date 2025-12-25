@@ -26,6 +26,8 @@ public class TaskCheckPatrolExecutionDecimal extends TaskCheckPatrolExecution {
         dto.setEvidence(getEvidence());
         dto.setUnit(unit);
         dto.setValue(value);
+        dto.setCommentCheck(getCommentCheck());
+        dto.setComment(getComment());
         return dto;
     }
 }

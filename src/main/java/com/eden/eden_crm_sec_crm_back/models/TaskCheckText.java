@@ -23,7 +23,6 @@ public class TaskCheckText extends TaskCheck {
         dto.setName(getName());
         dto.setNotes(notes);
         dto.setCommentCheck(getCommentCheck());
-        dto.setComment(getComment());
         return dto;
     }
 }
