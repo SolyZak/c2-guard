@@ -8,6 +8,7 @@ public interface TodayTasksProjection {
     Long getPatrolId();
     String getPatrolName();
     Long getLocationId();
+    String getLocationAccessType();
     String getLocationName();
     Long getPremiseId();
     String getPremiseName();

@@ -21,6 +21,8 @@ import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -112,6 +114,7 @@ public class TaskServiceImpl implements TaskService {
                     projection.getPatrolId(),
                     projection.getPatrolName(),
                     projection.getLocationId(),
+                    projection.getLocationAccessType(),
                     projection.getLocationName(),
                     projection.getPremiseId(),
                     projection.getPremiseName(),
@@ -131,6 +134,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getPatrolId(),
                         projection.getPatrolName(),
                         projection.getLocationId(),
+                        projection.getLocationAccessType(),
                         projection.getLocationName(),
                         projection.getPremiseId(),
                         projection.getPremiseName(),
@@ -150,6 +154,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getPatrolId(),
                         projection.getPatrolName(),
                         projection.getLocationId(),
+                        projection.getLocationAccessType(),
                         projection.getLocationName(),
                         projection.getPremiseId(),
                         projection.getPremiseName(),
@@ -168,7 +173,17 @@ public class TaskServiceImpl implements TaskService {
         List<Long> missedIds = new ArrayList<>();
         for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
             List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
-                    .map(tt -> new TodayTaskEntryTimesDto(tt.getStartTime().toLocalTime(),tt.getEndTime().toLocalTime(), getTimePeriodStatus(tt), tt.getPatrolDistributionId())).sorted(Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)).collect(Collectors.toList());
+                    .map(tt ->
+                            new TodayTaskEntryTimesDto(
+                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getStartTime()),
+                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getEndTime()),
+                                    getTimePeriodStatus(tt),
+                                    tt.getPatrolDistributionId()
+                            ))
+                    .sorted(
+                            Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)
+                    )
+                    .toList();
             TodayTaskEntryDto task = new TodayTaskEntryDto(
                     entry.getKey().getTaskName(),
                     entry.getKey().getPatrolName(),
@@ -177,7 +192,11 @@ public class TaskServiceImpl implements TaskService {
                     entry.getKey().getPatrolFreqType(),
                     entry.getKey().getEndDate(),
                     times,
-                    entry.getKey().getTaskId()
+                    entry.getKey().getTaskId(),
+                    entry.getKey().getPatrolId(),
+                    entry.getKey().getPremiseId(),
+                    entry.getKey().getLocationId(),
+                    entry.getKey().getLocationAccessType()
             );
             tasks.add(task);
             missedIds.addAll(times.stream().filter(t -> t.getStatus().equals(TaskDistributionStatus.MISSED.name())).map(t -> t.getPatrolDistributionId()).collect(Collectors.toList()));
@@ -246,7 +265,17 @@ public class TaskServiceImpl implements TaskService {
         if (!optionalDistribution.isPresent()) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
         }
-        if (!optionalDistribution.get().getStatus().equals(TaskDistributionStatus.CREATED.name())) {
+        ContractOperationSiteDistributionPatrol distributionPatrol = optionalDistribution.get();
+        ZoneId zoneId = DateUtils.getTimeWithTimezone(distributionPatrol.getCustomer().getTimezone());
+        ZoneOffset zoneOffset = zoneId.getRules().getOffset(Instant.now());
+        OffsetDateTime startDateTime = OffsetDateTime.of(distributionPatrol.getStartDate(), distributionPatrol.getFromTime().toLocalTime(), zoneOffset);
+        OffsetDateTime endDateTime = OffsetDateTime.of(distributionPatrol.getEndDate(), distributionPatrol.getToTime().toLocalTime(), zoneOffset);
+        OffsetDateTime currentDateTime = OffsetDateTime.now();
+        if (
+            !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name())
+                || currentDateTime.isBefore(startDateTime)
+                || currentDateTime.isAfter(endDateTime)
+        ) {
             throw new BusinessException("Can't execute task", HttpStatus.BAD_REQUEST);
         }
         Optional<Task> optionalTask = taskRepository.findById(request.getTaskId());
@@ -294,11 +323,15 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void addTask(AddTaskRequest request) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
         Task task = new Task();
         task.setName(request.getTaskName());
+
         if (request.getChecks() != null) {
             List<TaskCheck> taskChecks = new ArrayList<>(request.getChecks().size());
+
             for (TaskCheckDTO dto : request.getChecks()) {
                 taskChecks.add(dto.mapToEntity(task));
             }

@@ -25,6 +25,7 @@ public class TaskCheckListDTO extends TaskCheckDTO {
         entity.setName(getName());
         entity.setEvidence(getEvidence());
         entity.setTask(task);
+        entity.setCommentCheck(getCommentCheck());
         return entity;
     }
 
@@ -35,6 +36,8 @@ public class TaskCheckListDTO extends TaskCheckDTO {
         entity.setListItems(listItems);
         entity.setName(getName());
         entity.setEvidence(getEvidence());
+        entity.setCommentCheck(getCommentCheck());
+        entity.setComment(getComment());
         if (getEvidence()) {
             entity.setImage(getImageBase64());
         }

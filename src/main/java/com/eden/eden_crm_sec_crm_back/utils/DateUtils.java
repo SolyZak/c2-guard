@@ -25,6 +25,14 @@ public class DateUtils {
         return OffsetDateTime.now(getTimeWithTimezone(timezone));
     }
 
+    public static OffsetTime withTimeZone(CustomTimezone timezone, OffsetTime offsetTime) {
+        if (offsetTime == null) return null;
+        ZoneId zoneId = getTimeWithTimezone(timezone);
+        ZoneOffset offset = zoneId.getRules().getOffset(Instant.now());
+
+        return OffsetTime.of(offsetTime.toLocalTime(), offset);
+    }
+
     public static OffsetTime toLocalTime(CustomTimezone timezone, LocalTime time) {
         if (time == null) return null;
         ZoneId zoneId = getTimeWithTimezone(timezone);
