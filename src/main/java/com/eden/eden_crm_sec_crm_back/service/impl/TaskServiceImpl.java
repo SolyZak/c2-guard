@@ -265,7 +265,17 @@ public class TaskServiceImpl implements TaskService {
         if (!optionalDistribution.isPresent()) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
         }
-        if (!optionalDistribution.get().getStatus().equals(TaskDistributionStatus.CREATED.name())) {
+        ContractOperationSiteDistributionPatrol distributionPatrol = optionalDistribution.get();
+        ZoneId zoneId = DateUtils.getTimeWithTimezone(distributionPatrol.getCustomer().getTimezone());
+        ZoneOffset zoneOffset = zoneId.getRules().getOffset(Instant.now());
+        OffsetDateTime startDateTime = OffsetDateTime.of(distributionPatrol.getStartDate(), distributionPatrol.getFromTime().toLocalTime(), zoneOffset);
+        OffsetDateTime endDateTime = OffsetDateTime.of(distributionPatrol.getEndDate(), distributionPatrol.getToTime().toLocalTime(), zoneOffset);
+        OffsetDateTime currentDateTime = OffsetDateTime.now();
+        if (
+            !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name())
+                || currentDateTime.isBefore(startDateTime)
+                || currentDateTime.isAfter(endDateTime)
+        ) {
             throw new BusinessException("Can't execute task", HttpStatus.BAD_REQUEST);
         }
         Optional<Task> optionalTask = taskRepository.findById(request.getTaskId());
