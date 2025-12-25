@@ -125,11 +125,10 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
         List<LKCustomerContractOperationService> operationServices = siteDistributionOptional.get().getOperationServices();
         if (operationServices != null) {
             for (LKCustomerContractOperationService service : operationServices) {
-                CustomTimezone timezone = service.getSiteDistribution().getSite().getTimezone();
                 for (int i = 0; i < service.getQuantity(); i++) {
                     result.add(new DistributionTimesWithQuantity(
-                            DateUtils.withTimeZone(timezone, service.getFromTime()),
-                            DateUtils.withTimeZone(timezone, service.getToTime()),
+                            service.getFromTime(),
+                            service.getToTime(),
                             service.getId() + "_" + i
                     ));
                 }
