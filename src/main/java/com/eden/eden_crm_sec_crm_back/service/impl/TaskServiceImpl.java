@@ -305,23 +305,10 @@ public class TaskServiceImpl implements TaskService {
             List<TaskCheck> taskChecks = new ArrayList<>(request.getChecks().size());
 
             for (TaskCheckDTO dto : request.getChecks()) {
-
-                // treat null as false to avoid NPEs (recommended)
-                boolean allowed = Boolean.TRUE.equals(dto.getCommentCheck());
-                String comment = dto.getComment();
-
-                if (!allowed && comment != null && !comment.isBlank()) {
-                    // localized message based on Accept-Language / locale
-                    String msg = MessageUtil.getMessage("validation.task-check.comment.not-allowed");
-                    throw new BusinessException(msg, HttpStatus.BAD_REQUEST);
-                }
-
                 taskChecks.add(dto.mapToEntity(task));
             }
-
             task.setTaskChecks(taskChecks);
         }
-
         task.setCustomer(customer);
         taskRepository.save(task);
     }
