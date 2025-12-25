@@ -56,34 +56,56 @@ public class LocationServiceImpl implements LocationService {
     @Override
     @Transactional
     public void addNewLocation(AddLocationRequest request) throws IOException, WriterException {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        Optional<Premise> premiseOptional = premiseRepository.findById(request.getPremiseId());
-        if (!premiseOptional.isPresent())
-            throw new PremiseNotProvided();
+
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        Premise premise = premiseRepository.findById(request.getPremiseId())
+                .orElseThrow(PremiseNotProvided::new);
+
         List<Location> locations = new ArrayList<>();
-        if (request.getLocations() != null) {
-            for(LocationRequestDto locationRequestDto : request.getLocations()) {
-                Location location = new Location();
-                location.setPremise(premiseOptional.get());
-                location.setName(locationRequestDto.getLocationName());
-                if (locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType()) && locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
-                    throw new BusinessException(MessageUtil.getMessage("validation.location.locations.accessType.invalid"), HttpStatus.BAD_REQUEST);
-                }
-                location.setAccessType(locationRequestDto.getAccessType());
-                // Convert BigDecimal to Double for storage in the entity
-                location.setLatitude(locationRequestDto.getLatitude());
-                location.setLongitude(locationRequestDto.getLongitude());
-                location.setCustomer(customer);
-                location.setTolerance(locationRequestDto.getTolerance());
-                if (location.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType())) {
-                    byte[] qr = QrCodeUtil.generateQrCode(location.getId().toString(), 300, 300);
-                    location.setQrImage(qr);
-                }
-                locations.add(location);
+
+        for (LocationRequestDto dto : request.getLocations()) {
+            Location location = new Location();
+            location.setPremise(premise);
+            location.setName(dto.getLocationName());
+
+            // IMPORTANT: your current condition is impossible (&&). This is the typical correct validation:
+            String accessType = dto.getAccessType();
+            if (!accessType.equals(LocationAccessTypeEnum.QR_CODE.getType())
+                    && !accessType.equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
+                throw new BusinessException(
+                        MessageUtil.getMessage("validation.location.locations.accessType.invalid"),
+                        HttpStatus.BAD_REQUEST
+                );
             }
-            locationRepository.saveAll(locations);
+
+            location.setAccessType(accessType);
+            location.setLatitude(dto.getLatitude());
+            location.setLongitude(dto.getLongitude());
+            location.setTolerance(dto.getTolerance());
+            location.setCustomer(customer);
+
+            locations.add(location);
         }
+
+        // 1) Persist first so IDs are assigned
+        locations = locationRepository.saveAll(locations);
+        locationRepository.flush(); // ensures inserts happen now (safe)
+
+        // 2) Generate QR for QR_CODE locations
+        for (Location location : locations) {
+            if (LocationAccessTypeEnum.QR_CODE.getType().equals(location.getAccessType())) {
+                byte[] qr = QrCodeUtil.generateQrCode(String.valueOf(location.getId()), 300, 300);
+                location.setQrImage(qr);
+            }
+        }
+
+        // 3) Update with QR images
+        locationRepository.saveAll(locations);
     }
+
 
     @Override
     public PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size) {
