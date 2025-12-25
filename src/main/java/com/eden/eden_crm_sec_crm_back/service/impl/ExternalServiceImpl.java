@@ -90,8 +90,8 @@ public class ExternalServiceImpl implements ExternalService {
     }
 
     @Override
-    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id) {
-        return workforceService.operationSiteServicesDropdown(id);
+    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id, Long contractId) {
+        return workforceService.operationSiteServicesDropdown(id, contractId);
     }
 
     @Override

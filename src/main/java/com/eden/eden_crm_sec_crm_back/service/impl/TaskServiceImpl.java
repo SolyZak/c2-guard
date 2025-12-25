@@ -113,6 +113,7 @@ public class TaskServiceImpl implements TaskService {
                     projection.getPatrolId(),
                     projection.getPatrolName(),
                     projection.getLocationId(),
+                    projection.getLocationAccessType(),
                     projection.getLocationName(),
                     projection.getPremiseId(),
                     projection.getPremiseName(),
@@ -132,6 +133,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getPatrolId(),
                         projection.getPatrolName(),
                         projection.getLocationId(),
+                        projection.getLocationAccessType(),
                         projection.getLocationName(),
                         projection.getPremiseId(),
                         projection.getPremiseName(),
@@ -151,6 +153,7 @@ public class TaskServiceImpl implements TaskService {
                         projection.getPatrolId(),
                         projection.getPatrolName(),
                         projection.getLocationId(),
+                        projection.getLocationAccessType(),
                         projection.getLocationName(),
                         projection.getPremiseId(),
                         projection.getPremiseName(),
@@ -178,7 +181,11 @@ public class TaskServiceImpl implements TaskService {
                     entry.getKey().getPatrolFreqType(),
                     entry.getKey().getEndDate(),
                     times,
-                    entry.getKey().getTaskId()
+                    entry.getKey().getTaskId(),
+                    entry.getKey().getPatrolId(),
+                    entry.getKey().getPremiseId(),
+                    entry.getKey().getLocationId(),
+                    entry.getKey().getLocationAccessType()
             );
             tasks.add(task);
             missedIds.addAll(times.stream().filter(t -> t.getStatus().equals(TaskDistributionStatus.MISSED.name())).map(t -> t.getPatrolDistributionId()).collect(Collectors.toList()));

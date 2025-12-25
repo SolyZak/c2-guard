@@ -16,6 +16,7 @@ public class TodayTasks {
     Long patrolId;
     String patrolName;
     Long locationId;
+    String locationAccessType;
     String locationName;
     Long premiseId;
     String premiseName;

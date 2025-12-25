@@ -146,10 +146,10 @@ public class WorkforceServiceImpl implements WorkforceService {
     }
 
     @Override
-    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id) {
+    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id, Long contractId) {
         WorkforceFullDataDto workforceFullDataDto = getLoggedInWorkforce();
         List<SiteDistribution> distributions = siteDistributionRepository.listForSecurityCompanyActiveTodayAndSiteId(
-                workforceFullDataDto.securityCompany().id(), id, LocalDate.now()
+                workforceFullDataDto.securityCompany().id(), id, contractId, LocalDate.now()
         );
         if (distributions.isEmpty()) {
             throw new BusinessException(MessageUtil.getMessage("not-your-working-period"), HttpStatus.BAD_REQUEST);
