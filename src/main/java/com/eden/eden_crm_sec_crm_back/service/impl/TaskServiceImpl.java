@@ -21,6 +21,7 @@ import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -172,7 +173,17 @@ public class TaskServiceImpl implements TaskService {
         List<Long> missedIds = new ArrayList<>();
         for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
             List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
-                    .map(tt -> new TodayTaskEntryTimesDto(tt.getStartTime().toLocalTime(),tt.getEndTime().toLocalTime(), getTimePeriodStatus(tt), tt.getPatrolDistributionId())).sorted(Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)).collect(Collectors.toList());
+                    .map(tt ->
+                            new TodayTaskEntryTimesDto(
+                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getStartTime()),
+                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getEndTime()),
+                                    getTimePeriodStatus(tt),
+                                    tt.getPatrolDistributionId()
+                            ))
+                    .sorted(
+                            Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)
+                    )
+                    .toList();
             TodayTaskEntryDto task = new TodayTaskEntryDto(
                     entry.getKey().getTaskName(),
                     entry.getKey().getPatrolName(),
