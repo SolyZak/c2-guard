@@ -27,7 +27,7 @@ import lombok.Setter;
 })
 public abstract class TaskCheckDTO {
 
-    @NotNull(message = "{validation.distribution.task-check.id}")
+
     private Long id;
     @NotNull(message = "{validation.distribution.task-check.name}")
     private String name;
