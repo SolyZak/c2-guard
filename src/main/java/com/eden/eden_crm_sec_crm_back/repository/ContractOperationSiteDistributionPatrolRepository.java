@@ -48,26 +48,6 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
             @Param("endDate") LocalDate endDate
     );
 
-//    @Query("""
-//        SELECT
-//            l.id AS locationId,
-//            l.name AS locationName,
-//            MIN(p.startDate) AS taskStartDate,
-//            MAX(p.endDate) AS taskEndDate,
-//            CASE WHEN COUNT(tc.id) > 0 THEN true ELSE false END AS hasEvidence,
-//            ARRAY_AGG(te.image) AS evidenceImages
-//        FROM ContractOperationSiteDistributionPatrol p
-//        LEFT JOIN p.location l
-//        LEFT JOIN TaskCheck tc ON tc.patrol.id = p.id
-//        LEFT JOIN TaskCheckPatrolExecution te ON te.taskCheck.id = tc.id
-//        WHERE p.premise.id = :premiseId AND p.patrol.id = :patrolId
-//        GROUP BY l.id, l.name
-//    """)
-//    List<PatrolPremiseAggregation> findPatrolDetailsByPremiseAndPatrol(
-//            @Param("premiseId") Long premiseId,
-//            @Param("patrolId") Long patrolId
-//    );
-
     @Query("""
         SELECT 
             l.id AS locationId, 
