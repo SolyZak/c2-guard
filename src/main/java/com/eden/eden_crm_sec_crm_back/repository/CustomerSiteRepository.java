@@ -83,46 +83,37 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
        """)
     List<GeneralDropdownProjection> findCustomerSitesForDropdown(@Param("customerId") Long customerId);
 
-//    @Query(value = """
-//    ---------------------------------------------------------------------------
-//    --  Purpose
-//    --  -------
-//    --  Return the list of operation-sites that
-//    --      • belong to the supplied customer-contract  (:contractId)
-//    --      • belong to the current customer             (:customerId)
-//    --      • have at least one patrol row attached
-//    --
-//    --  The projection we return is:
-//    --      id   -> site id              (hidden value used by the UI)
-//    --      name -> "<site name> - <premise name>"   (text shown to user)
-//    ---------------------------------------------------------------------------
-//    SELECT DISTINCT
-//           cs.id                                             AS id,   -- dropdown value
-//           CONCAT( cs.name, ' - ',
-//                   COALESCE(pr.name, '') )                   AS name -- dropdown label (NO premise-id)
-//    FROM   contract_operation_site_distribution sd           -- link: contract ➜ site
-//           JOIN customer_site cs
-//             ON sd.operation_site_id = cs.id                 -- the actual site entity
-//           LEFT JOIN premise pr
-//             ON cs.premise_id = pr.id                        -- optional premise for a site
-//    ---------------------------------------------------------------------------
-//    --  Filters
-//    ---------------------------------------------------------------------------
-//    WHERE  sd.customer_contract_id = :contractId             -- site belongs to contract
-//      AND  cs.customer_id          = :customerId             -- site belongs to customer
-//      -------------------------------------------------------------------------
-//      --  keep the site only if at least one patrol exists for the same
-//      --  contract (and obviously on that site)
-//      -------------------------------------------------------------------------
-//      AND  EXISTS (
-//              SELECT 1
-//              FROM   contract_operation_distribution_site_patrol sp
-//              WHERE  sp.site_id              = cs.id
-//                AND  sp.customer_contract_id = :contractId
-//           )
-//    """,
-//            nativeQuery = true)
-//    List<GeneralDropdownProjection> findOperationSitesForDropdown(@Param("contractId") Long contractId,
-//                                                                  @Param("customerId")  Long customerId);
+    @Query(value = """
+    ---------------------------------------------------------------------------
+    --  Purpose
+    --  -------
+    --  Return the list of operation-sites that
+    --      • belong to the supplied customer-contract  (:contractId)
+    --      • belong to the current customer             (:customerId)
+    --
+    --  The projection we return is:
+    --      id   -> site id              (hidden value used by the UI)
+    --      name -> "<site name> - <premise name>"   (text shown to user)
+    ---------------------------------------------------------------------------
+    SELECT DISTINCT
+           cs.id                                             AS id,   -- dropdown value
+           CONCAT( cs.name, ' - ',
+                   COALESCE(pr.name, '') )                   AS name -- dropdown label (NO premise-id)
+    FROM   contract_operation_site_distribution sd           -- link: contract ➜ site
+           JOIN customer_site cs
+             ON sd.operation_site_id = cs.id                 -- the actual site entity
+           LEFT JOIN premise pr
+             ON cs.premise_id = pr.id                        -- optional premise for a site
+    ---------------------------------------------------------------------------
+    --  Filters
+    ---------------------------------------------------------------------------
+    WHERE  sd.customer_contract_id = :contractId             -- site belongs to contract
+      AND  cs.customer_id          = :customerId             -- site belongs to customer
+    """,
+            nativeQuery = true)
+    List<GeneralDropdownProjection> findOperationSitesForDropdownWithDistrbutedContracts(
+            @Param("contractId") Long contractId,
+            @Param("customerId") Long customerId
+    );
 
 }

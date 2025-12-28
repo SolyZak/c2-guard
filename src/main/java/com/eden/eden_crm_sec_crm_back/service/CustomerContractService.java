@@ -18,6 +18,7 @@ public interface CustomerContractService {
     List<ContractServiceDetailsData> contractServicesList(Long contractId);
     List<ContractRowDto> listAllMyContracts();
     List<GeneralDropdown> availableOperationSitesList(Long contractId);
+    List<GeneralDropdown> availableOperationSitesListWithDistributedContracts(Long contractId);
     List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId);
     ContractDetailsData getCustomerContractDetails(Long contractId);
 }
