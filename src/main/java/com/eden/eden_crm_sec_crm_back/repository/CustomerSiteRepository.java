@@ -90,7 +90,6 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     --  Return the list of operation-sites that
     --      • belong to the supplied customer-contract  (:contractId)
     --      • belong to the current customer             (:customerId)
-    --      • have at least one patrol row attached
     --
     --  The projection we return is:
     --      id   -> site id              (hidden value used by the UI)
@@ -110,19 +109,11 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     ---------------------------------------------------------------------------
     WHERE  sd.customer_contract_id = :contractId             -- site belongs to contract
       AND  cs.customer_id          = :customerId             -- site belongs to customer
-      -------------------------------------------------------------------------
-      --  keep the site only if at least one patrol exists for the same
-      --  contract (and obviously on that site)
-      -------------------------------------------------------------------------
-      AND  EXISTS (
-              SELECT 1
-              FROM   contract_operation_distribution_site_patrol sp
-              WHERE  sp.site_id              = cs.id
-                AND  sp.customer_contract_id = :contractId
-           )
     """,
             nativeQuery = true)
-    List<GeneralDropdownProjection> findOperationSitesForDropdownWithPatrols(@Param("contractId") Long contractId,
-                                                                  @Param("customerId")  Long customerId);
+    List<GeneralDropdownProjection> findOperationSitesForDropdownWithDistrbutedContracts(
+            @Param("contractId") Long contractId,
+            @Param("customerId") Long customerId
+    );
 
 }
