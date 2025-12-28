@@ -328,6 +328,9 @@ public class TaskServiceImpl implements TaskService {
 
         Task task = new Task();
         task.setName(request.getTaskName());
+        task.setCustomer(customer);
+        task = taskRepository.save(task);
+
 
         if (request.getChecks() != null) {
             List<TaskCheck> taskChecks = new ArrayList<>(request.getChecks().size());
@@ -337,7 +340,6 @@ public class TaskServiceImpl implements TaskService {
             }
             task.setTaskChecks(taskChecks);
         }
-        task.setCustomer(customer);
         taskRepository.save(task);
     }
 }
