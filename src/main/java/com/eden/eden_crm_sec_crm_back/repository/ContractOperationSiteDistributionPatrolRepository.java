@@ -1,6 +1,8 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
+import com.eden.eden_crm_sec_crm_back.models.projections.PatrolPremiseAggregation;
+import com.eden.eden_crm_sec_crm_back.models.projections.PatrolReportDetailsAggregation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -45,4 +47,53 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
+//    @Query("""
+//        SELECT
+//            l.id AS locationId,
+//            l.name AS locationName,
+//            MIN(p.startDate) AS taskStartDate,
+//            MAX(p.endDate) AS taskEndDate,
+//            CASE WHEN COUNT(tc.id) > 0 THEN true ELSE false END AS hasEvidence,
+//            ARRAY_AGG(te.image) AS evidenceImages
+//        FROM ContractOperationSiteDistributionPatrol p
+//        LEFT JOIN p.location l
+//        LEFT JOIN TaskCheck tc ON tc.patrol.id = p.id
+//        LEFT JOIN TaskCheckPatrolExecution te ON te.taskCheck.id = tc.id
+//        WHERE p.premise.id = :premiseId AND p.patrol.id = :patrolId
+//        GROUP BY l.id, l.name
+//    """)
+//    List<PatrolPremiseAggregation> findPatrolDetailsByPremiseAndPatrol(
+//            @Param("premiseId") Long premiseId,
+//            @Param("patrolId") Long patrolId
+//    );
+
+    @Query("""
+        SELECT 
+            l.id AS locationId, 
+            s.id AS siteId,
+            cs.id AS serviceId,
+            t.id AS taskId, 
+            s.name AS siteName,
+            cs.serviceName AS serviceName,
+            t.name AS taskName, 
+            cosdp.status AS status,
+            tc.evidence AS hasEvidence, 
+            te.image AS evidenceImage, 
+            MIN(cosdp.startDate) AS taskStartDate, 
+            MAX(cosdp.endDate) AS taskEndDate
+        FROM ContractOperationSiteDistributionPatrol cosdp
+        JOIN cosdp.patrol patrol
+        JOIN cosdp.site s
+        JOIN cosdp.location l
+        JOIN cosdp.location.premise p
+        JOIN cosdp.customerService.customerService.customerService cs
+        JOIN cosdp.task t
+        LEFT JOIN t.taskChecks tc
+        LEFT JOIN TaskCheckPatrolExecution te ON te.id = tc.id
+        WHERE p.id = :premiseId
+          AND patrol.id = :patrolId
+        GROUP BY locationId, siteId, serviceId, taskId, serviceName, siteName, taskName, status, hasEvidence, evidenceImage
+    """)
+    List<PatrolReportDetailsAggregation> findPatrolDetails(@Param("premiseId") Long premiseId, @Param("patrolId") Long patrolId);
 }

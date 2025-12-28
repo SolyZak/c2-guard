@@ -1,4 +1,4 @@
-package com.eden.eden_crm_sec_crm_back.repository;
+package com.eden.eden_crm_sec_crm_back.models.projections;
 
 import java.time.LocalDate;
 
