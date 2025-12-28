@@ -169,7 +169,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     }
 
     @Override
-    public List<GeneralDropdown> availableOperationSitesListHavingPatrols(Long contractId) {
+    public List<GeneralDropdown> availableOperationSitesListWithDistributedContracts(Long contractId) {
 
         // make sure the contract really belongs to the logged-in customer
         customerContractRepository
@@ -180,7 +180,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                         HttpStatus.NOT_FOUND));
 
         return customerSiteRepository
-                .findOperationSitesForDropdownWithPatrols(contractId, getLoggedInCustomerId())
+                .findOperationSitesForDropdownWithDistrbutedContracts(contractId, getLoggedInCustomerId())
                 .stream()
                 .map(customerSiteMapper::toDropdown)
                 .toList();

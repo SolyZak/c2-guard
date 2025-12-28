@@ -77,12 +77,12 @@ public class CustomerContractController {
     ) {
         return ApiResponse.ok(customerContractService.availableOperationSitesList(contractId));
     }
-    @Operation(summary = "Get available operation sites for a selected distributed Contract that has patrols on it API")
-    @GetMapping("/{id}/patrol/operation-sites")
+    @Operation(summary = "Get available operation sites for a selected distributed Contract API")
+    @GetMapping("/{id}/distributed/operation-sites")
     public ApiResponse<List<GeneralDropdown>> availableOperationSitesListHavingPatrols(
             @PathVariable("id") Long contractId
     ) {
-        return ApiResponse.ok(customerContractService.availableOperationSitesListHavingPatrols(contractId));
+        return ApiResponse.ok(customerContractService.availableOperationSitesListWithDistributedContracts(contractId));
     }
 
     @Operation(summary = "Distribute A Contract Service & Operation Site API")
