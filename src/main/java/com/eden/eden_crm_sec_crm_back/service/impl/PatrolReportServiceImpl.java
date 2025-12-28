@@ -1,15 +1,15 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.PatrolReportRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.PatrolSummaryDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.PatrolReportResponseDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
+import com.eden.eden_crm_sec_crm_back.models.Location;
+import com.eden.eden_crm_sec_crm_back.models.Patrol;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
-import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
-import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
-import com.eden.eden_crm_sec_crm_back.repository.PatrolPremiseAggregation;
-import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
+import com.eden.eden_crm_sec_crm_back.models.projections.PatrolReportDetailsAggregation;
+import com.eden.eden_crm_sec_crm_back.repository.*;
+import com.eden.eden_crm_sec_crm_back.models.projections.PatrolPremiseAggregation;
 import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,8 +27,10 @@ import java.util.stream.Collectors;
 public class PatrolReportServiceImpl implements PatrolReportService {
 
     private final CustomerContractRepository customerContractRepository;
-    private final ContractOperationSiteDistributionPatrolRepository patrolRepository;
+    private final ContractOperationSiteDistributionPatrolRepository distributionPatrolRepository;
     private final PremiseRepository premiseRepository;
+    private final LocationRepository locationRepository;
+    private final PatrolRepository patrolRepository;
 
     @Override
     @Transactional
@@ -39,7 +40,7 @@ public class PatrolReportServiceImpl implements PatrolReportService {
             throw new BusinessException(MessageUtil.getMessage("validation.security-company.contract-id.not-found"), HttpStatus.BAD_REQUEST);
 
         CustomerContract contract = contractOpt.get();
-        List<PatrolPremiseAggregation> aggs = patrolRepository.aggregatePatrolsByPremiseAndPatrol(
+        List<PatrolPremiseAggregation> aggs = distributionPatrolRepository.aggregatePatrolsByPremiseAndPatrol(
                 contract.getId(),
                 reportRequest.premiseIds(),
                 reportRequest.patrolIds(),
@@ -80,5 +81,62 @@ public class PatrolReportServiceImpl implements PatrolReportService {
                 .patrols(patrolsPerPremise.getOrDefault(pr.getId(), Collections.emptyList()))
                 .build())
             .toList();
+    }
+
+    @Override
+    public PatrolReportDetailsResponse getPatrolReportDetails(Long premiseId, Long patrolId) {
+        List<PatrolReportDetailsAggregation> taskDetails = distributionPatrolRepository.findPatrolDetails(premiseId, patrolId);
+        Optional<Patrol> patrolOpt = patrolRepository.findById(patrolId);
+        Optional<Premise> premiseOpt = premiseRepository.findById(premiseId);
+
+        if (patrolOpt.isEmpty() || premiseOpt.isEmpty())
+            throw new BusinessException(MessageUtil.getMessage("validation.security-company.contract-id.not-found"), HttpStatus.BAD_REQUEST);
+
+        Patrol patrol = patrolOpt.get();
+        Premise premise = premiseOpt.get();
+
+        List<Long> locationIds = taskDetails.stream()
+            .map(PatrolReportDetailsAggregation::getLocationId)
+            .toList();
+
+        List<Location> locations = locationRepository.findAllById(locationIds);
+
+        Map<Long, List<PatrolTaskDetailsResponse>> tasksPerLocation = new HashMap<>();
+
+        taskDetails.forEach(taskDetail -> {
+              Long locationId = taskDetail.getLocationId();
+              tasksPerLocation.computeIfAbsent(locationId, k -> new ArrayList<>())
+                .add(
+                    PatrolTaskDetailsResponse.builder()
+                        .id(taskDetail.getTaskId())
+                        .name(taskDetail.getTaskName())
+                        .status(taskDetail.getStatus())
+                        .startDate(taskDetail.getTaskStartDate())
+                        .endDate(taskDetail.getTaskEndDate())
+                        .hasEvidence(taskDetail.getHasEvidence())
+                        .evidenceImage(taskDetail.getEvidenceImage())
+                        .siteId(taskDetail.getSiteId())
+                        .siteName(taskDetail.getSiteName())
+                        .serviceId(taskDetail.getServiceId())
+                        .serviceName(taskDetail.getServiceName())
+                        .locationId(taskDetail.getLocationId())
+                        .build()
+                );
+        });
+
+        List<PatrolLocationDetailsResponse> locationDetails = locations.stream()
+                .map(loc -> PatrolLocationDetailsResponse.builder()
+                    .id(loc.getId())
+                    .name(loc.getName())
+                    .tasks(tasksPerLocation.getOrDefault(loc.getId(), Collections.emptyList()))
+                    .build()
+                )
+                .toList();
+
+        return PatrolReportDetailsResponse.builder()
+                .premiseName(premise.getName())
+                .patrolName(patrol.getName())
+                .locations(locationDetails)
+                .build();
     }
 }
