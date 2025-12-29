@@ -14,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TaskCheckNumberDTO extends TaskCheckDTO {
-    @NotNull(message = "{validation.distribution.task-check.unit}")
+//    @NotNull(message = "{validation.distribution.task-check.unit}")
     private String unit;
     @NotNull(groups = OnAddTask.class, message = "{validation.distribution.task-check.operator}")
     private String operator;
