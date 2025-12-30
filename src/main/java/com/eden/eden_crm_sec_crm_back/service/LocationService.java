@@ -16,7 +16,7 @@
 
         void addNewLocation(AddLocationRequest request) throws IOException, WriterException;
 
-        Map<String, Object> updateLocation(Long id, UpdateLocationRequest request);
+        UpdateLocationResponse updateLocation(Long id, UpdateLocationRequest request);
 
         PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size);
 

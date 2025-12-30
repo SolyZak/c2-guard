@@ -32,9 +32,9 @@ public class LocationController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Map<String, Object>> updateLocation(
+    public ApiResponse<UpdateLocationResponse> updateLocation(
             @PathVariable("id") Long id,
-            @RequestBody  UpdateLocationRequest request) {
+            @RequestBody @Valid UpdateLocationRequest request) {
         return ApiResponse.ok(locationService.updateLocation(id, request));
     }
 

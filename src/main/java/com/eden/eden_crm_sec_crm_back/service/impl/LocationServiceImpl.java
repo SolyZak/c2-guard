@@ -105,7 +105,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     @Transactional
-    public Map<String, Object> updateLocation(Long id, UpdateLocationRequest request) {
+    public UpdateLocationResponse updateLocation(Long id, UpdateLocationRequest request) {
 
         // Get logged-in customer
         Customer customer = customerRepository
@@ -126,7 +126,7 @@ public class LocationServiceImpl implements LocationService {
             );
         }
 
-        // Now safe to load full entity (it's specific-point, no QR image)
+        // Now safe to load full entity
         Location location = locationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("validation.location.not.found"),
@@ -141,35 +141,48 @@ public class LocationServiceImpl implements LocationService {
             );
         }
 
-        Map<String, Object> updatedFields = new HashMap<>();
+        // Track what's being updated
+        String updatedLocationName = null;
+        BigDecimal updatedLongitude = null;
+        BigDecimal updatedLatitude = null;
+        BigDecimal updatedTolerance = null;
+        boolean hasUpdates = false;
 
         if (request.getLocationName() != null) {
             location.setName(request.getLocationName());
-            updatedFields.put("locationName", request.getLocationName());
+            updatedLocationName = request.getLocationName();
+            hasUpdates = true;
         }
 
         if (request.getLongitude() != null) {
             location.setLongitude(request.getLongitude());
-            updatedFields.put("longitude", request.getLongitude());
+            updatedLongitude = request.getLongitude();
+            hasUpdates = true;
         }
 
         if (request.getLatitude() != null) {
             location.setLatitude(request.getLatitude());
-            updatedFields.put("latitude", request.getLatitude());
+            updatedLatitude = request.getLatitude();
+            hasUpdates = true;
         }
 
         if (request.getTolerance() != null) {
             location.setTolerance(request.getTolerance());
-            updatedFields.put("tolerance", request.getTolerance());
+            updatedTolerance = request.getTolerance();
+            hasUpdates = true;
         }
 
-        if (!updatedFields.isEmpty()) {
+        if (hasUpdates) {
             locationRepository.save(location);
         }
 
-        return updatedFields;
+        return UpdateLocationResponse.builder()
+                .locationName(updatedLocationName)
+                .longitude(updatedLongitude)
+                .latitude(updatedLatitude)
+                .tolerance(updatedTolerance)
+                .build();
     }
-
 
 
     @Override
