@@ -122,13 +122,14 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             throw new BusinessException(MessageUtil.getMessage("entity.not-found"), HttpStatus.NOT_FOUND);
         }
         List<DistributionTimesWithQuantity> result = new ArrayList<>();
+        CustomTimezone customerTimezone = siteDistributionOptional.get().getSite().getCustomer().getTimezone();
         List<LKCustomerContractOperationService> operationServices = siteDistributionOptional.get().getOperationServices();
         if (operationServices != null) {
             for (LKCustomerContractOperationService service : operationServices) {
                 for (int i = 0; i < service.getQuantity(); i++) {
                     result.add(new DistributionTimesWithQuantity(
-                            service.getFromTime(),
-                            service.getToTime(),
+                            DateUtils.withTimeZone(customerTimezone, service.getFromTime()),
+                            DateUtils.withTimeZone(customerTimezone, service.getToTime()),
                             service.getId() + "_" + i
                     ));
                 }
