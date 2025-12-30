@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.TimeZone;
 
 @EnableAsync
 @SpringBootApplication
@@ -24,6 +25,7 @@ public class EdenCrmSecCrmBackApplication {
 
     @PostConstruct
     public void init() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC")); // Makes the JVM timezone UTC
         log.info("JVM TZ: {}", ZoneId.systemDefault());
         log.info("Now: {}", OffsetDateTime.now());
         log.info("Now in Africa/Cairo: {}", OffsetDateTime.now(ZoneId.of("Africa/Cairo")));
