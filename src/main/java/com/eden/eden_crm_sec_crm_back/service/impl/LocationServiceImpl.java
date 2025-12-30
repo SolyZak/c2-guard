@@ -187,15 +187,26 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<LocationProjection> resultPage = locationRepository.searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
+        Page<LocationProjection> resultPage = locationRepository
+                .searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
+
         List<PremiseLocationDto> premiseLocationDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (LocationProjection location : resultPage.getContent()) {
-                PremiseLocationDto dto = new PremiseLocationDto(location.getId(), location.getName(), location.getAccessType(),
+                PremiseLocationDto dto = new PremiseLocationDto(
+                        location.getId(),
+                        location.getName(),
+                        location.getAccessType(),
                         location.getPremise() != null ? location.getPremise().getName() : "",
-                        location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())  ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())));
+                        location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())
+                                ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())),
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        location.getTolerance()
+                );
                 premiseLocationDtos.add(dto);
             }
         }
@@ -242,8 +253,9 @@ public class LocationServiceImpl implements LocationService {
             result.add(new LocationResponseDto(
                     lp.getId(),
                     lp.getName(),
-                    lp.getLongitude() != null ? BigDecimal.valueOf(lp.getLongitude()) : null,
-                    lp.getLatitude() != null ? BigDecimal.valueOf(lp.getLatitude()) : null
+                    lp.getLongitude() != null ? lp.getLongitude(): null,
+                    lp.getLatitude() != null ? lp.getLatitude(): null,
+                    lp.getTolerance() != null ? lp.getLatitude(): null
             ));
         }
         return result;
@@ -276,11 +288,11 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
         final Long id = Long.valueOf(request.getPayload());
-        Optional<Location> opt = locationRepository
-                .findByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
+        Optional<LocationRepository.QrLocationProjection> opt = locationRepository
+                .findQrLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
         if (opt.isPresent()) {
-            Location loc = opt.get();
+            var loc = opt.get();
             String msg = MessageUtil.getMessage("validation.qr.success");
             return new ValidateQrResponse(
                     true,
@@ -296,16 +308,13 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest request) {
-        Optional<Location> opt = locationRepository
-                .findByIdAndAccessType(
-                        locationId,
-                        LocationAccessTypeEnum.SPECIFIC_POINT.getType()
-                );
+        Optional<LocationRepository.QrLocationProjection> opt = locationRepository
+                .findQrLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.SPECIFIC_POINT.getType());
 
         boolean isSuccess = false;
 
         if (opt.isPresent()) {
-            Location loc = opt.get();
+            var loc = opt.get();
             isSuccess = LocationUtils.isWithinTolerance(
                     request.latitude(), request.longitude(), loc.getLatitude(), loc.getLongitude(), loc.getTolerance()
             );

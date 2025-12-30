@@ -6,6 +6,7 @@ public record LocationResponseDto(
         Long locationId,
         String locationName,
         BigDecimal longitude,
-        BigDecimal latitude
+        BigDecimal latitude,
+        BigDecimal tolerance
 ) {
 }
