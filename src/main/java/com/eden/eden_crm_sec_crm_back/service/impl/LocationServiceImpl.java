@@ -1,9 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.request.LocationRequestDto;
-import com.eden.eden_crm_sec_crm_back.dto.request.ValidateLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -105,6 +102,71 @@ public class LocationServiceImpl implements LocationService {
         // 3) Update with QR images
         locationRepository.saveAll(locations);
     }
+
+    @Override
+    @Transactional
+    public Map<String, Object> updateLocation(Long id, UpdateLocationRequest request) {
+
+        // Get logged-in customer
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        // Find the location
+        Location location = locationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("validation.location.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        // Verify ownership - ensure location belongs to logged-in customer
+        if (!location.getCustomer().getId().equals(customer.getId())) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.unauthorized"),
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        // Check if location is QR_CODE type - cannot be updated
+        if (LocationAccessTypeEnum.QR_CODE.getType().equals(location.getAccessType())) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.qr-code.update.not-allowed"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Map<String, Object> updatedFields = new HashMap<>();
+
+        // Update only fields that are provided (not null)
+        if (request.getLocationName() != null) {
+            location.setName(request.getLocationName());
+            updatedFields.put("locationName", request.getLocationName());
+        }
+
+        if (request.getLongitude() != null) {
+            location.setLongitude(request.getLongitude());
+            updatedFields.put("longitude", request.getLongitude());
+        }
+
+        if (request.getLatitude() != null) {
+            location.setLatitude(request.getLatitude());
+            updatedFields.put("latitude", request.getLatitude());
+        }
+
+        if (request.getTolerance() != null) {
+            location.setTolerance(request.getTolerance());
+            updatedFields.put("tolerance", request.getTolerance());
+        }
+        // If tolerance is NULL in DB and not provided in request, it stays NULL - no issues
+
+        // Save only if there's something to update
+        if (!updatedFields.isEmpty()) {
+            locationRepository.save(location);
+        }
+
+        return updatedFields;
+    }
+
 
 
     @Override
