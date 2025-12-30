@@ -94,7 +94,7 @@ public class WorkforceServiceImpl implements WorkforceService {
         groupedBySite.forEach((site, distributions) -> {
             WorkforceSiteDistributionDto workforceSiteDistributionDto = WorkforceSiteDistributionDto.builder()
                     .id(site.getId())
-                    .name(site.getName())
+                    .name(site.getName() + " - " + site.getPremise().getName())
                     .contractId(contractId)
                     .contractName(contract.getAgreementName())
                     .customerId(contract.getCustomer().getId())
