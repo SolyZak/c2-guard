@@ -112,14 +112,28 @@ public class LocationServiceImpl implements LocationService {
                 .findById(utils.getLoggedInUser().getCustomerId())
                 .orElseThrow(UserNotProvided::new);
 
-        // Find the location
+        // Check access type FIRST (no LOB loading)
+        String accessType = locationRepository.findAccessTypeById(id)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("validation.location.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if ("qr-code".equals(accessType)) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.qr-code.update.not-allowed"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // Now safe to load full entity (it's specific-point, no QR image)
         Location location = locationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("validation.location.not.found"),
                         HttpStatus.NOT_FOUND
                 ));
 
-        // Verify ownership - ensure location belongs to logged-in customer
+        // Verify ownership
         if (!location.getCustomer().getId().equals(customer.getId())) {
             throw new BusinessException(
                     MessageUtil.getMessage("validation.location.unauthorized"),
@@ -127,17 +141,8 @@ public class LocationServiceImpl implements LocationService {
             );
         }
 
-        // Check if location is QR_CODE type - cannot be updated
-        if (LocationAccessTypeEnum.QR_CODE.getType().equals(location.getAccessType())) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("validation.location.qr-code.update.not-allowed"),
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-
         Map<String, Object> updatedFields = new HashMap<>();
 
-        // Update only fields that are provided (not null)
         if (request.getLocationName() != null) {
             location.setName(request.getLocationName());
             updatedFields.put("locationName", request.getLocationName());
@@ -157,9 +162,7 @@ public class LocationServiceImpl implements LocationService {
             location.setTolerance(request.getTolerance());
             updatedFields.put("tolerance", request.getTolerance());
         }
-        // If tolerance is NULL in DB and not provided in request, it stays NULL - no issues
 
-        // Save only if there's something to update
         if (!updatedFields.isEmpty()) {
             locationRepository.save(location);
         }

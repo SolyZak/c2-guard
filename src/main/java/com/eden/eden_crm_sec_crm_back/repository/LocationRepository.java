@@ -50,4 +50,7 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
             @Param("accessType") String accessType
     );
 
+    @Query("SELECT l.accessType FROM Location l WHERE l.id = :id")
+    Optional<String> findAccessTypeById(@Param("id") Long id);
+
 }
