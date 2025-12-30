@@ -28,9 +28,11 @@ public class DateUtils {
     public static OffsetTime withTimeZone(CustomTimezone timezone, OffsetTime offsetTime) {
         if (offsetTime == null) return null;
         ZoneId zoneId = getTimeWithTimezone(timezone);
+        OffsetDateTime originalDateTime = LocalDate.now().atTime(offsetTime);
         ZoneOffset offset = zoneId.getRules().getOffset(Instant.now());
+        ZonedDateTime targetZoned = originalDateTime.atZoneSameInstant(zoneId);
 
-        return OffsetTime.of(offsetTime.toLocalTime(), offset);
+        return targetZoned.toOffsetDateTime().toOffsetTime().withOffsetSameInstant(offset);
     }
 
     public static OffsetTime toLocalTime(CustomTimezone timezone, LocalTime time) {
