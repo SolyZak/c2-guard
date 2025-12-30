@@ -276,11 +276,11 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
         final Long id = Long.valueOf(request.getPayload());
-        Optional<Location> opt = locationRepository
-                .findByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
+        Optional<LocationRepository.QrLocationProjection> opt = locationRepository
+                .findQrLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
         if (opt.isPresent()) {
-            Location loc = opt.get();
+            var loc = opt.get();
             String msg = MessageUtil.getMessage("validation.qr.success");
             return new ValidateQrResponse(
                     true,
@@ -296,16 +296,13 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest request) {
-        Optional<Location> opt = locationRepository
-                .findByIdAndAccessType(
-                        locationId,
-                        LocationAccessTypeEnum.SPECIFIC_POINT.getType()
-                );
+        Optional<LocationRepository.QrLocationProjection> opt = locationRepository
+                .findQrLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.SPECIFIC_POINT.getType());
 
         boolean isSuccess = false;
 
         if (opt.isPresent()) {
-            Location loc = opt.get();
+            var loc = opt.get();
             isSuccess = LocationUtils.isWithinTolerance(
                     request.latitude(), request.longitude(), loc.getLatitude(), loc.getLongitude(), loc.getTolerance()
             );

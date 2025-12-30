@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,19 +39,27 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
             """)
     List<LocationProjection> listAllLoggedInCustomerLocationsByPatrolId(@Param("customerId") Long customerId, @Param("patrolId") Long patrolId);
 
+    @Query("SELECT l.accessType FROM Location l WHERE l.id = :id")
+    Optional<String> findAccessTypeById(@Param("id") Long id);
+
+    interface QrLocationProjection {
+        Long getId();
+        String getName();
+        BigDecimal getLatitude();
+        BigDecimal getLongitude();
+        BigDecimal getTolerance();
+        String getAccessType();
+    }
+
     @Query("""
-    SELECT l
+    SELECT l.id AS id, l.name AS name
     FROM Location l
     WHERE l.id = :id
       AND l.accessType = :accessType
       AND l.deleted = false
-""")
-    Optional<Location> findByIdAndAccessType(
+    """)
+    Optional<QrLocationProjection> findQrLocationByIdAndAccessType(
             @Param("id") Long id,
             @Param("accessType") String accessType
     );
-
-    @Query("SELECT l.accessType FROM Location l WHERE l.id = :id")
-    Optional<String> findAccessTypeById(@Param("id") Long id);
-
 }
