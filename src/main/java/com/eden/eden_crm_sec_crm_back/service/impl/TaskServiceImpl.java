@@ -25,6 +25,7 @@ import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +38,7 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
@@ -271,12 +273,18 @@ public class TaskServiceImpl implements TaskService {
         OffsetDateTime startDateTime = OffsetDateTime.of(distributionPatrol.getStartDate(), distributionPatrol.getFromTime().toLocalTime(), zoneOffset);
         OffsetDateTime endDateTime = OffsetDateTime.of(distributionPatrol.getEndDate(), distributionPatrol.getToTime().toLocalTime(), zoneOffset);
         OffsetDateTime currentDateTime = OffsetDateTime.now();
+        boolean statusNotCreated = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name());
+        boolean currentDateTimeBeforeStartDateTime = currentDateTime.isBefore(startDateTime);
+        boolean currentDateTimeAfterEndDateTime = currentDateTime.isAfter(endDateTime);
+        log.info("statusNotCreated: {}", statusNotCreated);
+        log.info("currentDateTimeBeforeStartDateTime: {}", currentDateTimeBeforeStartDateTime);
+        log.info("currentDateTimeAfterEndDateTime: {}", currentDateTimeAfterEndDateTime);
         if (
-            !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name())
-                || currentDateTime.isBefore(startDateTime)
-                || currentDateTime.isAfter(endDateTime)
+            statusNotCreated
+                || currentDateTimeBeforeStartDateTime
+                || currentDateTimeAfterEndDateTime
         ) {
-            throw new BusinessException("Can't execute task", HttpStatus.BAD_REQUEST);
+            throw new BusinessException(MessageUtil.getMessage("task.execute.error"), HttpStatus.BAD_REQUEST);
         }
         Optional<Task> optionalTask = taskRepository.findById(request.getTaskId());
         if (!optionalTask.isPresent()) {
