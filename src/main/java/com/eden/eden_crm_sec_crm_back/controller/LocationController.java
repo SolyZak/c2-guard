@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.UpdateLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ValidateLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/location")
@@ -27,6 +29,13 @@ public class LocationController {
     ApiResponse addLocation(@RequestBody @Valid AddLocationRequest request) throws IOException, WriterException {
         locationService.addNewLocation(request);
         return ApiResponse.created();
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<UpdateLocationResponse> updateLocation(
+            @PathVariable("id") Long id,
+            @RequestBody @Valid UpdateLocationRequest request) {
+        return ApiResponse.ok(locationService.updateLocation(id, request));
     }
 
     @GetMapping
