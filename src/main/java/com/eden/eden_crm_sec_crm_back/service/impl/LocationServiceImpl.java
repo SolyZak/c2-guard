@@ -1,9 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.request.LocationRequestDto;
-import com.eden.eden_crm_sec_crm_back.dto.request.ValidateLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -104,6 +101,87 @@ public class LocationServiceImpl implements LocationService {
 
         // 3) Update with QR images
         locationRepository.saveAll(locations);
+    }
+
+    @Override
+    @Transactional
+    public UpdateLocationResponse updateLocation(Long id, UpdateLocationRequest request) {
+
+        // Get logged-in customer
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        // Check access type FIRST (no LOB loading)
+        String accessType = locationRepository.findAccessTypeById(id)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("validation.location.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if ("qr-code".equals(accessType)) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.qr-code.update.not-allowed"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // Now safe to load full entity
+        Location location = locationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("validation.location.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        // Verify ownership
+        if (!location.getCustomer().getId().equals(customer.getId())) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.unauthorized"),
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        // Track what's being updated
+        String updatedLocationName = null;
+        BigDecimal updatedLongitude = null;
+        BigDecimal updatedLatitude = null;
+        BigDecimal updatedTolerance = null;
+        boolean hasUpdates = false;
+
+        if (request.getLocationName() != null) {
+            location.setName(request.getLocationName());
+            updatedLocationName = request.getLocationName();
+            hasUpdates = true;
+        }
+
+        if (request.getLongitude() != null) {
+            location.setLongitude(request.getLongitude());
+            updatedLongitude = request.getLongitude();
+            hasUpdates = true;
+        }
+
+        if (request.getLatitude() != null) {
+            location.setLatitude(request.getLatitude());
+            updatedLatitude = request.getLatitude();
+            hasUpdates = true;
+        }
+
+        if (request.getTolerance() != null) {
+            location.setTolerance(request.getTolerance());
+            updatedTolerance = request.getTolerance();
+            hasUpdates = true;
+        }
+
+        if (hasUpdates) {
+            locationRepository.save(location);
+        }
+
+        return UpdateLocationResponse.builder()
+                .locationName(updatedLocationName)
+                .longitude(updatedLongitude)
+                .latitude(updatedLatitude)
+                .tolerance(updatedTolerance)
+                .build();
     }
 
 
