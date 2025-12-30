@@ -164,8 +164,8 @@ public class LocationServiceImpl implements LocationService {
             result.add(new LocationResponseDto(
                     lp.getId(),
                     lp.getName(),
-                    BigDecimal.valueOf(lp.getLongitude()),
-                    BigDecimal.valueOf(lp.getLatitude())
+                    lp.getLongitude() != null ? BigDecimal.valueOf(lp.getLongitude()) : null,
+                    lp.getLatitude() != null ? BigDecimal.valueOf(lp.getLatitude()) : null
             ));
         }
         return result;
