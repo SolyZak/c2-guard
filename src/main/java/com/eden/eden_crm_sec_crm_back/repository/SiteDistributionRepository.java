@@ -85,7 +85,7 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
     );
 
     @Query("""
-            SELECT sd.site.id AS id, sd.site.name AS name
+            SELECT sd.site.id AS id, CONCAT(sd.site.name, ' - ', sd.site.premise.name) AS name
             FROM SiteDistribution sd
             WHERE sd.site.customer.id = :customerId
               AND (:securityCompanyId IS NULL OR sd.customerContract.securityCompanyId = :securityCompanyId)
