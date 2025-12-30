@@ -53,7 +53,8 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     List<GeneralDropdownProjection> operationSitesDropdown(@Param("customerId") Long customerId);
 
     @Query("""
-                SELECT cs.id as id, cs.name as name FROM CustomerSite cs
+                SELECT cs.id as id, CONCAT(cs.name, ' - ', p.name)as name FROM CustomerSite cs
+                JOIN cs.premise p
                 WHERE EXISTS (
                     SELECT sd FROM SiteDistribution sd
                     WHERE sd.site = cs
