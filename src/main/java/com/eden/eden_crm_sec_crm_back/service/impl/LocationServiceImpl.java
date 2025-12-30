@@ -254,7 +254,8 @@ public class LocationServiceImpl implements LocationService {
                     lp.getId(),
                     lp.getName(),
                     lp.getLongitude() != null ? lp.getLongitude(): null,
-                    lp.getLatitude() != null ? lp.getLatitude(): null
+                    lp.getLatitude() != null ? lp.getLatitude(): null,
+                    lp.getTolerance() != null ? lp.getLatitude(): null
             ));
         }
         return result;
