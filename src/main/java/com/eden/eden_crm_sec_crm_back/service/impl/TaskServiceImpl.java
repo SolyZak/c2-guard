@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
 import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -264,14 +265,13 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public void executeTask(AddTaskDistributionRequest request) {
         Optional<ContractOperationSiteDistributionPatrol> optionalDistribution =  repository.findById(request.getPatrolDistributionId());
-        if (!optionalDistribution.isPresent()) {
+        if (optionalDistribution.isEmpty()) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
         }
         ContractOperationSiteDistributionPatrol distributionPatrol = optionalDistribution.get();
-        ZoneId zoneId = DateUtils.getTimeWithTimezone(distributionPatrol.getCustomer().getTimezone());
-        ZoneOffset zoneOffset = zoneId.getRules().getOffset(Instant.now());
-        OffsetDateTime startDateTime = OffsetDateTime.of(distributionPatrol.getStartDate(), distributionPatrol.getFromTime().toLocalTime(), zoneOffset);
-        OffsetDateTime endDateTime = OffsetDateTime.of(distributionPatrol.getEndDate(), distributionPatrol.getToTime().toLocalTime(), zoneOffset);
+        CustomTimezone customTimezone = distributionPatrol.getCustomer().getTimezone();
+        OffsetDateTime startDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getStartDate(), distributionPatrol.getFromTime());
+        OffsetDateTime endDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getEndDate(), distributionPatrol.getToTime());
         OffsetDateTime currentDateTime = OffsetDateTime.now();
         boolean statusNotCreated = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name());
         boolean currentDateTimeBeforeStartDateTime = currentDateTime.isBefore(startDateTime);
