@@ -10,8 +10,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.Duration;
@@ -23,14 +21,14 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "scheduled_tasks", indexes = {
-        @Index(name = "idx_id", columnList = "id"),
-        @Index(name = "idx_name", columnList = "name"),
-        @Index(name = "idx_task_type", columnList = "taskType"),
-        @Index(name = "idx_active", columnList = "isActive"),
-        @Index(name = "idx_task_type_active", columnList = "taskType,isActive"),
-        @Index(name = "idx_type_of_execution", columnList = "typeOfExecution"),
-        @Index(name = "idx_active_planned_execution_time", columnList = "isActive,plannedExecutionTime"),
-        @Index(name = "idx_created_at", columnList = "createdAt")
+        @Index(name = "idx_scheduled_tasks_id", columnList = "id"),
+        @Index(name = "idx_scheduled_tasks_name", columnList = "name"),
+        @Index(name = "idx_scheduled_tasks_task_type", columnList = "taskType"),
+        @Index(name = "idx_scheduled_tasks_is_active", columnList = "isActive"),
+        @Index(name = "idx_scheduled_tasks_type_active", columnList = "taskType,isActive"),
+        @Index(name = "idx_scheduled_tasks_type_of_execution", columnList = "typeOfExecution"),
+        @Index(name = "idx_scheduled_tasks_active_planned_execution_time", columnList = "isActive,plannedExecutionTime"),
+        @Index(name = "idx_scheduled_tasks_created_at", columnList = "createdAt")
 })
 public class ScheduledTaskEntity {
 

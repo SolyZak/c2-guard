@@ -18,11 +18,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "scheduled_task_execution_logs", indexes = {
-        @Index(name = "idx_id", columnList = "id"),
-        @Index(name = "idx_task_id", columnList = "task_id"),
-        @Index(name = "idx_startedAt", columnList = "startedAt"),
-        @Index(name = "idx_finishedAt", columnList = "finishedAt"),
-        @Index(name = "idx_status", columnList = "status")
+        @Index(name = "idx_scheduled_task_execution_logs_id", columnList = "id"),
+        @Index(name = "idx_scheduled_task_execution_logs_task_id", columnList = "task_id"),
+        @Index(name = "idx_scheduled_task_execution_logs_started_at", columnList = "startedAt"),
+        @Index(name = "idx_scheduled_task_execution_logs_finished_at", columnList = "finishedAt"),
+        @Index(name = "idx_scheduled_task_execution_logs_status", columnList = "status")
 })
 public class ScheduledTaskExecutionLogEntity {
 
