@@ -29,12 +29,18 @@ public record CreateScheduledTaskRequest(
         Duration duration,
         JsonNode arguments,
 
-        @NotNull
         Boolean isActive,
 
-        @NotNull
         OffsetDateTime createdAt
 ) {
+    public CreateScheduledTaskRequest {
+        if (createdAt == null)
+            createdAt = OffsetDateTime.now();
+
+        if (isActive == null)
+            isActive = true;
+    }
+
     @AssertTrue(message = "cronExpression must be not blank when typeOfExecution is CRON")
     private boolean isCronExpressionValid() {
         return typeOfExecution != TaskExecutionType.CRON || (cronExpression != null && !cronExpression.isBlank());

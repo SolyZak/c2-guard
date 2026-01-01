@@ -1,7 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dynamicscheduler.entity;
 
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.converter.DurationAttributeConverter;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.converter.JsonNodeAttributeConverter;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.enums.TaskExecutionType;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.uuid.UUIDv7;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,10 +9,12 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
-import org.springframework.data.annotation.CreatedDate;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,18 +63,17 @@ public class ScheduledTaskEntity {
     @Convert(converter = DurationAttributeConverter.class)
     private Duration duration;
 
-    @Column(name = "arguments")
-    @Convert(converter = JsonNodeAttributeConverter.class)
+    @Column(name = "arguments", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private JsonNode arguments;
 
-    @Column(name = "is_active")
+    @Column(name = "is_active", nullable = false)
     @ColumnDefault("true")
     private Boolean isActive;
 
-    @Column(name = "created_at")
-    @CreatedDate
+    @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    private List<ScheduledTaskExecutionLogEntity> executionLogs;
+    @OneToMany(mappedBy = "task", fetch = FetchType.LAZY)
+    private List<ScheduledTaskExecutionLogEntity> executionLogs = new ArrayList<>();
 }

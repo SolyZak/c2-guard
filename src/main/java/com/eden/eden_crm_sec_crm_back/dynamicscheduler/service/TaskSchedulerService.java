@@ -1,16 +1,22 @@
 package com.eden.eden_crm_sec_crm_back.dynamicscheduler.service;
 
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.dto.CreateScheduledTaskRequest;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.entity.ScheduledTaskEntity;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.interfaces.ScheduledTaskFactory;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.mapper.ScheduledTaskMapper;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.repository.ScheduledTaskExecutionLogRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.repository.ScheduledTaskRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import jakarta.validation.Validator;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.util.*;
@@ -20,24 +26,30 @@ import java.util.concurrent.ScheduledFuture;
 @Service
 public class TaskSchedulerService {
 
-    private final ObjectMapper mapper;
+    private final ObjectMapper objectMapper;
     private final ThreadPoolTaskScheduler scheduler;
     private final ScheduledTaskRepository taskRepository;
     private final ScheduledTaskExecutionLogRepository logRepository;
+    private final ScheduledTaskMapper scheduledTaskMapper;
+    private final Validator validator;
     private final Map<String, ScheduledTaskFactory> factories = new HashMap<>();
     private final Map<UUID, ScheduledFuture<?>> scheduledFutures = new HashMap<>();
 
     public TaskSchedulerService(
-        ObjectMapper mapper,
+        ObjectMapper objectMapper,
         ThreadPoolTaskScheduler scheduler,
         ScheduledTaskRepository taskRepository,
         ScheduledTaskExecutionLogRepository logRepository,
-        List<ScheduledTaskFactory> factoryList
+        ScheduledTaskMapper scheduledTaskMapper,
+        List<ScheduledTaskFactory> factoryList,
+        Validator validator
     ) {
-        this.mapper = mapper;
+        this.objectMapper = objectMapper;
         this.scheduler = scheduler;
         this.taskRepository = taskRepository;
         this.logRepository = logRepository;
+        this.scheduledTaskMapper = scheduledTaskMapper;
+        this.validator = validator;
         for (ScheduledTaskFactory factory : factoryList) {
             String type = factory.getTaskType();
             if (factories.put(type, factory) != null) {
@@ -53,7 +65,7 @@ public class TaskSchedulerService {
     }
 
     public void scheduleAllActiveTasks() {
-        List<ScheduledTaskEntity> tasks = taskRepository.findAllByIsActiveTrue();
+        List<ScheduledTaskEntity> tasks = taskRepository.findAllByIsActiveTrueWithLogs();
         tasks.forEach(this::scheduleTask);
     }
 
@@ -64,7 +76,7 @@ public class TaskSchedulerService {
             return;
         }
 
-        Runnable runnable = factory.createInstance(mapper, task, taskRepository, logRepository);
+        Runnable runnable = factory.createInstance(objectMapper, task, taskRepository, logRepository);
 
         ScheduledFuture<?> future;
         switch (task.getTypeOfExecution()) {
@@ -101,6 +113,24 @@ public class TaskSchedulerService {
             future.cancel(false);
             log.info("Cancelled scheduled task ID: {}", taskId);
         }
+    }
+
+    @Transactional
+    public ScheduledTaskEntity createTask(CreateScheduledTaskRequest scheduledTaskRequest) {
+        Set<ConstraintViolation<CreateScheduledTaskRequest>> violations = validator.validate(scheduledTaskRequest);
+        if (!violations.isEmpty())
+            throw new ConstraintViolationException(violations);
+
+        ScheduledTaskEntity scheduledTask = scheduledTaskMapper.createRequestToEntity(scheduledTaskRequest);
+        scheduledTask = taskRepository.save(scheduledTask);
+        return scheduledTask;
+    }
+
+    @Transactional
+    public ScheduledTaskEntity createAndScheduleTask(CreateScheduledTaskRequest scheduledTaskRequest) {
+        ScheduledTaskEntity scheduledTask = createTask(scheduledTaskRequest);
+        scheduleTask(scheduledTask);
+        return scheduledTask;
     }
 
     @PreDestroy
