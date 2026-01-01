@@ -18,18 +18,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TaskMissedStatusJob extends AbstractScheduledTaskFactory {
 
-    private final TaskSchedulerService taskSchedulerService;
+//    private final TaskSchedulerService taskSchedulerService;
     private final ScheduledTaskMapper scheduledTaskMapper;
 
     public TaskMissedStatusJob(
             ObjectMapper mapper,
             ScheduledTaskRepository taskRepository,
             ScheduledTaskExecutionLogRepository logRepository,
-            TaskSchedulerService taskSchedulerService,
+//            TaskSchedulerService taskSchedulerService,
             ScheduledTaskMapper scheduledTaskMapper
     ) {
         super(mapper, taskRepository, logRepository);
-        this.taskSchedulerService = taskSchedulerService;
+//        this.taskSchedulerService = taskSchedulerService;
         this.scheduledTaskMapper = scheduledTaskMapper;
     }
 
@@ -45,10 +45,10 @@ public class TaskMissedStatusJob extends AbstractScheduledTaskFactory {
         return result;
     }
 
-    @Transactional
-    public void createTask(@Valid CreateScheduledTaskRequest scheduledTaskRequest) {
-        ScheduledTaskEntity scheduledTask = scheduledTaskMapper.createRequestToEntity(scheduledTaskRequest);
-        scheduledTask = taskRepository.save(scheduledTask);
-        taskSchedulerService.scheduleTask(scheduledTask);
-    }
+//    @Transactional
+//    public void createTask(@Valid CreateScheduledTaskRequest scheduledTaskRequest) {
+//        ScheduledTaskEntity scheduledTask = scheduledTaskMapper.createRequestToEntity(scheduledTaskRequest);
+//        scheduledTask = taskRepository.save(scheduledTask);
+//        taskSchedulerService.scheduleTask(scheduledTask);
+//    }
 }
