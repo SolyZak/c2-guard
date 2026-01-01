@@ -31,8 +31,19 @@ public abstract class AbstractScheduledTaskFactory implements Runnable, Schedule
         ScheduledTaskExecutionLogEntity execution = new ScheduledTaskExecutionLogEntity();
         execution.setTask(taskEntity);
         execution.setStartedAt(OffsetDateTime.now());
+
+        if (Boolean.FALSE.equals(taskEntity.getIsActive()))
+            execution.setStatus(ScheduledTaskStatus.INACTIVE);
+
         taskEntity.getExecutionLogs().add(execution);
         logRepository.save(execution);
+
+        if (execution.getStatus() == ScheduledTaskStatus.INACTIVE) {
+            execution.setFinishedAt(OffsetDateTime.now());
+            logRepository.save(execution);
+            log.info("Task [{}] '{}' InActive - Skipping the execution", taskEntity.getTaskType(), taskEntity.getName());
+            return;
+        }
 
         log.info("Task [{}] '{}' started", taskEntity.getTaskType(), taskEntity.getName());
 
