@@ -23,13 +23,12 @@ public class TaskMissedStatusJob extends AbstractScheduledTaskFactory {
 
     public TaskMissedStatusJob(
             ObjectMapper mapper,
-            ScheduledTaskEntity taskEntity,
             ScheduledTaskRepository taskRepository,
             ScheduledTaskExecutionLogRepository logRepository,
             TaskSchedulerService taskSchedulerService,
             ScheduledTaskMapper scheduledTaskMapper
     ) {
-        super(mapper, taskEntity, taskRepository, logRepository);
+        super(mapper, taskRepository, logRepository);
         this.taskSchedulerService = taskSchedulerService;
         this.scheduledTaskMapper = scheduledTaskMapper;
     }

@@ -21,9 +21,9 @@ import java.time.OffsetDateTime;
 public abstract class AbstractScheduledTaskFactory implements Runnable, ScheduledTaskFactory {
 
     protected final ObjectMapper mapper;
-    protected final ScheduledTaskEntity taskEntity;
     protected final ScheduledTaskRepository taskRepository;
     protected final ScheduledTaskExecutionLogRepository logRepository;
+    protected ScheduledTaskEntity taskEntity;
 
     @Override
     @Transactional
@@ -58,6 +58,7 @@ public abstract class AbstractScheduledTaskFactory implements Runnable, Schedule
             ScheduledTaskRepository taskRepository,
             ScheduledTaskExecutionLogRepository logRepository
     ) {
+        this.taskEntity = taskEntity;
         return this;
     }
 
