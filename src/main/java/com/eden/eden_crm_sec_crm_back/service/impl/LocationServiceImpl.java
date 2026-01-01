@@ -11,6 +11,7 @@ import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.models.projections.LocationProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
@@ -46,6 +47,8 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
     private final PremiseRepository premiseRepository;
     private final CustomerRepository customerRepository;
+    private final ContractOperationSiteDistributionPatrolRepository contractOperationSiteDistributionPatrolRepository; // ADD THIS
+
     private final Utils utils;
 
     private final EntityManager em;
@@ -290,6 +293,24 @@ public class LocationServiceImpl implements LocationService {
         final Long id = Long.valueOf(request.getPayload());
         Optional<LocationRepository.QrLocationProjection> opt = locationRepository
                 .findQrLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
+
+        if (!id.equals(request.getLocationId())) {
+            String msg = MessageUtil.getMessage("validation.qr.locationid.mismatch");
+            return new ValidateQrResponse(false, msg, null, null);
+        }
+
+        boolean isValid = contractOperationSiteDistributionPatrolRepository
+                .existsByIdAndTaskIdAndLocationId(
+                        request.getPatrolDistributionId(),
+                        request.getTaskId(),
+                        request.getLocationId()
+                );
+
+        if (!isValid) {
+            String msg = MessageUtil.getMessage("validation.qr.patrol.distribution.invalid");
+            return new ValidateQrResponse(false, msg, null, null);
+        }
+
 
         if (opt.isPresent()) {
             var loc = opt.get();
