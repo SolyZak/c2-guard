@@ -22,6 +22,4 @@ public class ValidateQrRequest {
     @NotNull(message = "Task ID is required")
     private Long taskId;
 
-    @NotNull(message = "Location ID is required")
-    private Long locationId;
 }

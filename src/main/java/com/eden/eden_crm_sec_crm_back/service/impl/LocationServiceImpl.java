@@ -294,16 +294,12 @@ public class LocationServiceImpl implements LocationService {
         Optional<LocationRepository.QrLocationProjection> opt = locationRepository
                 .findQrLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
-        if (!id.equals(request.getLocationId())) {
-            String msg = MessageUtil.getMessage("validation.qr.locationid.mismatch");
-            return new ValidateQrResponse(false, msg, null, null);
-        }
 
         boolean isValid = contractOperationSiteDistributionPatrolRepository
                 .existsByIdAndTaskIdAndLocationId(
                         request.getPatrolDistributionId(),
                         request.getTaskId(),
-                        request.getLocationId()
+                        id
                 );
 
         if (!isValid) {
