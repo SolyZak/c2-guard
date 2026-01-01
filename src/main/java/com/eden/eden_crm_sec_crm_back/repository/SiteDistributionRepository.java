@@ -90,7 +90,7 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             WHERE sd.site.customer.id = :customerId
               AND (:securityCompanyId IS NULL OR sd.customerContract.securityCompanyId = :securityCompanyId)
               AND (:contractId IS NULL OR sd.customerContract.id IN :contractId)
-            GROUP BY sd.site.id, sd.site.name
+            GROUP BY sd.site.id, sd.site.name, sd.site.premise.name
             """)
     List<GeneralDropdownProjection> operationSitesDropdown(
             @Param("customerId") Long customerId,
