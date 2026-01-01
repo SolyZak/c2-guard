@@ -10,11 +10,11 @@ public interface ScheduledTaskFactory {
     String getTaskType();
 
     AbstractScheduledTaskFactory createInstance(
-        ObjectMapper mapper,
+        ObjectMapper objectMapper,
         ScheduledTaskEntity taskEntity,
         ScheduledTaskRepository taskRepository,
         ScheduledTaskExecutionLogRepository logRepository
     );
 
-    JsonNode performTask(JsonNode arguments) throws Exception;
+    JsonNode performTask(JsonNode arguments);
 }

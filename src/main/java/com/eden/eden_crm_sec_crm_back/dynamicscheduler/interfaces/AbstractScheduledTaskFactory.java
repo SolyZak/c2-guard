@@ -20,7 +20,7 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public abstract class AbstractScheduledTaskFactory implements Runnable, ScheduledTaskFactory {
 
-    protected final ObjectMapper mapper;
+    protected final ObjectMapper objectMapper;
     protected final ScheduledTaskRepository taskRepository;
     protected final ScheduledTaskExecutionLogRepository logRepository;
     protected ScheduledTaskEntity taskEntity;
@@ -53,7 +53,7 @@ public abstract class AbstractScheduledTaskFactory implements Runnable, Schedule
 
     @Override
     public AbstractScheduledTaskFactory createInstance(
-            ObjectMapper mapper,
+            ObjectMapper objectMapper,
             ScheduledTaskEntity taskEntity,
             ScheduledTaskRepository taskRepository,
             ScheduledTaskExecutionLogRepository logRepository
@@ -63,7 +63,7 @@ public abstract class AbstractScheduledTaskFactory implements Runnable, Schedule
     }
 
     protected ObjectNode createObjectNode() {
-        return mapper.createObjectNode();
+        return objectMapper.createObjectNode();
     }
 
     protected <T> T readArguments(Class<T> clazz) {
@@ -72,7 +72,7 @@ public abstract class AbstractScheduledTaskFactory implements Runnable, Schedule
             return null;
         }
         try {
-            return mapper.treeToValue(args, clazz);
+            return objectMapper.treeToValue(args, clazz);
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse task arguments", e);
         }
