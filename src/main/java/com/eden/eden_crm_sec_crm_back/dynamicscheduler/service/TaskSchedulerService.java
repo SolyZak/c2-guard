@@ -9,7 +9,9 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.repository.ScheduledTaskR
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.validation.Valid;
+import jakarta.validation.Validator;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
@@ -29,6 +31,7 @@ public class TaskSchedulerService {
     private final ScheduledTaskRepository taskRepository;
     private final ScheduledTaskExecutionLogRepository logRepository;
     private final ScheduledTaskMapper scheduledTaskMapper;
+    private final Validator validator;
     private final Map<String, ScheduledTaskFactory> factories = new HashMap<>();
     private final Map<UUID, ScheduledFuture<?>> scheduledFutures = new HashMap<>();
 
@@ -38,13 +41,15 @@ public class TaskSchedulerService {
         ScheduledTaskRepository taskRepository,
         ScheduledTaskExecutionLogRepository logRepository,
         ScheduledTaskMapper scheduledTaskMapper,
-        List<ScheduledTaskFactory> factoryList
+        List<ScheduledTaskFactory> factoryList,
+        Validator validator
     ) {
         this.objectMapper = objectMapper;
         this.scheduler = scheduler;
         this.taskRepository = taskRepository;
         this.logRepository = logRepository;
         this.scheduledTaskMapper = scheduledTaskMapper;
+        this.validator = validator;
         for (ScheduledTaskFactory factory : factoryList) {
             String type = factory.getTaskType();
             if (factories.put(type, factory) != null) {
@@ -60,7 +65,7 @@ public class TaskSchedulerService {
     }
 
     public void scheduleAllActiveTasks() {
-        List<ScheduledTaskEntity> tasks = taskRepository.findAllByIsActiveTrue();
+        List<ScheduledTaskEntity> tasks = taskRepository.findAllByIsActiveTrueWithLogs();
         tasks.forEach(this::scheduleTask);
     }
 
@@ -110,13 +115,19 @@ public class TaskSchedulerService {
         }
     }
 
-    public ScheduledTaskEntity createTask(@Valid CreateScheduledTaskRequest scheduledTaskRequest) {
+    @Transactional
+    public ScheduledTaskEntity createTask(CreateScheduledTaskRequest scheduledTaskRequest) {
+        Set<ConstraintViolation<CreateScheduledTaskRequest>> violations = validator.validate(scheduledTaskRequest);
+        if (!violations.isEmpty())
+            throw new ConstraintViolationException(violations);
+
         ScheduledTaskEntity scheduledTask = scheduledTaskMapper.createRequestToEntity(scheduledTaskRequest);
         scheduledTask = taskRepository.save(scheduledTask);
         return scheduledTask;
     }
 
-    public ScheduledTaskEntity createAndScheduleTask(@Valid CreateScheduledTaskRequest scheduledTaskRequest) {
+    @Transactional
+    public ScheduledTaskEntity createAndScheduleTask(CreateScheduledTaskRequest scheduledTaskRequest) {
         ScheduledTaskEntity scheduledTask = createTask(scheduledTaskRequest);
         scheduleTask(scheduledTask);
         return scheduledTask;
