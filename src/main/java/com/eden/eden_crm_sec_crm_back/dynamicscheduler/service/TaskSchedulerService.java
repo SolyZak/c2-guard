@@ -64,7 +64,7 @@ public class TaskSchedulerService {
             return;
         }
 
-        Runnable runnable = factory.create(mapper, task, taskRepository, logRepository);
+        Runnable runnable = factory.createInstance(mapper, task, taskRepository, logRepository);
 
         ScheduledFuture<?> future;
         switch (task.getTypeOfExecution()) {
@@ -83,7 +83,14 @@ public class TaskSchedulerService {
 
         // Cancel previous if exists
         Optional.ofNullable(scheduledFutures.put(task.getId(), future))
-                .ifPresent(prev -> prev.cancel(false));
+                .ifPresent(prev -> {
+                        if (prev.isDone()) {
+                            scheduledFutures.remove(task.getId());
+                            scheduledFutures.put(task.getId(), future);
+                        }
+                        else
+                            prev.cancel(false);
+                });
 
         log.info("Scheduled task '{}' (type: {})", task.getName(), task.getTaskType());
     }

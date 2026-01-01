@@ -8,15 +8,17 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.repository.ScheduledTaskR
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 
+@Getter
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractScheduledTask implements Runnable, ScheduledTask {
+public abstract class AbstractScheduledTaskFactory implements Runnable, ScheduledTaskFactory {
 
     protected final ObjectMapper mapper;
     protected final ScheduledTaskEntity taskEntity;
@@ -41,7 +43,7 @@ public abstract class AbstractScheduledTask implements Runnable, ScheduledTask {
             log.info("Task [{}] '{}' succeeded", taskEntity.getTaskType(), taskEntity.getName());
         } catch (Exception e) {
             execution.setStatus(ScheduledTaskStatus.FAILED);
-            execution.setResult(createResult().put("error", e.getMessage()));
+            execution.setResult(createObjectNode().put("error", e.getMessage()));
             log.error("Task [{}] '{}' failed", taskEntity.getTaskType(), taskEntity.getName(), e);
         } finally {
             execution.setFinishedAt(OffsetDateTime.now());
@@ -49,7 +51,17 @@ public abstract class AbstractScheduledTask implements Runnable, ScheduledTask {
         }
     }
 
-    protected ObjectNode createResult() {
+    @Override
+    public AbstractScheduledTaskFactory createInstance(
+            ObjectMapper mapper,
+            ScheduledTaskEntity taskEntity,
+            ScheduledTaskRepository taskRepository,
+            ScheduledTaskExecutionLogRepository logRepository
+    ) {
+        return this;
+    }
+
+    protected ObjectNode createObjectNode() {
         return mapper.createObjectNode();
     }
 
