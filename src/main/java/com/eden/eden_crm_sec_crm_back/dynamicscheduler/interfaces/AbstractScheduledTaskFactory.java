@@ -30,6 +30,7 @@ public abstract class AbstractScheduledTaskFactory implements Runnable, Schedule
     public void run() {
         ScheduledTaskExecutionLogEntity execution = new ScheduledTaskExecutionLogEntity();
         execution.setTask(taskEntity);
+        execution.setStatus(ScheduledTaskStatus.STARTED);
         execution.setStartedAt(OffsetDateTime.now());
 
         if (Boolean.FALSE.equals(taskEntity.getIsActive()))
