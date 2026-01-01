@@ -1,6 +1,5 @@
 package com.eden.eden_crm_sec_crm_back.dynamicscheduler.entity;
 
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.converter.JsonNodeAttributeConverter;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.enums.ScheduledTaskStatus;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.uuid.UUIDv7;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -42,11 +43,11 @@ public class ScheduledTaskExecutionLogEntity {
     private OffsetDateTime finishedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     @ColumnDefault("STARTED")
     private ScheduledTaskStatus status;
 
-    @Column(name = "result")
-    @Convert(converter = JsonNodeAttributeConverter.class)
+    @Column(name = "result", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private JsonNode result;
 }
