@@ -24,6 +24,8 @@
 
         List<LocationResponseDto> findLoggedInCustomerLocationsByPatrolId(Long patrolId);
 
+        List<PatrolLocationResponseDto> findLocationsByCustomerSiteAndPatrol(Long customerSiteId, Long patrolId);
+
         ValidateQrResponse validateQr(ValidateQrRequest request);
 
         ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest locationRequest);
