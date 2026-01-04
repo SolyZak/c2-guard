@@ -68,6 +68,30 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
             @Param("customerId") Long customerId,
             @Param("patrolId") Long patrolId);
 
+    @Query(value = """
+    SELECT DISTINCT
+        l.id            AS id,
+        l.name          AS name,
+        l.access_type   AS accessType,
+        l.longitude     AS longitude,
+        l.latitude      AS latitude,
+        l.tolerance     AS tolerance
+    FROM patrol_detail pd
+    JOIN location l
+        ON l.id = pd.location_id
+    JOIN customer_site cs
+        ON cs.premise_id = l.premise_id
+    WHERE pd.patrol_id = :patrolId
+      AND cs.id = :customerSiteId
+      AND l.customer_id = :customerId
+      AND l.deleted = false
+""", nativeQuery = true)
+    List<LocationProjection> findLocationsByPatrolAndCustomerSite(
+            @Param("patrolId") Long patrolId,
+            @Param("customerSiteId") Long customerSiteId,
+            @Param("customerId") Long customerId
+    );
+
     @Query("SELECT l.accessType FROM Location l WHERE l.id = :id")
     Optional<String> findAccessTypeById(@Param("id") Long id);
 

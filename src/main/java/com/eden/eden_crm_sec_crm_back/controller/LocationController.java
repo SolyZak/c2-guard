@@ -55,6 +55,15 @@ public class LocationController {
         return ApiResponse.ok(locationService.findLoggedInCustomerLocationsByPatrolId(patrolId));
     }
 
+    @GetMapping("/customer-site/{customerSiteId}/patrol/{patrolId}")
+    ApiResponse<List<PatrolLocationResponseDto>> getLocationsByCustomerSiteAndPatrol(
+            @PathVariable Long customerSiteId,
+            @PathVariable Long patrolId
+    ) {
+        return ApiResponse.ok(locationService.findLocationsByCustomerSiteAndPatrol(customerSiteId,patrolId)
+        );
+    }
+
     @PostMapping("/validate-qr")
     public ResponseEntity<ValidateQrResponse> validateQr(
             @Valid @RequestBody ValidateQrRequest req) {

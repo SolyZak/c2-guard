@@ -263,6 +263,36 @@ public class LocationServiceImpl implements LocationService {
         }
         return result;
     }
+    @Override
+    public List<PatrolLocationResponseDto> findLocationsByCustomerSiteAndPatrol(
+            Long customerSiteId,
+            Long patrolId
+    ) {
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        List<LocationProjection> locations =
+                locationRepository.findLocationsByPatrolAndCustomerSite(
+                        patrolId,
+                        customerSiteId,
+                        customer.getId()
+                );
+
+        List<PatrolLocationResponseDto> result = new ArrayList<>();
+        for (LocationProjection lp : locations) {
+            result.add(new PatrolLocationResponseDto(
+                    lp.getId(),
+                    lp.getName(),
+                    lp.getAccessType(),
+                    lp.getLongitude(),
+                    lp.getLatitude(),
+                    lp.getTolerance()
+            ));
+        }
+
+        return result;
+    }
 
     public byte[] getQrImage(Long id) {
         Session session = em.unwrap(Session.class);
