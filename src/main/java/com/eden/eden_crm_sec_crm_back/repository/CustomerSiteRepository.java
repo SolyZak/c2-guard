@@ -109,11 +109,13 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     --  Filters
     ---------------------------------------------------------------------------
     WHERE  sd.customer_contract_id = :contractId             -- site belongs to contract
+      AND sd.customer_contract_service_id = :serviceId
       AND  cs.customer_id          = :customerId             -- site belongs to customer
     """,
             nativeQuery = true)
     List<GeneralDropdownProjection> findOperationSitesForDropdownWithDistrbutedContracts(
             @Param("contractId") Long contractId,
+            @Param("serviceId") Long serviceId,
             @Param("customerId") Long customerId
     );
 
