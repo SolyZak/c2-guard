@@ -29,7 +29,9 @@ import java.util.UUID;
         @Index(name = "idx_scheduled_tasks_type_active", columnList = "taskType,isActive"),
         @Index(name = "idx_scheduled_tasks_type_of_execution", columnList = "typeOfExecution"),
         @Index(name = "idx_scheduled_tasks_active_planned_execution_time", columnList = "isActive,plannedExecutionTime"),
-        @Index(name = "idx_scheduled_tasks_created_at", columnList = "createdAt")
+        @Index(name = "idx_scheduled_tasks_created_at", columnList = "createdAt"),
+        @Index(name = "idx_scheduled_tasks_is_execution_finished", columnList = "isExecutionFinished"),
+        @Index(name = "idx_scheduled_tasks_typeOfExecution_is_execution_finished", columnList = "typeOfExecution,isExecutionFinished")
 })
 public class ScheduledTaskEntity {
 
@@ -39,11 +41,14 @@ public class ScheduledTaskEntity {
     private UUID id;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "description", nullable = true, length = 500)
+    private String description;
+
     @NotBlank
-    @Column(nullable = false)
+    @Column(name = "task_type", nullable = false)
     private String taskType;
 
     @Enumerated(EnumType.STRING)
@@ -71,7 +76,11 @@ public class ScheduledTaskEntity {
     @ColumnDefault("true")
     private Boolean isActive;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "is_execution_finished", nullable = false)
+    @ColumnDefault("false")
+    private Boolean isExecutionFinished;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @OneToMany(mappedBy = "task", fetch = FetchType.LAZY)
