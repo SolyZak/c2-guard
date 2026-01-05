@@ -1,5 +1,5 @@
 ALTER TABLE scheduled_tasks ALTER COLUMN is_active SET NOT NULL;
-ِALTER TABLE scheduled_tasks ADD COLUMN description VARCHAR(500);
+ALTER TABLE scheduled_tasks ADD COLUMN description VARCHAR(500);
 ALTER TABLE scheduled_tasks ADD COLUMN is_execution_finished BOOLEAN DEFAULT FALSE NOT NULL;
 
 
