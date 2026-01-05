@@ -1,4 +1,4 @@
-package com.eden.eden_crm_sec_crm_back.dynamicscheduler.uuid;
+package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.generators.uuid;
 
 import org.hibernate.annotations.IdGeneratorType;
 

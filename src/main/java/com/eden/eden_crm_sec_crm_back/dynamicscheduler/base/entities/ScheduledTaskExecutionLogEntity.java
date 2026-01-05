@@ -1,7 +1,7 @@
-package com.eden.eden_crm_sec_crm_back.dynamicscheduler.entity;
+package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities;
 
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.enums.ScheduledTaskStatus;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.uuid.UUIDv7;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.ScheduledTaskStatus;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.generators.uuid.UUIDv7;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.Getter;

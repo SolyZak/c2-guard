@@ -1,8 +1,8 @@
-package com.eden.eden_crm_sec_crm_back.dynamicscheduler.entity;
+package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities;
 
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.converter.DurationAttributeConverter;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.enums.TaskExecutionType;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.uuid.UUIDv7;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.converters.DurationAttributeConverter;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.TaskExecutionType;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.generators.uuid.UUIDv7;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

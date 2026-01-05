@@ -1,6 +1,6 @@
-package com.eden.eden_crm_sec_crm_back.dynamicscheduler.repository;
+package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories;
 
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.entity.ScheduledTaskExecutionLogEntity;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskExecutionLogEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

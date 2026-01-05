@@ -1,4 +1,4 @@
-package com.eden.eden_crm_sec_crm_back.dynamicscheduler.enums;
+package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums;
 
 public enum TaskExecutionType {
     CRON,

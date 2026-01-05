@@ -1,4 +1,4 @@
-package com.eden.eden_crm_sec_crm_back.dynamicscheduler.converter;
+package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.converters;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
