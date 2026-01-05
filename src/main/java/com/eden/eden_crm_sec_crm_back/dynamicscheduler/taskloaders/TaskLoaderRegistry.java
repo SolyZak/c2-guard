@@ -1,25 +1,26 @@
 package com.eden.eden_crm_sec_crm_back.dynamicscheduler.taskloaders;
 
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.dto.CreateScheduledTaskRequest;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.entity.ScheduledTaskEntity;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.enums.TaskExecutionType;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.operator.TaskSchedulerOperator;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.repository.ScheduledTaskRepository;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.service.TaskSchedulerService;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.dtos.CronScheduledTaskRequest;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskEntity;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.operators.TaskSchedulerOperator;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks.TaskLoaderJob;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class TaskLoaderRegistry {
 
     private final ScheduledTaskRepository scheduledTaskRepository;
-    private final TaskSchedulerService taskSchedulerService;
+    private final TaskSchedulerOperator taskSchedulerOperator;
+    private final TaskLoaderJob taskLoaderJob;
 
     @PostConstruct
     public void init() {
@@ -27,17 +28,14 @@ public class TaskLoaderRegistry {
     }
 
     public void createIfNotExists() {
-        List<ScheduledTaskEntity> loaderTasks = scheduledTaskRepository.findAllByTaskType("Tasks24HoursLoader");
+        List<ScheduledTaskEntity> loaderTasks = scheduledTaskRepository.findAllByTaskType(taskLoaderJob.getTaskType());
         if (loaderTasks.isEmpty()) {
-            CreateScheduledTaskRequest scheduledTaskRequest = CreateScheduledTaskRequest.builder()
+            CronScheduledTaskRequest scheduledTaskRequest = CronScheduledTaskRequest.builder()
                     .name("TaskLoader - " + LocalDate.now())
-                    .taskType("Tasks24HoursLoader")
-                    .typeOfExecution(TaskExecutionType.CRON)
-                    .cronExpression("0 0 12 * * *")
-                    .createdAt(OffsetDateTime.now())
-                    .isActive(true)
+                    .cronExpression("0 0 12 * * *") // 12:00 every day
                     .build();
-            taskSchedulerService.createAndScheduleTask(scheduledTaskRequest);
+            ScheduledTaskEntity task = taskLoaderJob.createTask(scheduledTaskRequest);
+            taskSchedulerOperator.scheduleTask(task);
         }
     }
 }
