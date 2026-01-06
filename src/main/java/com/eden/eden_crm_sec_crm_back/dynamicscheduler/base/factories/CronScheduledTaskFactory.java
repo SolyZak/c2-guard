@@ -23,6 +23,9 @@ public abstract non-sealed class CronScheduledTaskFactory extends AbstractSchedu
     private final ScheduledTaskMapper scheduledTaskMapper;
     private final Validator validator;
 
+    /**
+     * Subclasses must provide a constructor with this signature.
+     */
     protected CronScheduledTaskFactory (
         ApplicationContext applicationContext,
         ObjectMapper objectMapper,

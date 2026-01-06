@@ -32,7 +32,7 @@ public class TaskLoaderRegistry {
         if (loaderTasks.isEmpty()) {
             CronScheduledTaskRequest scheduledTaskRequest = CronScheduledTaskRequest.builder()
                     .name("TaskLoader - " + LocalDate.now())
-                    .cronExpression("0 0 12 * * *") // 12:00 every day
+                    .cronExpression("0 0 0 * * *") // midnight every day
                     .build();
             ScheduledTaskEntity task = taskLoaderJob.createTask(scheduledTaskRequest);
             taskSchedulerOperator.scheduleTask(task);
