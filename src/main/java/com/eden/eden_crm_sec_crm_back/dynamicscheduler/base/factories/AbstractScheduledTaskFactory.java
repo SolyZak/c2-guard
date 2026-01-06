@@ -148,4 +148,13 @@ public abstract sealed class AbstractScheduledTaskFactory
         JsonNode node = args.get(fieldName);
         return node != null && node.isInt() ? node.asInt() : defaultValue;
     }
+
+    protected Long getArg(String fieldName, Long defaultValue) {
+        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
+
+        JsonNode args = taskEntity.getArguments();
+        if (args == null) return defaultValue;
+        JsonNode node = args.get(fieldName);
+        return node != null && node.isLong() ? node.asLong() : defaultValue;
+    }
 }
