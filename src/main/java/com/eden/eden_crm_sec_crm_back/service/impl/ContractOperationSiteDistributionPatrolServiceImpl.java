@@ -109,7 +109,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                 }
             }
         }
-        createScheduledTasks(distributionForPatrols, contractId, serviceId);
+//        createScheduledTasks(distributionForPatrols, contractId, serviceId);
     }
 
     private void createScheduledTasks(
