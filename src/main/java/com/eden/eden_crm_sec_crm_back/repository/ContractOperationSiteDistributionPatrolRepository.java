@@ -76,4 +76,19 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
         GROUP BY locationId, siteId, serviceId, taskId, serviceName, siteName, taskName, status, hasEvidence, evidenceImage
     """)
     List<PatrolReportDetailsAggregation> findPatrolDetails(@Param("premiseId") Long premiseId, @Param("patrolId") Long patrolId);
+
+    @Query(value = """
+        SELECT EXISTS (
+            SELECT 1 
+            FROM contract_operation_distribution_site_patrol 
+            WHERE id = :id 
+              AND task_id = :taskId 
+              AND location_id = :locationId
+        )
+    """, nativeQuery = true)
+    boolean existsByIdAndTaskIdAndLocationId(
+            @Param("id") Long id,
+            @Param("taskId") Long taskId,
+            @Param("locationId") Long locationId
+    );
 }

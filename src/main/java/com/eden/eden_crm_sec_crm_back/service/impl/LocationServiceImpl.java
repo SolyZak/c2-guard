@@ -11,6 +11,7 @@ import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.models.projections.LocationProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
@@ -46,6 +47,8 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
     private final PremiseRepository premiseRepository;
     private final CustomerRepository customerRepository;
+    private final ContractOperationSiteDistributionPatrolRepository contractOperationSiteDistributionPatrolRepository; // ADD THIS
+
     private final Utils utils;
 
     private final EntityManager em;
@@ -187,15 +190,26 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<LocationProjection> resultPage = locationRepository.searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
+        Page<LocationProjection> resultPage = locationRepository
+                .searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
+
         List<PremiseLocationDto> premiseLocationDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (LocationProjection location : resultPage.getContent()) {
-                PremiseLocationDto dto = new PremiseLocationDto(location.getId(), location.getName(), location.getAccessType(),
+                PremiseLocationDto dto = new PremiseLocationDto(
+                        location.getId(),
+                        location.getName(),
+                        location.getAccessType(),
                         location.getPremise() != null ? location.getPremise().getName() : "",
-                        location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())  ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())));
+                        location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())
+                                ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())),
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        location.getTolerance()
+                );
                 premiseLocationDtos.add(dto);
             }
         }
@@ -242,10 +256,41 @@ public class LocationServiceImpl implements LocationService {
             result.add(new LocationResponseDto(
                     lp.getId(),
                     lp.getName(),
-                    lp.getLongitude() != null ? BigDecimal.valueOf(lp.getLongitude()) : null,
-                    lp.getLatitude() != null ? BigDecimal.valueOf(lp.getLatitude()) : null
+                    lp.getLongitude() != null ? lp.getLongitude(): null,
+                    lp.getLatitude() != null ? lp.getLatitude(): null,
+                    lp.getTolerance() != null ? lp.getLatitude(): null
             ));
         }
+        return result;
+    }
+    @Override
+    public List<PatrolLocationResponseDto> findLocationsByCustomerSiteAndPatrol(
+            Long customerSiteId,
+            Long patrolId
+    ) {
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        List<LocationProjection> locations =
+                locationRepository.findLocationsByPatrolAndCustomerSite(
+                        patrolId,
+                        customerSiteId,
+                        customer.getId()
+                );
+
+        List<PatrolLocationResponseDto> result = new ArrayList<>();
+        for (LocationProjection lp : locations) {
+            result.add(new PatrolLocationResponseDto(
+                    lp.getId(),
+                    lp.getName(),
+                    lp.getAccessType(),
+                    lp.getLongitude(),
+                    lp.getLatitude(),
+                    lp.getTolerance()
+            ));
+        }
+
         return result;
     }
 
@@ -278,6 +323,20 @@ public class LocationServiceImpl implements LocationService {
         final Long id = Long.valueOf(request.getPayload());
         Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
                 .findLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
+
+
+        boolean isValid = contractOperationSiteDistributionPatrolRepository
+                .existsByIdAndTaskIdAndLocationId(
+                        request.getPatrolDistributionId(),
+                        request.getTaskId(),
+                        id
+                );
+
+        if (!isValid) {
+            String msg = MessageUtil.getMessage("validation.qr.patrol.distribution.invalid");
+            return new ValidateQrResponse(false, msg, null, null);
+        }
+
 
         if (opt.isPresent()) {
             var loc = opt.get();
