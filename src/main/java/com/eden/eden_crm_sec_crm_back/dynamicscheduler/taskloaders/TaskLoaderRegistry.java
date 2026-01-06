@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,19 +24,29 @@ public class TaskLoaderRegistry {
     private final TaskLoaderJob taskLoaderJob;
 
     @PostConstruct
+    @Transactional
     public void init() {
-        createIfNotExists();
+        List<ScheduledTaskEntity> loaderTasks = scheduledTaskRepository.findAllByTaskType(taskLoaderJob.getTaskType());
+        createIfNotExists(loaderTasks);
+        scheduleIfExists(loaderTasks);
     }
 
-    public void createIfNotExists() {
-        List<ScheduledTaskEntity> loaderTasks = scheduledTaskRepository.findAllByTaskType(taskLoaderJob.getTaskType());
-        if (loaderTasks.isEmpty()) {
-            CronScheduledTaskRequest scheduledTaskRequest = CronScheduledTaskRequest.builder()
-                    .name("TaskLoader - " + LocalDate.now())
-                    .cronExpression("0 0 0 * * *") // midnight every day
-                    .build();
-            ScheduledTaskEntity task = taskLoaderJob.createTask(scheduledTaskRequest);
-            taskSchedulerOperator.scheduleTask(task);
-        }
+    public void createIfNotExists(List<ScheduledTaskEntity> loaderTasks) {
+        if (!loaderTasks.isEmpty())
+            return;
+
+        CronScheduledTaskRequest scheduledTaskRequest = CronScheduledTaskRequest.builder()
+                .name("TaskLoader - " + LocalDate.now())
+                .cronExpression("0 0 0 * * *") // midnight every day
+                .build();
+        ScheduledTaskEntity task = taskLoaderJob.createTask(scheduledTaskRequest);
+        taskSchedulerOperator.scheduleTask(task);
+    }
+
+    public void scheduleIfExists(List<ScheduledTaskEntity> loaderTasks) {
+        if (loaderTasks.isEmpty())
+            return;
+
+        loaderTasks.forEach(taskSchedulerOperator::scheduleTask);
     }
 }
