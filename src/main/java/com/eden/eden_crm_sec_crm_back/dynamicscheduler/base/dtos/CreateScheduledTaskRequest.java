@@ -29,13 +29,16 @@ public abstract class CreateScheduledTaskRequest {
     @NotNull
     protected OffsetDateTime createdAt;
 
+    protected String description;
+
     protected CreateScheduledTaskRequest(
         String name,
         String taskType,
         TaskExecutionType typeOfExecution,
         JsonNode arguments,
         Boolean isActive,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        String description
     ) {
         this.name = name;
         this.taskType = taskType;
@@ -43,5 +46,6 @@ public abstract class CreateScheduledTaskRequest {
         this.arguments = arguments == null ? JsonNodeFactory.instance.objectNode() : arguments;
         this.isActive = isActive == null || isActive;
         this.createdAt = createdAt == null ? OffsetDateTime.now() : createdAt;
+        this.description = description;
     }
 }

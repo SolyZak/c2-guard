@@ -17,7 +17,15 @@ public class CronScheduledTaskRequest extends CreateScheduledTaskRequest {
     private String cronExpression;
 
     public CronScheduledTaskRequest(Builder builder) {
-        super(builder.name, builder.taskType, TaskExecutionType.CRON, builder.arguments, builder.isActive, builder.createdAt);
+        super(
+            builder.name,
+            builder.taskType,
+            TaskExecutionType.CRON,
+            builder.arguments,
+            builder.isActive,
+            builder.createdAt,
+            builder.description
+        );
         this.cronExpression = builder.cronExpression;
     }
 
@@ -37,6 +45,7 @@ public class CronScheduledTaskRequest extends CreateScheduledTaskRequest {
         private Boolean isActive;
         private OffsetDateTime createdAt;
         private String cronExpression;
+        private String description;
 
         public Builder name(String name) {
             this.name = name;
@@ -65,6 +74,11 @@ public class CronScheduledTaskRequest extends CreateScheduledTaskRequest {
 
         public Builder cronExpression(String cronExpression) {
             this.cronExpression = cronExpression;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
             return this;
         }
 
