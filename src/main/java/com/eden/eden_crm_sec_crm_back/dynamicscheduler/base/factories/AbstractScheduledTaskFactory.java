@@ -90,7 +90,7 @@ public abstract sealed class AbstractScheduledTaskFactory
         try {
             AbstractScheduledTaskFactory instance = factory.getApplicationContext().getBean(this.getClass());
             instance.taskEntity = task;
-            return this;
+            return instance;
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate concrete ScheduledTaskFactory via reflection. Ensure the subclass has a matching constructor.", e);
         }
