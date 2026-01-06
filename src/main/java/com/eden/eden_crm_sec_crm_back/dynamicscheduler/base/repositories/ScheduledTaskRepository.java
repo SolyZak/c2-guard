@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -52,4 +53,10 @@ public interface ScheduledTaskRepository extends JpaRepository<ScheduledTaskEnti
     );
 
     List<ScheduledTaskEntity> findAllByTaskType(String taskType);
+
+    long countByIsExecutionFinishedTrue();
+
+    @Modifying
+    @Query("DELETE FROM ScheduledTaskEntity t WHERE t.isExecutionFinished = true")
+    void deleteByIsExecutionFinishedTrue();
 }

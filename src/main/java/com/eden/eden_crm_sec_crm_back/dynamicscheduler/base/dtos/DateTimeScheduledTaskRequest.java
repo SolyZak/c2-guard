@@ -17,7 +17,15 @@ public class DateTimeScheduledTaskRequest extends CreateScheduledTaskRequest {
     private OffsetDateTime plannedExecutionTime;
 
     public DateTimeScheduledTaskRequest(Builder builder) {
-        super(builder.name, builder.taskType, TaskExecutionType.DATETIME, builder.arguments, builder.isActive, builder.createdAt);
+        super(
+            builder.name,
+            builder.taskType,
+            TaskExecutionType.DATETIME,
+            builder.arguments,
+            builder.isActive,
+            builder.createdAt,
+            builder.description
+        );
         this.plannedExecutionTime = builder.plannedExecutionTime;
     }
 
@@ -37,6 +45,7 @@ public class DateTimeScheduledTaskRequest extends CreateScheduledTaskRequest {
         private Boolean isActive;
         private OffsetDateTime createdAt;
         private OffsetDateTime plannedExecutionTime;
+        private String description;
 
         public Builder name(String name) {
             this.name = name;
@@ -65,6 +74,11 @@ public class DateTimeScheduledTaskRequest extends CreateScheduledTaskRequest {
 
         public Builder plannedExecutionTime(OffsetDateTime plannedExecutionTime) {
             this.plannedExecutionTime = plannedExecutionTime;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
             return this;
         }
 
