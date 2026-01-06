@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
+import java.util.Arrays;
+
 @Configuration
 @Slf4j
 public class SchedulerConfig {
@@ -14,7 +16,10 @@ public class SchedulerConfig {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(50);
         scheduler.setThreadNamePrefix("[DynamicScheduler]-");
-        scheduler.setErrorHandler(t -> log.error("Task error: {}", t.getMessage()));
+        scheduler.setErrorHandler(t -> {
+            log.error("Task error: {}", t.getMessage());
+            log.error("StackTrace:\n {}", Arrays.stream(t.getStackTrace()).map(Object::toString).toList());
+        });
         scheduler.initialize();
         return scheduler;
     }

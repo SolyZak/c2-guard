@@ -127,17 +127,21 @@ public class TaskSchedulerOperator {
     public boolean isDateTimeTypeAndWithInToday(ScheduledTaskEntity taskEntity, OffsetDateTime nowDateTime) {
         OffsetDateTime endOfDay = nowDateTime.with(LocalTime.MAX);
         boolean isDateTimeType = taskEntity.getTypeOfExecution() == TaskExecutionType.DATETIME;
+        if (!isDateTimeType)
+            return false;
         boolean isAfterStartOfDay = taskEntity.getPlannedExecutionTime().isAfter(nowDateTime);
         boolean isBeforeEndOfDay = taskEntity.getPlannedExecutionTime().isBefore(endOfDay);
-        return isDateTimeType && isAfterStartOfDay && isBeforeEndOfDay;
+        return isAfterStartOfDay && isBeforeEndOfDay;
     }
 
     public boolean isCronTypeAndWithInToday(ScheduledTaskEntity taskEntity, OffsetDateTime nowDateTime) {
         OffsetDateTime endOfDay = nowDateTime.with(LocalTime.MAX);
         boolean isCronType = taskEntity.getTypeOfExecution() == TaskExecutionType.CRON;
+        if (!isCronType)
+            return false;
         try {
             CronExpression cron = CronExpression.parse(taskEntity.getCronExpression());
-            return isCronType && Optional.ofNullable(cron.next(nowDateTime))
+            return Optional.ofNullable(cron.next(nowDateTime))
                     .map(dateTime -> !dateTime.isAfter(endOfDay))
                     .orElse(false);
         } catch (Exception e) {
@@ -149,8 +153,9 @@ public class TaskSchedulerOperator {
     public boolean isStartDateTimeAndDurationAndWithInToday(ScheduledTaskEntity taskEntity, OffsetDateTime nowDateTime) {
         OffsetDateTime endOfDay = nowDateTime.with(LocalTime.MAX);
         boolean isStartTimeAndDurationType = taskEntity.getTypeOfExecution() == TaskExecutionType.START_TIME_AND_DURATION;
-        boolean isStartTimeInPastOrToday = taskEntity.getStartDateTime().isBefore(endOfDay);
-        return isStartTimeAndDurationType && isStartTimeInPastOrToday;
+        if (!isStartTimeAndDurationType)
+            return false;
+        return taskEntity.getStartDateTime().isBefore(endOfDay);
     }
 
     @PreDestroy

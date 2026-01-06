@@ -172,8 +172,8 @@ public class TaskServiceImpl implements TaskService {
                 ));
             }
         }
-        List<TodayTaskEntryDto> tasks = new ArrayList<>();
         List<Long> missedIds = new ArrayList<>();
+        List<TodayTaskEntryDto> tasks = new ArrayList<>();
         for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
             List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
                     .map(tt ->

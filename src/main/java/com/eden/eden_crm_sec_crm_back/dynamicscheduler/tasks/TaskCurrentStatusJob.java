@@ -22,12 +22,12 @@ import java.util.Optional;
 
 @Service
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
+public class TaskCurrentStatusJob extends DateTimeScheduledTaskFactory {
 
-    public static final String TASK_TYPE = "TaskMissedStatus";
+    public static final String TASK_TYPE = "TaskCurrentStatus";
     private final ContractOperationSiteDistributionPatrolRepository repository;
 
-    public TaskMissedStatusJob(
+    public TaskCurrentStatusJob(
         ApplicationContext applicationContext,
         ObjectMapper objectMapper,
         ScheduledTaskRepository taskRepository,
@@ -54,7 +54,7 @@ public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
             throw new BusinessException("Patrol distribution not found", HttpStatus.NOT_FOUND);
 
         ContractOperationSiteDistributionPatrol distribution = optionalDistribution.get();
-        distribution.setStatus(TaskDistributionStatus.MISSED.name());
+        distribution.setStatus(TaskDistributionStatus.CURRENT.name());
         repository.save(distribution);
 
         ObjectNode result = createObjectNode();
