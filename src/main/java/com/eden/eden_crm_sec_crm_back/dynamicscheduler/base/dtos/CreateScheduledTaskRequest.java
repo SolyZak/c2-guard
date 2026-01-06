@@ -31,6 +31,8 @@ public abstract class CreateScheduledTaskRequest {
 
     protected String description;
 
+    protected Boolean isExecutionFinished;
+
     protected CreateScheduledTaskRequest(
         String name,
         String taskType,
@@ -47,5 +49,6 @@ public abstract class CreateScheduledTaskRequest {
         this.isActive = isActive == null || isActive;
         this.createdAt = createdAt == null ? OffsetDateTime.now() : createdAt;
         this.description = description;
+        this.isExecutionFinished = false;
     }
 }
