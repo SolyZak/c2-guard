@@ -321,8 +321,8 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
         final Long id = Long.valueOf(request.getPayload());
-        Optional<LocationRepository.QrLocationProjection> opt = locationRepository
-                .findQrLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
+        Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
+                .findLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
 
         boolean isValid = contractOperationSiteDistributionPatrolRepository
@@ -355,8 +355,8 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest request) {
-        Optional<LocationRepository.QrLocationProjection> opt = locationRepository
-                .findQrLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.SPECIFIC_POINT.getType());
+        Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
+                .findLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.SPECIFIC_POINT.getType());
 
         boolean isSuccess = false;
 
