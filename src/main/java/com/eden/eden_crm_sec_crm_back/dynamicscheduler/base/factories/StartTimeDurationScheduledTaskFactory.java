@@ -23,6 +23,9 @@ public abstract non-sealed class StartTimeDurationScheduledTaskFactory extends A
     private final ScheduledTaskMapper scheduledTaskMapper;
     private final Validator validator;
 
+    /**
+     * Subclasses must provide a constructor with this signature.
+     */
     protected StartTimeDurationScheduledTaskFactory (
         ApplicationContext applicationContext,
         ObjectMapper objectMapper,

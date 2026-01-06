@@ -21,7 +21,15 @@ public class StartTimeDurationScheduledTaskRequest extends CreateScheduledTaskRe
     private Duration duration;
 
     public StartTimeDurationScheduledTaskRequest(Builder builder) {
-        super(builder.name, builder.taskType, TaskExecutionType.START_TIME_AND_DURATION, builder.arguments, builder.isActive, builder.createdAt);
+        super(
+            builder.name,
+            builder.taskType,
+            TaskExecutionType.START_TIME_AND_DURATION,
+            builder.arguments,
+            builder.isActive,
+            builder.createdAt,
+            builder.description
+        );
         this.startDateTime = builder.startDateTime;
         this.duration = builder.duration;
     }
@@ -43,6 +51,7 @@ public class StartTimeDurationScheduledTaskRequest extends CreateScheduledTaskRe
         private OffsetDateTime createdAt;
         private OffsetDateTime startDateTime;
         private Duration duration;
+        private String description;
 
         public Builder name(String name) {
             this.name = name;
@@ -76,6 +85,11 @@ public class StartTimeDurationScheduledTaskRequest extends CreateScheduledTaskRe
 
         public Builder duration(Duration duration) {
             this.duration = duration;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
             return this;
         }
 

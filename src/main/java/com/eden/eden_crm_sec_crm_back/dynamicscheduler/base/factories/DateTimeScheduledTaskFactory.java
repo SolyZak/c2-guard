@@ -23,6 +23,9 @@ public abstract non-sealed class DateTimeScheduledTaskFactory extends AbstractSc
     private final ScheduledTaskMapper scheduledTaskMapper;
     private final Validator validator;
 
+    /**
+     * Subclasses must provide a constructor with this signature.
+     */
     protected DateTimeScheduledTaskFactory (
         ApplicationContext applicationContext,
         ObjectMapper objectMapper,

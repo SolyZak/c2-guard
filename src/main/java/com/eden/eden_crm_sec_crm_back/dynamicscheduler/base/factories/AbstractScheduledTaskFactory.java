@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskEntity;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskExecutionLogEntity;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.ScheduledTaskStatus;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.TaskExecutionType;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories.base.ScheduledTaskFactory;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.mappers.ScheduledTaskMapper;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
@@ -79,6 +80,10 @@ public abstract sealed class AbstractScheduledTaskFactory
         } finally {
             execution.setFinishedAt(OffsetDateTime.now());
             logRepository.save(execution);
+            if (taskEntity.getTypeOfExecution() == TaskExecutionType.DATETIME) {
+                taskEntity.setIsExecutionFinished(true);
+                taskRepository.save(taskEntity);
+            }
         }
     }
 
