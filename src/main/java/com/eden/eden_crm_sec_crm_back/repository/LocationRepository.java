@@ -18,7 +18,7 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
                 SELECT l.id as id,l.premise as premise,l.name as name,l.accessType as accessType,l.longitude as longitude,l.latitude as latitude FROM Location l JOIN Premise p on p.id = l.premise.id where l.customer.id = :customerId AND (lower(p.name) like lower(concat('%', :search, '%')) OR lower(l.name) like lower(concat('%', :search, '%')) OR lower(l.accessType) like lower(concat('%', :search, '%')) OR :search is null)
             """)
     Page<LocationProjection> searchByPremiseNameAndLocationNameAndAccessType(@Param("search") String search, @Param("customerId") Long customerId,
-                                                                             Pageable pageable);
+                                                                                    Pageable pageable);
     @Query(value = """
             select l.name from location l INNER JOIN patrol_detail lpd on l.id = lpd.location_id where lpd.id = :detailsId 
             """, nativeQuery = true)
@@ -42,7 +42,7 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     @Query("SELECT l.accessType FROM Location l WHERE l.id = :id")
     Optional<String> findAccessTypeById(@Param("id") Long id);
 
-    interface QrLocationProjection {
+    interface LocationNoImageProjection {
         Long getId();
         String getName();
         BigDecimal getLatitude();
@@ -52,13 +52,18 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     }
 
     @Query("""
-    SELECT l.id AS id, l.name AS name
+    SELECT l.id AS id,
+        l.name AS name,
+        l.accessType AS accessType,
+        l.longitude AS longitude,
+        l.latitude AS latitude,
+        l.tolerance AS tolerance
     FROM Location l
     WHERE l.id = :id
       AND l.accessType = :accessType
       AND l.deleted = false
     """)
-    Optional<QrLocationProjection> findQrLocationByIdAndAccessType(
+    Optional<LocationNoImageProjection> findLocationByIdAndAccessType(
             @Param("id") Long id,
             @Param("accessType") String accessType
     );
