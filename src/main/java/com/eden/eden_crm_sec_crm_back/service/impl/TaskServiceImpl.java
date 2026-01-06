@@ -173,14 +173,13 @@ public class TaskServiceImpl implements TaskService {
             }
         }
         List<TodayTaskEntryDto> tasks = new ArrayList<>();
-        List<Long> missedIds = new ArrayList<>();
         for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
             List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
                     .map(tt ->
                             new TodayTaskEntryTimesDto(
                                     DateUtils.toLocalTime(customer.getTimezone(), tt.getStartTime()),
                                     DateUtils.toLocalTime(customer.getTimezone(), tt.getEndTime()),
-                                    getTimePeriodStatus(tt),
+                                    tt.getPeriodStatus(),
                                     tt.getPatrolDistributionId()
                             ))
                     .sorted(
@@ -202,45 +201,37 @@ public class TaskServiceImpl implements TaskService {
                     entry.getKey().getLocationAccessType()
             );
             tasks.add(task);
-            missedIds.addAll(times.stream().filter(t -> t.getStatus().equals(TaskDistributionStatus.MISSED.name())).map(t -> t.getPatrolDistributionId()).collect(Collectors.toList()));
-        }
-        if (missedIds.size() > 0) {
-            List<ContractOperationSiteDistributionPatrol> distributionPatrols = repository.findAllById(missedIds);
-            for (int i = 0; i < distributionPatrols.size() ; i++) {
-                distributionPatrols.get(i).setStatus(TaskDistributionStatus.MISSED.name());
-            }
-            repository.saveAll(distributionPatrols);
         }
         return new TodayTasksResponseDto(tasks);
     }
 
-    private String getTimePeriodStatus(TodayTasks todayTasks) {
-        if (todayTasks.getPeriodStatus().equals(TaskDistributionStatus.FINISHED.name()) || todayTasks.getPeriodStatus().equals(TaskDistributionStatus.MISSED.name())) {
-            return todayTasks.getPeriodStatus();
-        }
-        if (todayTasks.getPatrolFreqType().equals(PatrolFrequencyEnum.EVERY_PERIOD.getFreq())) {
-            LocalTime current = LocalTime.now();
-            if (current.isBefore(todayTasks.getEndTime().toLocalTime()) && current.isAfter(todayTasks.getStartTime().toLocalTime())) {
-                return TaskDistributionStatus.CURRENT.name();
-            } else if (current.isAfter(todayTasks.getEndTime().toLocalTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
-                return TaskDistributionStatus.MISSED.name();
-            }
-            return TaskDistributionStatus.CREATED.name();
-        } else {
-            LocalDate currentDate = LocalDate.now();
-            LocalTime current = LocalTime.now();
-            if (currentDate.equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime().toLocalTime())) {
-                return TaskDistributionStatus.MISSED.name();
-            } else if (
-                    ( currentDate.equals(todayTasks.getEndDate()) || currentDate.equals(todayTasks.getStartDate()) ) ||
-                            ( currentDate.isBefore(todayTasks.getEndDate()) && currentDate.isAfter(todayTasks.getStartDate()) )
-                            && current.isAfter(todayTasks.getStartTime().toLocalTime()) && current.isBefore(todayTasks.getEndTime().toLocalTime())
-            ) {
-                return TaskDistributionStatus.CURRENT.name();
-            }
-            return TaskDistributionStatus.CREATED.name();
-        }
-    }
+//    private String getTimePeriodStatus(TodayTasks todayTasks) {
+//        if (todayTasks.getPeriodStatus().equals(TaskDistributionStatus.FINISHED.name()) || todayTasks.getPeriodStatus().equals(TaskDistributionStatus.MISSED.name())) {
+//            return todayTasks.getPeriodStatus();
+//        }
+//        if (todayTasks.getPatrolFreqType().equals(PatrolFrequencyEnum.EVERY_PERIOD.getFreq())) {
+//            LocalTime current = LocalTime.now();
+//            if (current.isBefore(todayTasks.getEndTime().toLocalTime()) && current.isAfter(todayTasks.getStartTime().toLocalTime())) {
+//                return TaskDistributionStatus.CURRENT.name();
+//            } else if (current.isAfter(todayTasks.getEndTime().toLocalTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
+//                return TaskDistributionStatus.MISSED.name();
+//            }
+//            return TaskDistributionStatus.CREATED.name();
+//        } else {
+//            LocalDate currentDate = LocalDate.now();
+//            LocalTime current = LocalTime.now();
+//            if (currentDate.equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime().toLocalTime())) {
+//                return TaskDistributionStatus.MISSED.name();
+//            } else if (
+//                    ( currentDate.equals(todayTasks.getEndDate()) || currentDate.equals(todayTasks.getStartDate()) ) ||
+//                            ( currentDate.isBefore(todayTasks.getEndDate()) && currentDate.isAfter(todayTasks.getStartDate()) )
+//                            && current.isAfter(todayTasks.getStartTime().toLocalTime()) && current.isBefore(todayTasks.getEndTime().toLocalTime())
+//            ) {
+//                return TaskDistributionStatus.CURRENT.name();
+//            }
+//            return TaskDistributionStatus.CREATED.name();
+//        }
+//    }
 
     @Override
     public TaskCheckDto getTaskById(Long taskId) {
