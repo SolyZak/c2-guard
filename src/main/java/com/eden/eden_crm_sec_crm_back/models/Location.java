@@ -43,7 +43,7 @@ public class Location extends BaseAuditEntity {
     private BigDecimal latitude;
 
     @Column(name = "tolerance",
-            precision = 10,
+            precision = 18,
             scale     = 2,
             nullable  = true,
             columnDefinition = "NUMERIC(10,2)")
