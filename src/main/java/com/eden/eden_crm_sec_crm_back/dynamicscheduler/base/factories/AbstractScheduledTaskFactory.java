@@ -90,24 +90,8 @@ public abstract sealed class AbstractScheduledTaskFactory
     @Override
     public AbstractScheduledTaskFactory createInstanceAndSetEntity(ScheduledTaskFactory factory, ScheduledTaskEntity task) {
         try {
-            Constructor<? extends AbstractScheduledTaskFactory> ctor = this.getClass().getDeclaredConstructor(
-                    ApplicationContext.class,
-                    ObjectMapper.class,
-                    ScheduledTaskRepository.class,
-                    ScheduledTaskExecutionLogRepository.class,
-                    ScheduledTaskMapper.class,
-                    Validator.class
-            );
-            var instance = ctor.newInstance(
-                factory.getApplicationContext(),
-                factory.getObjectMapper(),
-                factory.getTaskRepository(),
-                factory.getLogRepository(),
-                factory.getScheduledTaskMapper(),
-                factory.getValidator()
-            );
-            instance.taskEntity = task;
-            return instance;
+            this.taskEntity = task;
+            return this;
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate concrete ScheduledTaskFactory via reflection. Ensure the subclass has a matching constructor.", e);
         }
