@@ -5,13 +5,11 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTa
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.ScheduledTaskStatus;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.TaskExecutionType;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories.base.ScheduledTaskFactory;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.mappers.ScheduledTaskMapper;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.validation.Validator;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +88,8 @@ public abstract sealed class AbstractScheduledTaskFactory
     @Override
     public AbstractScheduledTaskFactory createInstanceAndSetEntity(ScheduledTaskFactory factory, ScheduledTaskEntity task) {
         try {
-            this.taskEntity = task;
+            AbstractScheduledTaskFactory instance = factory.getApplicationContext().getBean(this.getClass());
+            instance.taskEntity = task;
             return this;
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate concrete ScheduledTaskFactory via reflection. Ensure the subclass has a matching constructor.", e);
