@@ -105,12 +105,17 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     }
 
     @Query("""
-    SELECT l.id AS id, l.name AS name
-    FROM Location l
-    WHERE l.id = :id
-      AND l.accessType = :accessType
-      AND l.deleted = false
-    """)
+SELECT l.id AS id, 
+       l.name AS name,
+       l.latitude AS latitude,
+       l.longitude AS longitude,
+       l.tolerance AS tolerance,
+       l.accessType AS accessType
+FROM Location l
+WHERE l.id = :id
+  AND l.accessType = :accessType
+  AND l.deleted = false
+""")
     Optional<QrLocationProjection> findQrLocationByIdAndAccessType(
             @Param("id") Long id,
             @Param("accessType") String accessType
