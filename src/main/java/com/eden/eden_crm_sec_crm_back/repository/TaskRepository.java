@@ -25,9 +25,13 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
     List<String> getTaskNamesByDetailId(@Param("detailsId") Long detailsId);
 
     @Query("""
-                SELECT t FROM Task t where t.customer.id = :customerId
-            """)
+    SELECT t 
+    FROM Task t 
+    WHERE t.customer.id = :customerId
+      AND t.deleted = false
+""")
     List<Task> listTasks(@Param("customerId") Long customerId);
+
 
     @Query("""
                 SELECT t FROM Task t where t.customer.id = :customerId and id in :taskIds
