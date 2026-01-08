@@ -315,7 +315,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
 
     private LocalDate calculateEndDateForOncePatrolType(String frequencyRate, LocalDate startDate) {
         if (frequencyRate.equals(PatrolFrequencyRateEnum.DAILY.getRate())) {
-            return startDate.plusDays(1);
+            return startDate;
         } else if (frequencyRate.equals(PatrolFrequencyRateEnum.WEEKLY.getRate())) {
             return startDate.plusWeeks(1);
         } else if (frequencyRate.equals(PatrolFrequencyRateEnum.MONTHLY.getRate())) {
