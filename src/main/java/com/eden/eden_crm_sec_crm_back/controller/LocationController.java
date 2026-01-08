@@ -76,13 +76,10 @@ public class LocationController {
     }
 
     @PostMapping("/{id}/validate-location")
-    public ResponseEntity<ValidateLocationResponse> validateLocation(
+    public ApiResponse<ValidateLocationResponse> validateLocation(
             @PathVariable("id") Long id,
             @Valid @RequestBody ValidateLocationRequest req
     ) {
-        ValidateLocationResponse resp = locationService.validateLocation(id, req);
-        return resp.success()
-                ? ResponseEntity.ok(resp)
-                : ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
+        return ApiResponse.ok(locationService.validateLocation(id, req));
     }
 }

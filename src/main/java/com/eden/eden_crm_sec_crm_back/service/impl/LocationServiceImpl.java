@@ -358,17 +358,40 @@ public class LocationServiceImpl implements LocationService {
         Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
                 .findLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.SPECIFIC_POINT.getType());
 
-        boolean isSuccess = false;
+        if (opt.isEmpty()) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.not.found"),
+                    HttpStatus.NOT_FOUND
+            );
+        }
 
-        if (opt.isPresent()) {
-            var loc = opt.get();
-            isSuccess = LocationUtils.isWithinTolerance(
-                    request.latitude(), request.longitude(), loc.getLatitude(), loc.getLongitude(), loc.getTolerance()
+        var loc = opt.get();
+
+        // Check if tolerance is null
+        if (loc.getTolerance() == null) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.tolerance.not.set"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        boolean isSuccess = LocationUtils.isWithinTolerance(
+                request.latitude(),
+                request.longitude(),
+                loc.getLatitude(),
+                loc.getLongitude(),
+                loc.getTolerance()
+        );
+
+        if (!isSuccess) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.out.of.range"),
+                    HttpStatus.BAD_REQUEST
             );
         }
 
         return ValidateLocationResponse.builder()
-                .success(isSuccess)
+                .success(true)
                 .build();
     }
 }
