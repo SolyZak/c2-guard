@@ -220,78 +220,96 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
         return repository.saveAll(distributionForPatrols);
     }
 
-    private List<ContractOperationSiteDistributionPatrol> handlePatrolOnceFrequency(Optional<Patrol> patrolOptional, ContractDistributionForPatrol request,
-                                           Optional<CustomerContract> optionalCustomerContract,
-                                           Map<Long, List<Long>> locations,
-                                           Optional<LKCustomerContractService> optionalCustomerService,
-                                           Long contractId, Long serviceId
+    private List<ContractOperationSiteDistributionPatrol> handlePatrolOnceFrequency(
+            Optional<Patrol> patrolOptional,
+            ContractDistributionForPatrol request,
+            Optional<CustomerContract> optionalCustomerContract,
+            Map<Long, List<Long>> locations,
+            Optional<LKCustomerContractService> optionalCustomerService,
+            Long contractId,
+            Long serviceId
     ) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        Optional<SiteDistribution> sd = siteDistributionRepository.findOneByContractAndLKCustomerServiceAndSiteId(contractId, serviceId, request.getSiteId());
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        Optional<SiteDistribution> sd = siteDistributionRepository
+                .findOneByContractAndLKCustomerServiceAndSiteId(contractId, serviceId, request.getSiteId());
+
         if (!sd.isPresent()) {
             throw new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST);
         }
-        LKCustomerContractOperationService details = sd.get().getOperationServices().stream().
-                filter(os -> os.getId().equals(
-                        Long.parseLong(request.getTimePeriodId().split("_")[0])
-                        )
-                ).findFirst().get();
 
-        ContractOperationSiteDistributionPatrol contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol();
-        contractDistributionForPatrol.setStartDate(request.getStartDate());
+        LKCustomerContractOperationService details = sd.get().getOperationServices().stream()
+                .filter(os -> os.getId().equals(Long.parseLong(request.getTimePeriodId().split("_")[0])))
+                .findFirst()
+                .get();
 
-        Set<String> weekDays = details.getDays().stream().map(dayEnum -> dayEnum.getCode()).collect(Collectors.toSet());
-        long count = getCountByFrequencyRateBetweenTwoDates(patrolOptional.get().getFrequencyRate(), request.getStartDate(), optionalCustomerContract.get().getEndAgreementDate());
+        Set<String> weekDays = details.getDays().stream()
+                .map(dayEnum -> dayEnum.getCode())
+                .collect(Collectors.toSet());
+
+        long count = getCountByFrequencyRateBetweenTwoDates(
+                patrolOptional.get().getFrequencyRate(),
+                request.getStartDate(),
+                optionalCustomerContract.get().getEndAgreementDate()
+        );
+
         List<ContractOperationSiteDistributionPatrol> distributionForPatrols = new ArrayList<>();
-
         CustomerSite customerSite = new CustomerSite();
         customerSite.setId(request.getSiteId());
+
         for (Map.Entry<Long, List<Long>> entry : locations.entrySet()) {
             Location location = new Location();
             location.setId(entry.getKey());
+
             for (Long tId : entry.getValue()) {
                 Task task = new Task();
                 task.setId(tId);
+
+                LocalDate currentStartDate = request.getStartDate();
+
                 for (long i = 0; i < count; i++) {
+                    LocalDate currentEndDate = calculateEndDateForOncePatrolType(
+                            patrolOptional.get().getFrequencyRate(),
+                            currentStartDate
+                    );
 
-                        contractDistributionForPatrol = new ContractOperationSiteDistributionPatrol(
-                                null,
-                                patrolOptional.get(),
-                                customerSite,
-                                contractDistributionForPatrol.getStartDate(),
-                                calculateEndDateForOncePatrolType(patrolOptional.get().getFrequencyRate(), contractDistributionForPatrol.getStartDate()),
-                                location,
-                                task,
-                                optionalCustomerService.get(),
-                                optionalCustomerContract.get(),
-                                details.getFromTime(),
-                                details.getToTime(),
-                                customer,
-                                patrolOptional.get().getFrequency(),
-                                TaskDistributionStatus.CREATED.name(),
-                                request.getTimePeriodId()
-                        );
-                        if (i == 0) {
-                            if (weekDays.contains(contractDistributionForPatrol.getStartDate().getDayOfWeek().name().toUpperCase()))
-                                distributionForPatrols.add(contractDistributionForPatrol);
-                            continue;
-                        }
+                    ContractOperationSiteDistributionPatrol contractDistributionForPatrol =
+                            new ContractOperationSiteDistributionPatrol(
+                                    null,
+                                    patrolOptional.get(),
+                                    customerSite,
+                                    currentStartDate,
+                                    currentEndDate,
+                                    location,
+                                    task,
+                                    optionalCustomerService.get(),
+                                    optionalCustomerContract.get(),
+                                    details.getFromTime(),
+                                    details.getToTime(),
+                                    customer,
+                                    patrolOptional.get().getFrequency(),
+                                    TaskDistributionStatus.CREATED.name(),
+                                    request.getTimePeriodId()
+                            );
 
-                        if (patrolOptional.get().getFrequencyRate().equals(PatrolFrequencyRateEnum.DAILY.getRate())) {
-                            contractDistributionForPatrol.setStartDate(contractDistributionForPatrol.getStartDate().plusDays(1));
-                        } else if (patrolOptional.get().getFrequencyRate().equals(PatrolFrequencyRateEnum.WEEKLY.getRate())) {
-                            contractDistributionForPatrol.setStartDate(contractDistributionForPatrol.getStartDate().plusWeeks(1));
-                        } else if (patrolOptional.get().getFrequencyRate().equals(PatrolFrequencyRateEnum.MONTHLY.getRate())) {
-                            contractDistributionForPatrol.setStartDate(contractDistributionForPatrol.getStartDate().plusMonths(1));
-                        } else {
-                            throw new IllegalArgumentException("Invalid unit. Use 'days', 'weeks', or 'months'.");
-                        }
+                    if (weekDays.contains(currentStartDate.getDayOfWeek().name().toUpperCase())) {
+                        distributionForPatrols.add(contractDistributionForPatrol);
+                    }
 
-                        if (weekDays.contains(contractDistributionForPatrol.getStartDate().getDayOfWeek().name().toUpperCase()))
-                            distributionForPatrols.add(contractDistributionForPatrol);
+                    if (patrolOptional.get().getFrequencyRate().equals(PatrolFrequencyRateEnum.DAILY.getRate())) {
+                        currentStartDate = currentStartDate.plusDays(1);
+                    } else if (patrolOptional.get().getFrequencyRate().equals(PatrolFrequencyRateEnum.WEEKLY.getRate())) {
+                        currentStartDate = currentStartDate.plusWeeks(1);
+                    } else if (patrolOptional.get().getFrequencyRate().equals(PatrolFrequencyRateEnum.MONTHLY.getRate())) {
+                        currentStartDate = currentStartDate.plusMonths(1);
+                    } else {
+                        throw new IllegalArgumentException("Invalid unit. Use 'days', 'weeks', or 'months'.");
+                    }
                 }
             }
         }
+
         return repository.saveAll(distributionForPatrols);
     }
 
