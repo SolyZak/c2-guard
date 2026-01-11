@@ -6,6 +6,7 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.mappers.ScheduledTas
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.operators.TaskSchedulerOperator;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.utils.JsonNodeUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -46,7 +47,7 @@ public class TaskLoaderJob extends CronScheduledTaskFactory {
             List.of(getTaskType())
         );
         entityList.forEach(taskSchedulerOperator::scheduleTask);
-        ObjectNode result = createObjectNode();
+        ObjectNode result = JsonNodeUtils.createObjectNode();
         result.put("status", "success");
         result.put("numberOfScheduledTasks", entityList.size());
         return result;
