@@ -163,8 +163,6 @@ public class TaskSchedulerOperator {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime startOfDay = now.with(LocalTime.MIN);
         OffsetDateTime endOfDay = now.with(LocalTime.MAX);
-        log.info("Loading tasks from datetime: {}", startOfDay);
-        log.info("Loading tasks to datetime: {}", endOfDay);
         return taskRepository.findAllActiveTasksInDateRangeExcludeLoaders(startOfDay, endOfDay, loaders)
                 .stream()
                 .filter(task -> {
