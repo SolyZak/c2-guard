@@ -30,18 +30,18 @@ public class JsonNodeUtils {
     public static Optional<String> getStringArg(JsonNode args, String fieldName) {
         if (args == null) return Optional.empty();
         JsonNode node = args.get(fieldName);
-        return node != null && node.isTextual() ? Optional.of(node.asText()) : Optional.empty();
+        return node != null ? Optional.of(node.asText()) : Optional.empty();
     }
 
     public static Optional<Integer> getIntegerArg(JsonNode args, String fieldName) {
         if (args == null) return Optional.empty();
         JsonNode node = args.get(fieldName);
-        return node != null && node.isInt() ? Optional.of(node.asInt()) : Optional.empty();
+        return node != null ? Optional.of(node.asInt()) : Optional.empty();
     }
 
     public static Optional<Long> getLongArg(JsonNode args, String fieldName) {
         if (args == null) return Optional.empty();
         JsonNode node = args.get(fieldName);
-        return node != null && node.isLong() ? Optional.of(node.asLong()) : Optional.empty();
+        return node != null ? Optional.of(node.asLong()) : Optional.empty();
     }
 }
