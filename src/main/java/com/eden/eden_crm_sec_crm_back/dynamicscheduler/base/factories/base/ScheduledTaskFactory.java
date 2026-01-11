@@ -13,7 +13,7 @@ import org.springframework.context.ApplicationContext;
 public interface ScheduledTaskFactory {
     String getTaskType();
 
-    AbstractScheduledTaskFactory createInstanceAndSetEntity(ScheduledTaskFactory factory, ScheduledTaskEntity task);
+    AbstractScheduledTaskFactory setTask(ScheduledTaskEntity task);
 
     JsonNode performTask(JsonNode arguments);
 

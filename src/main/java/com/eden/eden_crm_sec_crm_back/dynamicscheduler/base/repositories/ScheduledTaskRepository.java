@@ -18,6 +18,7 @@ public interface ScheduledTaskRepository extends JpaRepository<ScheduledTaskEnti
         SELECT DISTINCT t FROM ScheduledTaskEntity t
         LEFT JOIN FETCH t.executionLogs l
         WHERE t.isActive = true
+        AND t.isExecutionFinished = false
         AND (
             (t.typeOfExecution = 'DATETIME'
                 AND t.plannedExecutionTime >= :startDate
@@ -36,6 +37,7 @@ public interface ScheduledTaskRepository extends JpaRepository<ScheduledTaskEnti
         SELECT DISTINCT t FROM ScheduledTaskEntity t
         LEFT JOIN FETCH t.executionLogs l
         WHERE t.isActive = true
+        AND t.isExecutionFinished = false
         AND t.taskType not in :loaders
         AND (
             (t.typeOfExecution = 'DATETIME'
