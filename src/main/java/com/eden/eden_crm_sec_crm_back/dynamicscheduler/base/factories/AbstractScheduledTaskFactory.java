@@ -61,25 +61,30 @@ public abstract sealed class AbstractScheduledTaskFactory
         execution.setStatus(ScheduledTaskStatus.STARTED);
         execution.setStartedAt(OffsetDateTime.now());
         taskEntity.getExecutionLogs().add(execution);
-        logRepository.save(execution);
+        execution = logRepository.save(execution);
 
-        log.info("Task [{}] '{}' started", taskEntity.getTaskType(), taskEntity.getName());
+        ScheduledTaskEntity task = execution.getTask();
+        log.info("Task [{}] is exists before execute", task.getId());
+
+        log.info("Task [{}] '{}' started", task.getTaskType(), task.getName());
 
         try {
-            JsonNode result = performTask(taskEntity.getArguments());
+            log.info("Task [{}] '{}' arguments: {}", task.getTaskType(), task.getName(), task.getArguments());
+            JsonNode result = performTask(task.getArguments());
+            log.info("Task [{}] '{}' result: {}", task.getTaskType(), task.getName(), result);
             execution.setResult(result);
             execution.setStatus(ScheduledTaskStatus.SUCCESS);
-            log.info("Task [{}] '{}' succeeded", taskEntity.getTaskType(), taskEntity.getName());
+            log.info("Task [{}] '{}' succeeded", task.getTaskType(), task.getName());
         } catch (Exception e) {
             execution.setStatus(ScheduledTaskStatus.FAILED);
             execution.setResult(JsonNodeUtils.createObjectNode().put("error", e.getMessage()));
-            log.error("Task [{}] '{}' failed", taskEntity.getTaskType(), taskEntity.getName(), e);
+            log.error("Task [{}] '{}' failed", task.getTaskType(), task.getName(), e);
         } finally {
             execution.setFinishedAt(OffsetDateTime.now());
             logRepository.save(execution);
-            if (taskEntity.getTypeOfExecution() == TaskExecutionType.DATETIME) {
-                taskEntity.setIsExecutionFinished(true);
-                taskRepository.save(taskEntity);
+            if (task.getTypeOfExecution() == TaskExecutionType.DATETIME) {
+                task.setIsExecutionFinished(true);
+                task = taskRepository.save(task);
             }
         }
     }
