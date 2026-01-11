@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Constructor;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -86,11 +85,10 @@ public abstract sealed class AbstractScheduledTaskFactory
     }
 
     @Override
-    public AbstractScheduledTaskFactory createInstanceAndSetEntity(ScheduledTaskFactory factory, ScheduledTaskEntity task) {
+    public AbstractScheduledTaskFactory setTask(ScheduledTaskEntity task) {
         try {
-            AbstractScheduledTaskFactory instance = factory.getApplicationContext().getBean(this.getClass());
-            instance.taskEntity = task;
-            return instance;
+            this.taskEntity = task;
+            return this;
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate concrete ScheduledTaskFactory via reflection. Ensure the subclass has a matching constructor.", e);
         }
