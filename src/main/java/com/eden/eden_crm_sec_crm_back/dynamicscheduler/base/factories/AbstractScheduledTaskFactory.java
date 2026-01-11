@@ -7,9 +7,9 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.TaskExecutionT
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories.base.ScheduledTaskFactory;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.utils.JsonNodeUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +72,7 @@ public abstract sealed class AbstractScheduledTaskFactory
             log.info("Task [{}] '{}' succeeded", taskEntity.getTaskType(), taskEntity.getName());
         } catch (Exception e) {
             execution.setStatus(ScheduledTaskStatus.FAILED);
-            execution.setResult(createObjectNode().put("error", e.getMessage()));
+            execution.setResult(JsonNodeUtils.createObjectNode().put("error", e.getMessage()));
             log.error("Task [{}] '{}' failed", taskEntity.getTaskType(), taskEntity.getName(), e);
         } finally {
             execution.setFinishedAt(OffsetDateTime.now());
@@ -92,50 +92,5 @@ public abstract sealed class AbstractScheduledTaskFactory
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate concrete ScheduledTaskFactory via reflection. Ensure the subclass has a matching constructor.", e);
         }
-    }
-
-    protected ObjectNode createObjectNode() {
-        return objectMapper.createObjectNode();
-    }
-
-    protected <T> T readArguments(Class<T> clazz) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null || args.isNull()) {
-            return null;
-        }
-        try {
-            return objectMapper.treeToValue(args, clazz);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse task arguments", e);
-        }
-    }
-
-    protected String getArg(String fieldName, String defaultValue) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null) return defaultValue;
-        JsonNode node = args.get(fieldName);
-        return node != null && node.isTextual() ? node.asText() : defaultValue;
-    }
-
-    protected int getArg(String fieldName, int defaultValue) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null) return defaultValue;
-        JsonNode node = args.get(fieldName);
-        return node != null && node.isInt() ? node.asInt() : defaultValue;
-    }
-
-    protected Long getArg(String fieldName, Long defaultValue) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null) return defaultValue;
-        JsonNode node = args.get(fieldName);
-        return node != null && node.isLong() ? node.asLong() : defaultValue;
     }
 }
