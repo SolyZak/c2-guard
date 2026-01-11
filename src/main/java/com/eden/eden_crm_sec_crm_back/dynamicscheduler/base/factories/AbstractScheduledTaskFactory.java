@@ -77,7 +77,7 @@ public abstract sealed class AbstractScheduledTaskFactory
         } finally {
             execution.setFinishedAt(OffsetDateTime.now());
             logRepository.save(execution);
-            if (taskEntity.getTypeOfExecution() == TaskExecutionType.DATETIME) {
+            if (taskEntity.getTypeOfExecution() == TaskExecutionType.DATETIME && execution.getStatus() != ScheduledTaskStatus.FAILED) {
                 taskEntity.setIsExecutionFinished(true);
                 taskRepository.save(taskEntity);
             }

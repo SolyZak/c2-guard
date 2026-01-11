@@ -47,7 +47,7 @@ public class TaskCurrentStatusJob extends DateTimeScheduledTaskFactory {
 
     @Override
     public JsonNode performTask(JsonNode arguments) {
-        Long patrolDistributionId = getArg("patrolDistributionId", 0L);
+        Long patrolDistributionId = arguments.get("patrolDistributionId").asLong();
 
         Optional<ContractOperationSiteDistributionPatrol> optionalDistribution = repository.findById(patrolDistributionId);
         if (optionalDistribution.isEmpty())
