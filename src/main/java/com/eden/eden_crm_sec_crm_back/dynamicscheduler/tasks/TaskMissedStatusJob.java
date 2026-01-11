@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.Validator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
@@ -47,7 +49,7 @@ public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
 
     @Override
     public JsonNode performTask(JsonNode arguments) {
-        Long patrolDistributionId = getArg("patrolDistributionId", 0L);
+        Long patrolDistributionId = arguments.get("patrolDistributionId").asLong();
 
         Optional<ContractOperationSiteDistributionPatrol> optionalDistribution = repository.findById(patrolDistributionId);
         if (optionalDistribution.isEmpty())
