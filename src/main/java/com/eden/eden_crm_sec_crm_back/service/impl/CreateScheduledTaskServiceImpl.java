@@ -67,11 +67,6 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
         List<ScheduledTaskEntity> tasksList = taskMissedStatusJob.createTasks(scheduledTaskMissedRequests);
         List<ScheduledTaskEntity> tasksListCurrent = taskCurrentStatusJob.createTasks(scheduledTaskCurrentRequests);
         tasksList.addAll(tasksListCurrent);
-//        try {
-//            Thread.sleep(40000);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
         taskSchedulerService.scheduleTasksIfExecuteToday(tasksList);
         return CompletableFuture.completedFuture(null);
     }
