@@ -18,7 +18,12 @@ public abstract class TaskCheck {
     private Long id;
     private String name;
     private Boolean evidence;
+
+    @Column(name = "comment_check", nullable = false)
+    private Boolean commentCheck = false;
+
     @ManyToOne
+
     @JoinColumn(name = "task_id")
     private Task task;
 

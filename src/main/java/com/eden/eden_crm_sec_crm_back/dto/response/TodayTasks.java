@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.OffsetTime;
@@ -9,13 +10,18 @@ import java.util.Objects;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class TodayTasks {
     String taskName;
+    Long patrolId;
     String patrolName;
+    Long locationId;
+    String locationAccessType;
     String locationName;
+    Long premiseId;
     String premiseName;
-    LocalDate endDate;
     LocalDate startDate;
+    LocalDate endDate;
     OffsetTime startTime;
     OffsetTime endTime;
     String patrolFreqType;
@@ -24,18 +30,6 @@ public class TodayTasks {
     Long patrolDistributionId;
 
     String periodStatus;
-
-    public TodayTasks(String taskName, String patrolName, String locationName, String premiseName, LocalDate endDate, String patrolFreqType, Long taskId, Long patrolDistributionId, String periodStatus) {
-        this.taskName = taskName;
-        this.patrolName = patrolName;
-        this.locationName = locationName;
-        this.premiseName = premiseName;
-        this.endDate = endDate;
-        this.patrolFreqType = patrolFreqType;
-        this.taskId = taskId;
-        this.patrolDistributionId = patrolDistributionId;
-        this.periodStatus = periodStatus;
-    }
 
     @Override
     public boolean equals(Object o) {

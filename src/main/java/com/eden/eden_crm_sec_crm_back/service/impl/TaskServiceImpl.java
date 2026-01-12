@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
 import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -21,8 +22,11 @@ import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +39,7 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
@@ -109,10 +114,17 @@ public class TaskServiceImpl implements TaskService {
         for (TodayTasksProjection projection : todayTasksProjections) {
             TodayTasks search = new TodayTasks(
                     projection.getTaskName(),
+                    projection.getPatrolId(),
                     projection.getPatrolName(),
+                    projection.getLocationId(),
+                    projection.getLocationAccessType(),
                     projection.getLocationName(),
+                    projection.getPremiseId(),
                     projection.getPremiseName(),
+                    projection.getStartDate(),
                     projection.getEndDate(),
+                    projection.getStartTime(),
+                    projection.getEndTime(),
                     projection.getPatrolFreqType(),
                     projection.getTaskId(),
                     projection.getPatrolDistributionId(),
@@ -122,11 +134,15 @@ public class TaskServiceImpl implements TaskService {
                 List<TodayTasks> list = new ArrayList<>();
                 list.add(new TodayTasks(
                         projection.getTaskName(),
+                        projection.getPatrolId(),
                         projection.getPatrolName(),
+                        projection.getLocationId(),
+                        projection.getLocationAccessType(),
                         projection.getLocationName(),
+                        projection.getPremiseId(),
                         projection.getPremiseName(),
-                        projection.getEndDate(),
                         projection.getStartDate(),
+                        projection.getEndDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
@@ -138,11 +154,15 @@ public class TaskServiceImpl implements TaskService {
             } else {
                 map.get(search).add(new TodayTasks(
                         projection.getTaskName(),
+                        projection.getPatrolId(),
                         projection.getPatrolName(),
+                        projection.getLocationId(),
+                        projection.getLocationAccessType(),
                         projection.getLocationName(),
+                        projection.getPremiseId(),
                         projection.getPremiseName(),
-                        projection.getEndDate(),
                         projection.getStartDate(),
+                        projection.getEndDate(),
                         projection.getStartTime(),
                         projection.getEndTime(),
                         projection.getPatrolFreqType(),
@@ -152,11 +172,21 @@ public class TaskServiceImpl implements TaskService {
                 ));
             }
         }
-        List<TodayTaskEntryDto> tasks = new ArrayList<>();
         List<Long> missedIds = new ArrayList<>();
+        List<TodayTaskEntryDto> tasks = new ArrayList<>();
         for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
             List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
-                    .map(tt -> new TodayTaskEntryTimesDto(tt.getStartTime().toLocalTime(),tt.getEndTime().toLocalTime(), getTimePeriodStatus(tt), tt.getPatrolDistributionId())).sorted(Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)).collect(Collectors.toList());
+                    .map(tt ->
+                            new TodayTaskEntryTimesDto(
+                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getStartTime()),
+                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getEndTime()),
+                                    getTimePeriodStatus(tt),
+                                    tt.getPatrolDistributionId()
+                            ))
+                    .sorted(
+                            Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)
+                    )
+                    .toList();
             TodayTaskEntryDto task = new TodayTaskEntryDto(
                     entry.getKey().getTaskName(),
                     entry.getKey().getPatrolName(),
@@ -165,7 +195,11 @@ public class TaskServiceImpl implements TaskService {
                     entry.getKey().getPatrolFreqType(),
                     entry.getKey().getEndDate(),
                     times,
-                    entry.getKey().getTaskId()
+                    entry.getKey().getTaskId(),
+                    entry.getKey().getPatrolId(),
+                    entry.getKey().getPremiseId(),
+                    entry.getKey().getLocationId(),
+                    entry.getKey().getLocationAccessType()
             );
             tasks.add(task);
             missedIds.addAll(times.stream().filter(t -> t.getStatus().equals(TaskDistributionStatus.MISSED.name())).map(t -> t.getPatrolDistributionId()).collect(Collectors.toList()));
@@ -231,11 +265,26 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public void executeTask(AddTaskDistributionRequest request) {
         Optional<ContractOperationSiteDistributionPatrol> optionalDistribution =  repository.findById(request.getPatrolDistributionId());
-        if (!optionalDistribution.isPresent()) {
+        if (optionalDistribution.isEmpty()) {
             throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
         }
-        if (!optionalDistribution.get().getStatus().equals(TaskDistributionStatus.CREATED.name())) {
-            throw new BusinessException("Can't execute task", HttpStatus.BAD_REQUEST);
+        ContractOperationSiteDistributionPatrol distributionPatrol = optionalDistribution.get();
+        CustomTimezone customTimezone = distributionPatrol.getCustomer().getTimezone();
+        OffsetDateTime startDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getStartDate(), distributionPatrol.getFromTime());
+        OffsetDateTime endDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getEndDate(), distributionPatrol.getToTime());
+        OffsetDateTime currentDateTime = OffsetDateTime.now();
+        boolean statusNotCreated = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name());
+        boolean currentDateTimeBeforeStartDateTime = currentDateTime.isBefore(startDateTime);
+        boolean currentDateTimeAfterEndDateTime = currentDateTime.isAfter(endDateTime);
+        log.info("statusNotCreated: {}", statusNotCreated);
+        log.info("currentDateTimeBeforeStartDateTime: {}", currentDateTimeBeforeStartDateTime);
+        log.info("currentDateTimeAfterEndDateTime: {}", currentDateTimeAfterEndDateTime);
+        if (
+            statusNotCreated
+                || currentDateTimeBeforeStartDateTime
+                || currentDateTimeAfterEndDateTime
+        ) {
+            throw new BusinessException(MessageUtil.getMessage("task.execute.error"), HttpStatus.BAD_REQUEST);
         }
         Optional<Task> optionalTask = taskRepository.findById(request.getTaskId());
         if (!optionalTask.isPresent()) {
@@ -282,17 +331,23 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void addTask(AddTaskRequest request) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
         Task task = new Task();
         task.setName(request.getTaskName());
+        task.setCustomer(customer);
+        task = taskRepository.save(task);
+
+
         if (request.getChecks() != null) {
             List<TaskCheck> taskChecks = new ArrayList<>(request.getChecks().size());
+
             for (TaskCheckDTO dto : request.getChecks()) {
                 taskChecks.add(dto.mapToEntity(task));
             }
             task.setTaskChecks(taskChecks);
         }
-        task.setCustomer(customer);
         taskRepository.save(task);
     }
 }

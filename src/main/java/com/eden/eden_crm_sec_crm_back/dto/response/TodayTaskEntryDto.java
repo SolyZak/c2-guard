@@ -17,4 +17,8 @@ public class TodayTaskEntryDto {
     private LocalDate endDate;
     private List<TodayTaskEntryTimesDto> times;
     private Long taskId;
+    private Long patrolId;
+    private Long premiseId;
+    private Long locationId;
+    private String accessType;
 }

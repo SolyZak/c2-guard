@@ -94,7 +94,7 @@ public class WorkforceServiceImpl implements WorkforceService {
         groupedBySite.forEach((site, distributions) -> {
             WorkforceSiteDistributionDto workforceSiteDistributionDto = WorkforceSiteDistributionDto.builder()
                     .id(site.getId())
-                    .name(site.getName())
+                    .name(site.getName() + " - " + site.getPremise().getName())
                     .contractId(contractId)
                     .contractName(contract.getAgreementName())
                     .customerId(contract.getCustomer().getId())
@@ -146,10 +146,10 @@ public class WorkforceServiceImpl implements WorkforceService {
     }
 
     @Override
-    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id) {
+    public WorkforceSiteDistributionDto operationSiteServicesDropdown(Long id, Long contractId) {
         WorkforceFullDataDto workforceFullDataDto = getLoggedInWorkforce();
         List<SiteDistribution> distributions = siteDistributionRepository.listForSecurityCompanyActiveTodayAndSiteId(
-                workforceFullDataDto.securityCompany().id(), id, LocalDate.now()
+                workforceFullDataDto.securityCompany().id(), id, contractId, LocalDate.now()
         );
         if (distributions.isEmpty()) {
             throw new BusinessException(MessageUtil.getMessage("not-your-working-period"), HttpStatus.BAD_REQUEST);

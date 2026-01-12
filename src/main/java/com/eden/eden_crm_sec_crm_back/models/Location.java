@@ -42,6 +42,13 @@ public class Location extends BaseAuditEntity {
             columnDefinition = "DECIMAL(13,10)")
     private BigDecimal latitude;
 
+    @Column(name = "tolerance",
+            precision = 18,
+            scale     = 2,
+            nullable  = true,
+            columnDefinition = "NUMERIC(10,2)")
+    private BigDecimal tolerance;
+
     @Lob
     @Basic(fetch = FetchType.LAZY)
     private byte[] qrImage;

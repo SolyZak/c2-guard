@@ -8,6 +8,7 @@ import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecutio
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,12 +27,18 @@ import lombok.Setter;
 })
 public abstract class TaskCheckDTO {
 
-    @NotNull(message = "{validation.distribution.task-check.id}")
+
     private Long id;
     @NotNull(message = "{validation.distribution.task-check.name}")
     private String name;
     @NotNull(message = "{validation.distribution.task-check.evidence}")
     private Boolean evidence;
+
+    @NotNull(message = "commentCheck is required")
+    private Boolean commentCheck;
+
+    @Size(max = 500)
+    private String comment;
 
     // ✅ Base64-encoded image string (optional)
     private String imageBase64;

@@ -14,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TaskCheckNumberDTO extends TaskCheckDTO {
-    @NotNull(message = "{validation.distribution.task-check.unit}")
+//    @NotNull(message = "{validation.distribution.task-check.unit}")
     private String unit;
     @NotNull(groups = OnAddTask.class, message = "{validation.distribution.task-check.operator}")
     private String operator;
@@ -24,13 +24,14 @@ public class TaskCheckNumberDTO extends TaskCheckDTO {
     @Override
     public TaskCheck mapToEntity(Task task) {
         TaskCheckNumber entity = new TaskCheckNumber();
-        entity.setId(getId());
+
         entity.setOperator(operator);
         entity.setUnit(unit);
         entity.setValue(value);
         entity.setName(getName());
         entity.setEvidence(getEvidence());
         entity.setTask(task);
+        entity.setCommentCheck((getCommentCheck()));
         return entity;
     }
 
@@ -41,6 +42,8 @@ public class TaskCheckNumberDTO extends TaskCheckDTO {
         entity.setUnit(unit);
         entity.setValue(value);
         entity.setName(getName());
+        entity.setCommentCheck(getCommentCheck());
+        entity.setComment(getComment());
         entity.setEvidence(getEvidence());
         if (getEvidence()) {
             entity.setImage(getImageBase64());

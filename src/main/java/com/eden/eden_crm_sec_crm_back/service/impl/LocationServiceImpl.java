@@ -1,12 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
-import com.eden.eden_crm_sec_crm_back.dto.request.LocationRequestDto;
-import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
+import com.eden.eden_crm_sec_crm_back.dto.request.*;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.PremiseNotProvided;
@@ -16,10 +11,12 @@ import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.models.projections.LocationProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
+import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
+import com.eden.eden_crm_sec_crm_back.utils.LocationUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.QrCodeUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -50,6 +47,8 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
     private final PremiseRepository premiseRepository;
     private final CustomerRepository customerRepository;
+    private final ContractOperationSiteDistributionPatrolRepository contractOperationSiteDistributionPatrolRepository; // ADD THIS
+
     private final Utils utils;
 
     private final EntityManager em;
@@ -57,45 +56,160 @@ public class LocationServiceImpl implements LocationService {
     @Override
     @Transactional
     public void addNewLocation(AddLocationRequest request) throws IOException, WriterException {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        Optional<Premise> premiseOptional = premiseRepository.findById(request.getPremiseId());
-        if (!premiseOptional.isPresent())
-            throw new PremiseNotProvided();
+
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        Premise premise = premiseRepository.findById(request.getPremiseId())
+                .orElseThrow(PremiseNotProvided::new);
+
         List<Location> locations = new ArrayList<>();
-        if (request.getLocations() != null) {
-            for(LocationRequestDto locationRequestDto : request.getLocations()) {
-                Location location = new Location();
-                location.setPremise(premiseOptional.get());
-                location.setName(locationRequestDto.getLocationName());
-                if (locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType()) && locationRequestDto.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
-                    throw new BusinessException(MessageUtil.getMessage("validation.location.locations.accessType.invalid"), HttpStatus.BAD_REQUEST);
-                }
-                location.setAccessType(locationRequestDto.getAccessType());
-                // Convert BigDecimal to Double for storage in the entity
-                location.setLatitude(locationRequestDto.getLatitude());
-                location.setLongitude(locationRequestDto.getLongitude());
-                location.setCustomer(customer);
-                if (location.getAccessType().equals(LocationAccessTypeEnum.QR_CODE.getType())) {
-                    byte[] qr = QrCodeUtil.generateQrCode(location.getName(), 300, 300);
-                    location.setQrImage(qr);
-                }
-                locations.add(location);
+
+        for (LocationRequestDto dto : request.getLocations()) {
+            Location location = new Location();
+            location.setPremise(premise);
+            location.setName(dto.getLocationName());
+
+            // IMPORTANT: your current condition is impossible (&&). This is the typical correct validation:
+            String accessType = dto.getAccessType();
+            if (!accessType.equals(LocationAccessTypeEnum.QR_CODE.getType())
+                    && !accessType.equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
+                throw new BusinessException(
+                        MessageUtil.getMessage("validation.location.locations.accessType.invalid"),
+                        HttpStatus.BAD_REQUEST
+                );
             }
-            locationRepository.saveAll(locations);
+
+            location.setAccessType(accessType);
+            location.setLatitude(dto.getLatitude());
+            location.setLongitude(dto.getLongitude());
+            location.setTolerance(dto.getTolerance());
+            location.setCustomer(customer);
+
+            locations.add(location);
         }
+
+        // 1) Persist first so IDs are assigned
+        locations = locationRepository.saveAll(locations);
+        locationRepository.flush(); // ensures inserts happen now (safe)
+
+        // 2) Generate QR for QR_CODE locations
+        for (Location location : locations) {
+            if (LocationAccessTypeEnum.QR_CODE.getType().equals(location.getAccessType())) {
+                byte[] qr = QrCodeUtil.generateQrCode(String.valueOf(location.getId()), 300, 300);
+                location.setQrImage(qr);
+            }
+        }
+
+        // 3) Update with QR images
+        locationRepository.saveAll(locations);
     }
 
     @Override
+    @Transactional
+    public UpdateLocationResponse updateLocation(Long id, UpdateLocationRequest request) {
+
+        // Get logged-in customer
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        // Check access type FIRST (no LOB loading)
+        String accessType = locationRepository.findAccessTypeById(id)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("validation.location.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if ("qr-code".equals(accessType)) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.qr-code.update.not-allowed"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // Now safe to load full entity
+        Location location = locationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("validation.location.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        // Verify ownership
+        if (!location.getCustomer().getId().equals(customer.getId())) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.unauthorized"),
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        // Track what's being updated
+        String updatedLocationName = null;
+        BigDecimal updatedLongitude = null;
+        BigDecimal updatedLatitude = null;
+        BigDecimal updatedTolerance = null;
+        boolean hasUpdates = false;
+
+        if (request.getLocationName() != null) {
+            location.setName(request.getLocationName());
+            updatedLocationName = request.getLocationName();
+            hasUpdates = true;
+        }
+
+        if (request.getLongitude() != null) {
+            location.setLongitude(request.getLongitude());
+            updatedLongitude = request.getLongitude();
+            hasUpdates = true;
+        }
+
+        if (request.getLatitude() != null) {
+            location.setLatitude(request.getLatitude());
+            updatedLatitude = request.getLatitude();
+            hasUpdates = true;
+        }
+
+        if (request.getTolerance() != null) {
+            location.setTolerance(request.getTolerance());
+            updatedTolerance = request.getTolerance();
+            hasUpdates = true;
+        }
+
+        if (hasUpdates) {
+            locationRepository.save(location);
+        }
+
+        return UpdateLocationResponse.builder()
+                .locationName(updatedLocationName)
+                .longitude(updatedLongitude)
+                .latitude(updatedLatitude)
+                .tolerance(updatedTolerance)
+                .build();
+    }
+
+
+    @Override
     public PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<LocationProjection> resultPage = locationRepository.searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
+        Page<LocationProjection> resultPage = locationRepository
+                .searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
+
         List<PremiseLocationDto> premiseLocationDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (LocationProjection location : resultPage.getContent()) {
-                PremiseLocationDto dto = new PremiseLocationDto(location.getId(), location.getName(), location.getAccessType(),
+                PremiseLocationDto dto = new PremiseLocationDto(
+                        location.getId(),
+                        location.getName(),
+                        location.getAccessType(),
                         location.getPremise() != null ? location.getPremise().getName() : "",
-                        location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())  ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())));
+                        location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())
+                                ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())),
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        location.getTolerance()
+                );
                 premiseLocationDtos.add(dto);
             }
         }
@@ -142,10 +256,41 @@ public class LocationServiceImpl implements LocationService {
             result.add(new LocationResponseDto(
                     lp.getId(),
                     lp.getName(),
-                    BigDecimal.valueOf(lp.getLongitude()),
-                    BigDecimal.valueOf(lp.getLatitude())
+                    lp.getLongitude() != null ? lp.getLongitude(): null,
+                    lp.getLatitude() != null ? lp.getLatitude(): null,
+                    lp.getTolerance() != null ? lp.getLatitude(): null
             ));
         }
+        return result;
+    }
+    @Override
+    public List<PatrolLocationResponseDto> findLocationsByCustomerSiteAndPatrol(
+            Long customerSiteId,
+            Long patrolId
+    ) {
+        Customer customer = customerRepository
+                .findById(utils.getLoggedInUser().getCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        List<LocationProjection> locations =
+                locationRepository.findLocationsByPatrolAndCustomerSite(
+                        patrolId,
+                        customerSiteId,
+                        customer.getId()
+                );
+
+        List<PatrolLocationResponseDto> result = new ArrayList<>();
+        for (LocationProjection lp : locations) {
+            result.add(new PatrolLocationResponseDto(
+                    lp.getId(),
+                    lp.getName(),
+                    lp.getAccessType(),
+                    lp.getLongitude(),
+                    lp.getLatitude(),
+                    lp.getTolerance()
+            ));
+        }
+
         return result;
     }
 
@@ -166,28 +311,36 @@ public class LocationServiceImpl implements LocationService {
                     return data;
                 }
                 return null;
+            } catch (Exception e) {
+                return new byte[0];
             }
         });
 
     }
+
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
+        final Long id = Long.valueOf(request.getPayload());
+        Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
+                .findLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
-        final String payload = request.getPayload();   // extract text
 
-        Customer customer = customerRepository
-                .findById(utils.getLoggedInUser().getCustomerId())
-                .orElseThrow(UserNotProvided::new);
+        boolean isValid = contractOperationSiteDistributionPatrolRepository
+                .existsByIdAndTaskIdAndLocationId(
+                        request.getPatrolDistributionId(),
+                        request.getTaskId(),
+                        id
+                );
 
-        Optional<Location> opt = locationRepository
-                .findByNameAndAccessTypeAndCustomerId(
-                        payload,
-                        LocationAccessTypeEnum.QR_CODE.getType(),
-                        customer.getId());
+        if (!isValid) {
+            String msg = MessageUtil.getMessage("validation.qr.patrol.distribution.invalid");
+            return new ValidateQrResponse(false, msg, null, null);
+        }
+
 
         if (opt.isPresent()) {
-            Location loc  = opt.get();
-            String msg    = MessageUtil.getMessage("validation.qr.success");
+            var loc = opt.get();
+            String msg = MessageUtil.getMessage("validation.qr.success");
             return new ValidateQrResponse(
                     true,
                     msg,
@@ -199,4 +352,46 @@ public class LocationServiceImpl implements LocationService {
         String msg = MessageUtil.getMessage("validation.qr.invalid");
         return new ValidateQrResponse(false, msg, null, "");
     }
+
+    @Override
+    public ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest request) {
+        Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
+                .findLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.SPECIFIC_POINT.getType());
+
+        if (opt.isEmpty()) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.not.found"),
+                    HttpStatus.NOT_FOUND
+            );
         }
+
+        var loc = opt.get();
+
+        // Check if tolerance is null
+        if (loc.getTolerance() == null) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.tolerance.not.set"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        boolean isSuccess = LocationUtils.isWithinTolerance(
+                request.latitude(),
+                request.longitude(),
+                loc.getLatitude(),
+                loc.getLongitude(),
+                loc.getTolerance()
+        );
+
+        if (!isSuccess) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.location.out.of.range"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        return ValidateLocationResponse.builder()
+                .success(true)
+                .build();
+    }
+}

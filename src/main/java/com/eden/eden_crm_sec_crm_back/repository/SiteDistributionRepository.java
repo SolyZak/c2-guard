@@ -42,11 +42,12 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             @Param("today") LocalDate today
     );
 
-    @Query("""
+    @Query(value = """
             SELECT sd FROM SiteDistribution sd
             LEFT JOIN FETCH sd.site
             LEFT JOIN FETCH sd.customerContract
             WHERE sd.site.id = :siteId
+            AND (:contractId IS NULL OR sd.customerContract.id = :contractId)
             AND sd.customerContract.startAgreementDate <= :today
             AND sd.customerContract.endAgreementDate >= :today
             AND sd.customerContract.securityCompanyId = :securityCompanyId
@@ -54,6 +55,7 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
     List<SiteDistribution> listForSecurityCompanyActiveTodayAndSiteId(
             @Param("securityCompanyId") Long securityCompanyId,
             @Param("siteId") Long siteId,
+            @Param("contractId") Long contractId,
             @Param("today") LocalDate today
     );
 
@@ -83,12 +85,12 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
     );
 
     @Query("""
-            SELECT sd.site.id AS id, sd.site.name AS name
+            SELECT sd.site.id AS id, CONCAT(sd.site.name, ' - ', sd.site.premise.name) AS name
             FROM SiteDistribution sd
             WHERE sd.site.customer.id = :customerId
               AND (:securityCompanyId IS NULL OR sd.customerContract.securityCompanyId = :securityCompanyId)
               AND (:contractId IS NULL OR sd.customerContract.id IN :contractId)
-            GROUP BY sd.site.id, sd.site.name
+            GROUP BY sd.site.id, sd.site.name, sd.site.premise.name
             """)
     List<GeneralDropdownProjection> operationSitesDropdown(
             @Param("customerId") Long customerId,

@@ -1,11 +1,10 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddLocationRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.UpdateLocationRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.ValidateLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ValidateQrRequest;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationResponseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.LocationWithPremiseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.PremiseLocationDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.ValidateQrResponse;
+import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/location")
@@ -29,6 +29,13 @@ public class LocationController {
     ApiResponse addLocation(@RequestBody @Valid AddLocationRequest request) throws IOException, WriterException {
         locationService.addNewLocation(request);
         return ApiResponse.created();
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<UpdateLocationResponse> updateLocation(
+            @PathVariable("id") Long id,
+            @RequestBody @Valid UpdateLocationRequest request) {
+        return ApiResponse.ok(locationService.updateLocation(id, request));
     }
 
     @GetMapping
@@ -47,6 +54,16 @@ public class LocationController {
     ApiResponse<List<LocationResponseDto>> listLocationsNoPaginationByPatrolId(@PathVariable("patrolId") Long patrolId) {
         return ApiResponse.ok(locationService.findLoggedInCustomerLocationsByPatrolId(patrolId));
     }
+
+    @GetMapping("/customer-site/{customerSiteId}/patrol/{patrolId}")
+    ApiResponse<List<PatrolLocationResponseDto>> getLocationsByCustomerSiteAndPatrol(
+            @PathVariable Long customerSiteId,
+            @PathVariable Long patrolId
+    ) {
+        return ApiResponse.ok(locationService.findLocationsByCustomerSiteAndPatrol(customerSiteId,patrolId)
+        );
+    }
+
     @PostMapping("/validate-qr")
     public ResponseEntity<ValidateQrResponse> validateQr(
             @Valid @RequestBody ValidateQrRequest req) {
@@ -56,5 +73,13 @@ public class LocationController {
         return resp.isSuccess()
                 ? ResponseEntity.ok(resp)
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
+    }
+
+    @PostMapping("/{id}/validate-location")
+    public ApiResponse<ValidateLocationResponse> validateLocation(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody ValidateLocationRequest req
+    ) {
+        return ApiResponse.ok(locationService.validateLocation(id, req));
     }
 }

@@ -9,8 +9,6 @@ import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskDistributionReques
 import com.eden.eden_crm_sec_crm_back.dto.response.DistributionTimesWithQuantity;
 import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.TodayTasksResponseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
-import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
@@ -66,9 +64,10 @@ public class WorkforceController {
     @Operation(summary = "Get operation site services dropdown list")
     @GetMapping("/operation-sites/{id}/services")
     public ApiResponse<WorkforceSiteDistributionDto> operationSiteServicesDropdown(
-            @PathVariable("id") Long id
+            @PathVariable("id") Long id,
+            @RequestParam(value = "contractId", required = false) Long contractId
     ) {
-        return ApiResponse.ok(workforceService.operationSiteServicesDropdown(id));
+        return ApiResponse.ok(workforceService.operationSiteServicesDropdown(id, contractId));
     }
 
     @Operation(summary = "Get operation site job desc By Id")
@@ -83,12 +82,12 @@ public class WorkforceController {
 
     @Operation(summary = "Get times for a distribution (repeat with quantity more than one)")
     @GetMapping("/distribute/quantity/{contractId}/{serviceId}/{siteId}")
-    public com.eden.eden_crm_sec_crm_back.base.util.ApiResponse<List<DistributionTimesWithQuantity>> getTimesForDistributionWithQuantity(
+    public ApiResponse<List<DistributionTimesWithQuantity>> getTimesForDistributionWithQuantity(
             @PathVariable("contractId") Long contractId,
             @PathVariable("serviceId") Long serviceId,
             @PathVariable("siteId") Long siteId
     ) {
-        return com.eden.eden_crm_sec_crm_back.base.util.ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistributionWithQuantity(contractId, serviceId, siteId));
+        return ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistributionWithQuantity(contractId, serviceId, siteId));
     }
 
     @GetMapping("/{taskId}")

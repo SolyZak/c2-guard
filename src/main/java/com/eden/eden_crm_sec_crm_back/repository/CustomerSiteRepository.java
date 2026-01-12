@@ -1,5 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
+import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,22 @@ import java.util.Optional;
 public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long>, JpaSpecificationExecutor<CustomerSite> {
 
     List<CustomerSite> findByCustomerId(Long customerId);
+
+    @Query("""
+       select new com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData(
+                cs.id,
+                concat(cs.name, ' - ', coalesce(p.name, '')),
+                cs.latitude,
+                cs.longitude,
+                cs.tolerance
+       )
+       from   CustomerSite cs
+       left  join cs.premise p
+       where  cs.customer.id = :customerId
+       """)
+    List<OperationSiteData> findSitesForVisitorDropdown(@Param("customerId") Long customerId);
+
+
 
     Optional<CustomerSite> findByIdAndCustomerId(Long id, Long customerId);
 
@@ -35,7 +53,8 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
     List<GeneralDropdownProjection> operationSitesDropdown(@Param("customerId") Long customerId);
 
     @Query("""
-                SELECT cs.id as id, cs.name as name FROM CustomerSite cs
+                SELECT cs.id as id, CONCAT(cs.name, ' - ', p.name)as name FROM CustomerSite cs
+                JOIN cs.premise p
                 WHERE EXISTS (
                     SELECT sd FROM SiteDistribution sd
                     WHERE sd.site = cs
@@ -84,5 +103,39 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
 List<GeneralDropdownProjection> findOperationSitesForDropdown(@Param("contractId") Long contractId,
                                                               @Param("customerId")  Long customerId);
 
+    @Query(value = """
+    ---------------------------------------------------------------------------
+    --  Purpose
+    --  -------
+    --  Return the list of operation-sites that
+    --      • belong to the supplied customer-contract  (:contractId)
+    --      • belong to the current customer             (:customerId)
+    --
+    --  The projection we return is:
+    --      id   -> site id              (hidden value used by the UI)
+    --      name -> "<site name> - <premise name>"   (text shown to user)
+    ---------------------------------------------------------------------------
+    SELECT DISTINCT
+           cs.id                                             AS id,   -- dropdown value
+           CONCAT( cs.name, ' - ',
+                   COALESCE(pr.name, '') )                   AS name -- dropdown label (NO premise-id)
+    FROM   contract_operation_site_distribution sd           -- link: contract ➜ site
+           JOIN customer_site cs
+             ON sd.operation_site_id = cs.id                 -- the actual site entity
+           LEFT JOIN premise pr
+             ON cs.premise_id = pr.id                        -- optional premise for a site
+    ---------------------------------------------------------------------------
+    --  Filters
+    ---------------------------------------------------------------------------
+    WHERE  sd.customer_contract_id = :contractId             -- site belongs to contract
+      AND sd.customer_contract_service_id = :serviceId
+      AND  cs.customer_id          = :customerId             -- site belongs to customer
+    """,
+            nativeQuery = true)
+    List<GeneralDropdownProjection> findOperationSitesForDropdownWithDistrbutedContracts(
+            @Param("contractId") Long contractId,
+            @Param("serviceId") Long serviceId,
+            @Param("customerId") Long customerId
+    );
 
 }

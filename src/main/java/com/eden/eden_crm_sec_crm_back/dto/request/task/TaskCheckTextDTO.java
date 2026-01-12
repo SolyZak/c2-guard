@@ -25,6 +25,7 @@ public class TaskCheckTextDTO extends TaskCheckDTO {
         taskCheckText.setEvidence(getEvidence());
         taskCheckText.setName(getName());
         taskCheckText.setTask(task);
+        taskCheckText.setCommentCheck(getCommentCheck());
         return taskCheckText;
     }
 
@@ -34,6 +35,8 @@ public class TaskCheckTextDTO extends TaskCheckDTO {
         taskCheckText.setId(getId());
         taskCheckText.setNotes(notes);
         taskCheckText.setEvidence(getEvidence());
+        taskCheckText.setCommentCheck(getCommentCheck());
+        taskCheckText.setComment(getComment());
         if (getEvidence()) {
             taskCheckText.setImage(getImageBase64());
         }

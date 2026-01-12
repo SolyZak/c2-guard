@@ -22,6 +22,7 @@ import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -91,7 +89,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             dto.getOperationServices().forEach(lkCustomerContractOperationServiceDto -> {
                 OffsetTime[] times = getTimes(
                         lkCustomerContractOperationServiceDto.getFromTime(),
-                        CustomTimezone.UTC,
+                        customer.getTimezone(),
                         service.getCustomerService().getHours()
                 );
                 LKCustomerContractOperationService lkCustomerContractOperationService = new LKCustomerContractOperationService();
@@ -124,11 +122,16 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             throw new BusinessException(MessageUtil.getMessage("entity.not-found"), HttpStatus.NOT_FOUND);
         }
         List<DistributionTimesWithQuantity> result = new ArrayList<>();
+        CustomTimezone customerTimezone = siteDistributionOptional.get().getSite().getCustomer().getTimezone();
         List<LKCustomerContractOperationService> operationServices = siteDistributionOptional.get().getOperationServices();
         if (operationServices != null) {
             for (LKCustomerContractOperationService service : operationServices) {
                 for (int i = 0; i < service.getQuantity(); i++) {
-                    result.add(new DistributionTimesWithQuantity(service.getFromTime(), service.getToTime(), service.getId() + "_" + i));
+                    result.add(new DistributionTimesWithQuantity(
+                            DateUtils.withTimeZone(customerTimezone, service.getFromTime()),
+                            DateUtils.withTimeZone(customerTimezone, service.getToTime()),
+                            service.getId() + "_" + i
+                    ));
                 }
             }
         }
@@ -163,7 +166,7 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
             CustomTimezone customerTimezone,
             Long serviceHours
     ) {
-        ZoneId customerZone = ZoneId.of(customerTimezone.name());
+        ZoneId customerZone = DateUtils.getTimeWithTimezone(customerTimezone);
 
         ZonedDateTime fromZoned = rawFromTime.atDate(LocalDate.now()).atZone(customerZone);
         ZonedDateTime toZoned = fromZoned.plusHours(serviceHours);
