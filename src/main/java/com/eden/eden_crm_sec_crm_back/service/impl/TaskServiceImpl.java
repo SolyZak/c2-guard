@@ -238,14 +238,14 @@ public class TaskServiceImpl implements TaskService {
         OffsetDateTime startDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getStartDate(), distributionPatrol.getFromTime());
         OffsetDateTime endDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getEndDate(), distributionPatrol.getToTime());
         OffsetDateTime currentDateTime = OffsetDateTime.now();
-        boolean statusNotCreated = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name());
+        boolean statusNotCurrent = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CURRENT.name());
         boolean currentDateTimeBeforeStartDateTime = currentDateTime.isBefore(startDateTime);
         boolean currentDateTimeAfterEndDateTime = currentDateTime.isAfter(endDateTime);
-        log.info("statusNotCreated: {}", statusNotCreated);
+        log.info("statusNotCurrent: {}", statusNotCurrent);
         log.info("currentDateTimeBeforeStartDateTime: {}", currentDateTimeBeforeStartDateTime);
         log.info("currentDateTimeAfterEndDateTime: {}", currentDateTimeAfterEndDateTime);
         if (
-            statusNotCreated
+            statusNotCurrent
                 || currentDateTimeBeforeStartDateTime
                 || currentDateTimeAfterEndDateTime
         ) {
