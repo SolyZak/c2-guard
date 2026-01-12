@@ -61,7 +61,7 @@ public abstract sealed class AbstractScheduledTaskFactory
         execution.setStatus(ScheduledTaskStatus.STARTED);
         execution.setStartedAt(OffsetDateTime.now());
         taskEntity.getExecutionLogs().add(execution);
-        execution = logRepository.save(execution);
+        execution = logRepository.saveAndFlush(execution);
 
         ScheduledTaskEntity task = execution.getTask();
         log.info("Task [{}] is exists before execute", task.getId());
@@ -81,10 +81,10 @@ public abstract sealed class AbstractScheduledTaskFactory
             log.error("Task [{}] '{}' failed", task.getTaskType(), task.getName(), e);
         } finally {
             execution.setFinishedAt(OffsetDateTime.now());
-            logRepository.save(execution);
+            logRepository.saveAndFlush(execution);
             if (task.getTypeOfExecution() == TaskExecutionType.DATETIME) {
                 task.setIsExecutionFinished(true);
-                task = taskRepository.save(task);
+                task = taskRepository.saveAndFlush(task);
             }
         }
     }

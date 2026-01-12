@@ -58,8 +58,9 @@ public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
             throw new BusinessException("Patrol distribution not found", HttpStatus.NOT_FOUND);
 
         ContractOperationSiteDistributionPatrol distribution = optionalDistribution.get();
-        distribution.setStatus(TaskDistributionStatus.MISSED.name());
-        repository.save(distribution);
+        if (!distribution.getStatus().equals(TaskDistributionStatus.FINISHED.name()))
+            distribution.setStatus(TaskDistributionStatus.MISSED.name());
+        repository.saveAndFlush(distribution);
 
         ObjectNode result = JsonNodeUtils.createObjectNode();
         result.put("status", "success");
