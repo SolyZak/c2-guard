@@ -162,7 +162,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                 }
             }
         }
-        return repository.saveAll(distributionForPatrols);
+        return repository.saveAllAndFlush(distributionForPatrols);
     }
 
     private List<ContractOperationSiteDistributionPatrol> handlePatrolOnceFrequency(
@@ -255,7 +255,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
             }
         }
 
-        return repository.saveAll(distributionForPatrols);
+        return repository.saveAllAndFlush(distributionForPatrols);
     }
 
     private LocalDate calculateEndDateForOncePatrolType(String frequencyRate, LocalDate startDate) {
