@@ -33,8 +33,8 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
         List<DateTimeScheduledTaskRequest> scheduledTaskMissedRequests = distributionForPatrols
                 .stream()
                 .map(distributionForPatrol -> {
-                    OffsetDateTime taskStartDateTime = distributionForPatrol.getStartDate().atTime(distributionForPatrol.getFromTime());
-                    String taskName = "TaskCurrentStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
+                    OffsetDateTime taskStartDateTime = distributionForPatrol.getEndDate().atTime(distributionForPatrol.getToTime());
+                    String taskName = "TaskMissedStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
                             .formatted(distributionForPatrol.getId(), contractId, serviceId);
                     ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
                     taskParams.put("patrolDistributionId", distributionForPatrol.getId());
@@ -50,8 +50,8 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
         List<DateTimeScheduledTaskRequest> scheduledTaskCurrentRequests = distributionForPatrols
                 .stream()
                 .map(distributionForPatrol -> {
-                    OffsetDateTime taskEndDateTime = distributionForPatrol.getEndDate().atTime(distributionForPatrol.getToTime());
-                    String taskName = "TaskMissedStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
+                    OffsetDateTime taskEndDateTime = distributionForPatrol.getStartDate().atTime(distributionForPatrol.getFromTime());
+                    String taskName = "TaskCurrentStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
                             .formatted(distributionForPatrol.getId(), contractId, serviceId);
                     ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
                     taskParams.put("patrolDistributionId", distributionForPatrol.getId());
