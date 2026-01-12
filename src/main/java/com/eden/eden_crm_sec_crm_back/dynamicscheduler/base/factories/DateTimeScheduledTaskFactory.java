@@ -48,7 +48,7 @@ public abstract non-sealed class DateTimeScheduledTaskFactory extends AbstractSc
             throw new ConstraintViolationException(violations);
 
         ScheduledTaskEntity scheduledTask = scheduledTaskMapper.dateTimeTaskRequestToEntity(request);
-        scheduledTask = taskRepository.save(scheduledTask);
+        scheduledTask = taskRepository.saveAndFlush(scheduledTask);
         return scheduledTask;
     }
 
@@ -63,7 +63,7 @@ public abstract non-sealed class DateTimeScheduledTaskFactory extends AbstractSc
         });
 
         List<ScheduledTaskEntity> scheduledTasks = scheduledTaskMapper.dateTimeTaskRequestsToEntities(requests);
-        scheduledTasks = taskRepository.saveAll(scheduledTasks);
+        scheduledTasks = taskRepository.saveAllAndFlush(scheduledTasks);
         return scheduledTasks;
     }
 }
