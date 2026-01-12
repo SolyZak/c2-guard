@@ -8,12 +8,14 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories.base.Sched
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.utils.JsonNodeUtils;
+import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -51,19 +53,21 @@ public abstract sealed class AbstractScheduledTaskFactory
     @Transactional
     public void run() {
         Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-        if (Boolean.FALSE.equals(taskEntity.getIsActive())) {
-            log.info("Task [{}] '{}' InActive - Skipping the execution", taskEntity.getTaskType(), taskEntity.getName());
+        ScheduledTaskEntity task = taskRepository.findById(taskEntity.getId())
+                .orElseThrow(() -> new BusinessException("Task not found with id: " + taskEntity.getId(), HttpStatus.BAD_REQUEST));
+
+        if (Boolean.FALSE.equals(task.getIsActive())) {
+            log.info("Task [{}] '{}' InActive - Skipping the execution", task.getTaskType(), task.getName());
             return;
         }
 
         ScheduledTaskExecutionLogEntity execution = new ScheduledTaskExecutionLogEntity();
-        execution.setTask(taskEntity);
+        execution.setTask(task);
         execution.setStatus(ScheduledTaskStatus.STARTED);
         execution.setStartedAt(OffsetDateTime.now());
-        taskEntity.getExecutionLogs().add(execution);
+        task.getExecutionLogs().add(execution);
         execution = logRepository.saveAndFlush(execution);
 
-        ScheduledTaskEntity task = execution.getTask();
         log.info("Task [{}] is exists before execute", task.getId());
 
         log.info("Task [{}] '{}' started", task.getTaskType(), task.getName());
