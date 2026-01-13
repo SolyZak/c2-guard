@@ -104,7 +104,7 @@ public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
                 .servicePlatformName(ServicePlatformEnum.CRM.name())
                 .workforceId(0L)
                 .serviceTriggerEventId(0L)
-                .description(distribution.getId().toString())
+                .description(distribution.getTask().getName())
                 .build();
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
         c2AlertEventService.sendNewC2AlertEvent(crmTriggerLog);
