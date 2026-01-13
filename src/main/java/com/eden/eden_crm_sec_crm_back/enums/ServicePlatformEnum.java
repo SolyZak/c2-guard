@@ -7,7 +7,8 @@ public enum ServicePlatformEnum {
     ATTENDANCE("ATTENDANCE", 1L),
     PATROLS("PATROLS", 2L),
     VISITORS("VISITORS", 3L),
-    INCIDENTS("INCIDENTS", 4L);
+    INCIDENTS("INCIDENTS", 4L),
+    CRM("CRM", 5L);
 
     // You might also want to add getters for the fields
     private final String code;
