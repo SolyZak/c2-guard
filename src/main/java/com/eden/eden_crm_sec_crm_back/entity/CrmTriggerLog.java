@@ -50,7 +50,7 @@ public class CrmTriggerLog {
     @Column(name = "event_date")
     private LocalDate eventDate;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "service_platform_id")
     private ServicePlatform servicePlatform;
 

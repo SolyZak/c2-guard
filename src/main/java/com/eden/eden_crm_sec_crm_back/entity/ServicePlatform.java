@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Table(name = "service_platform")
 @Getter
@@ -24,4 +26,10 @@ public class ServicePlatform {
 
     @Column(name = "code", unique = true)
     private String code;
+
+    @OneToMany(mappedBy = "servicePlatform")
+    private List<AlertTrigger> alertTriggers;
+
+    @OneToMany(mappedBy = "servicePlatform")
+    private List<CrmTriggerLog> crmTriggerLogs;
 }
