@@ -7,7 +7,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "alert_trigger_severity")
+@Table(name = "alert_trigger_severity", uniqueConstraints = {
+        @UniqueConstraint(
+            name = "alert_trigger_severity_alert_trigger_id_customer_id_unique",
+            columnNames = {"alert_trigger_id", "customer_id"}
+        )
+})
 @Getter
 @Setter
 @NoArgsConstructor
