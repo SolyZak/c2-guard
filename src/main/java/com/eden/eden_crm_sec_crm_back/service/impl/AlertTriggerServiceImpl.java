@@ -60,7 +60,10 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
 
         alertTriggers.forEach(alertTrigger -> {
             triggerMap.putIfAbsent(alertTrigger.getServicePlatformName(), new ArrayList<>());
-            triggerMap.get(alertTrigger.getServicePlatformName()).add(triggers.get(alertTrigger.getServicePlatformName()).get(alertTrigger.getTriggerId()));
+            ServicePlatformEnum servicePlatformEnum = alertTrigger.getServicePlatformName();
+            if (servicePlatformEnum == ServicePlatformEnum.INCIDENTS)
+                servicePlatformEnum = ServicePlatformEnum.PATROLS;
+            triggerMap.get(servicePlatformEnum).add(triggers.get(servicePlatformEnum).get(alertTrigger.getTriggerId()));
         });
         return triggerMap;
     }
