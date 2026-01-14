@@ -2,7 +2,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.AlertTriggerDTO;
 import com.eden.eden_crm_sec_crm_back.dto.AlertTriggerSeverityRequest;
-import com.eden.eden_crm_sec_crm_back.dto.TriggerResponse;
+import com.eden.eden_crm_sec_crm_back.dto.TriggerWithAlertTriggerResponse;
 import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
 import com.eden.eden_crm_sec_crm_back.service.AlertTriggerService;
 import jakarta.validation.Valid;
@@ -21,7 +21,7 @@ public class AlertTriggerController {
     private final AlertTriggerService alertTriggerService;
 
     @GetMapping
-    public ResponseEntity<Map<ServicePlatformEnum, List<TriggerResponse>>> getAllAlertTriggers() {
+    public ResponseEntity<Map<ServicePlatformEnum, List<TriggerWithAlertTriggerResponse>>> getAllAlertTriggers() {
         return ResponseEntity.ok(alertTriggerService.getAllAlertTriggers());
     }
 

@@ -6,10 +6,12 @@ import com.eden.eden_crm_sec_crm_back.clients.VisitorFeignClient;
 import com.eden.eden_crm_sec_crm_back.dto.AlertTriggerDTO;
 import com.eden.eden_crm_sec_crm_back.dto.AlertTriggerSeverityRequest;
 import com.eden.eden_crm_sec_crm_back.dto.TriggerResponse;
+import com.eden.eden_crm_sec_crm_back.dto.TriggerWithAlertTriggerResponse;
 import com.eden.eden_crm_sec_crm_back.entity.AlertTrigger;
 import com.eden.eden_crm_sec_crm_back.entity.AlertTriggerSeverity;
 import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.mapper.TriggerMapper;
 import com.eden.eden_crm_sec_crm_back.repository.AlertTriggerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.AlertTriggerSeverityRepository;
 import com.eden.eden_crm_sec_crm_back.repository.projections.AlertTriggerWithSeverityProjection;
@@ -35,13 +37,14 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
     private final PatrolFeignClient patrolFeignClient;
     private final VisitorFeignClient visitorFeignClient;
     private final TriggerService triggerService;
+    private final TriggerMapper triggerMapper;
 
     @Override
     @Transactional(readOnly = true)
-    public Map<ServicePlatformEnum, List<TriggerResponse>> getAllAlertTriggers() {
+    public Map<ServicePlatformEnum, List<TriggerWithAlertTriggerResponse>> getAllAlertTriggers() {
         Long customerId = utils.getLoggedInUser().getCustomerId();
         List<AlertTriggerWithSeverityProjection> alertTriggers = alertTriggerRepository.findAllWithSeverityByCustomerId(customerId);
-        Map<ServicePlatformEnum, List<TriggerResponse>> triggerMap = new EnumMap<>(ServicePlatformEnum.class);
+        Map<ServicePlatformEnum, List<TriggerWithAlertTriggerResponse>> triggerMap = new EnumMap<>(ServicePlatformEnum.class);
         if (alertTriggers.isEmpty())
             return triggerMap;
 
@@ -63,7 +66,11 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
             ServicePlatformEnum servicePlatformEnum = alertTrigger.getServicePlatformName();
             if (servicePlatformEnum == ServicePlatformEnum.INCIDENTS)
                 servicePlatformEnum = ServicePlatformEnum.PATROLS;
-            triggerMap.get(servicePlatformEnum).add(triggers.get(servicePlatformEnum).get(alertTrigger.getTriggerId()));
+
+            TriggerResponse triggerResponse = triggers.get(servicePlatformEnum).get(alertTrigger.getTriggerId());
+            TriggerWithAlertTriggerResponse triggerWithAlertTriggerResponse = triggerMapper.toTriggerWithAlertTriggerResponse(triggerResponse);
+            triggerWithAlertTriggerResponse.setId(alertTrigger.getId());
+            triggerMap.get(servicePlatformEnum).add(triggerWithAlertTriggerResponse);
         });
         return triggerMap;
     }
