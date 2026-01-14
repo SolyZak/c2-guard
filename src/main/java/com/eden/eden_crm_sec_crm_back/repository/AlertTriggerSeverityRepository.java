@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AlertTriggerSeverityRepository extends JpaRepository<AlertTriggerSeverity, Long> {
@@ -17,6 +18,11 @@ public interface AlertTriggerSeverityRepository extends JpaRepository<AlertTrigg
     List<AlertTriggerSeverity> findByAlertTrigger_TriggerIdAndAlertTrigger_ServicePlatform_IdAndCustomerId(
         Long triggerId,
         Long servicePlatformId,
+        Long customerId
+    );
+
+    Optional<AlertTriggerSeverity> findByAlertTrigger_IdAndCustomerId(
+        Long alertTriggerId,
         Long customerId
     );
 }

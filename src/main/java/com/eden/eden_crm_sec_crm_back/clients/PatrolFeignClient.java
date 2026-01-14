@@ -1,0 +1,13 @@
+package com.eden.eden_crm_sec_crm_back.clients;
+
+import com.eden.eden_crm_sec_crm_back.dto.TriggerResponse;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.List;
+
+@FeignClient(value = "${feign.clients.patrol}", path = "/patrol")
+public interface PatrolFeignClient {
+    @GetMapping(value = "/triggers")
+    List<TriggerResponse> getAllTriggers();
+}

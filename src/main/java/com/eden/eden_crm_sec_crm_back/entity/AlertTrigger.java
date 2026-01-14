@@ -1,9 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "alert_trigger", uniqueConstraints = {
@@ -15,6 +13,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class AlertTrigger {
     @Id
     @SequenceGenerator(name = "alert_trigger_id_seq", sequenceName = "alert_trigger_id_seq", allocationSize = 1)
