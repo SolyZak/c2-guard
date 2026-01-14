@@ -13,6 +13,7 @@ import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
 import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.enums.TriggerCode;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
+import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
@@ -92,6 +93,7 @@ public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
         OffsetDateTime now = OffsetDateTime.now();
         final Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_MISSED.getId())
                 .orElseThrow(() -> new RuntimeException("Trigger not found"));
+        final Task task = distribution.getTask();
         TriggerEventDto triggerEventDto = TriggerEventDto.builder()
                 .triggerId(trigger.getId())
                 .triggerName(trigger.getName())
@@ -104,7 +106,9 @@ public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
                 .servicePlatformName(ServicePlatformEnum.CRM.name())
                 .workforceId(0L)
                 .serviceTriggerEventId(0L)
-                .description(distribution.getTask().getName())
+                .description(
+                    task.getName() + " | " + distribution.getFromTime() + " - " + distribution.getToTime()
+                )
                 .build();
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
         c2AlertEventService.sendNewC2AlertEvent(crmTriggerLog);
