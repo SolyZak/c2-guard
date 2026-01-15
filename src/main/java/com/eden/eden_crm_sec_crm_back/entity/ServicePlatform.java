@@ -20,10 +20,13 @@ public class ServicePlatform {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "name", unique = true)
+    @Column(name = "name", nullable = false, unique = true)
     private String name;
 
-    @Column(name = "code", unique = true)
+    @Column(name = "name_ar", nullable = false, unique = true)
+    private String nameAr;
+
+    @Column(name = "code", nullable = false, unique = true)
     @Enumerated(EnumType.STRING)
     private ServicePlatformEnum code;
 
