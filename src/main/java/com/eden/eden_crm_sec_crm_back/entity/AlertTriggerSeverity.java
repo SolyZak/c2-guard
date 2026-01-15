@@ -7,7 +7,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "alert_trigger_severity")
+@Table(name = "alert_trigger_severity", uniqueConstraints = {
+        @UniqueConstraint(
+            name = "alert_trigger_severity_alert_trigger_id_customer_id_unique",
+            columnNames = {"alert_trigger_id", "customer_id"}
+        )
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,19 +23,12 @@ public class AlertTriggerSeverity {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "alert_id")
-    private Long alertId;
-
-    @Column(name = "trigger_id")
-    private Long triggerId;
+    @ManyToOne
+    @JoinColumn(name = "alert_trigger_id")
+    private AlertTrigger alertTrigger;
 
     @Column(name = "customer_id")
     private Long customerId;
-
-    @OneToOne
-    @JoinColumn(name = "service_platform_id")
-    private ServicePlatform servicePlatform;
-
 
     @Column(name = "severity")
     @Enumerated(EnumType.STRING)

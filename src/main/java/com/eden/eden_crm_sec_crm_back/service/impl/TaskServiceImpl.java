@@ -1,7 +1,9 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
-import com.eden.eden_crm_sec_crm_back.dto.request.task.*;
+import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskDistributionRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDTO;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
@@ -35,9 +37,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.*;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -172,7 +174,6 @@ public class TaskServiceImpl implements TaskService {
                 ));
             }
         }
-        List<Long> missedIds = new ArrayList<>();
         List<TodayTaskEntryDto> tasks = new ArrayList<>();
         for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
             List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
@@ -180,7 +181,7 @@ public class TaskServiceImpl implements TaskService {
                             new TodayTaskEntryTimesDto(
                                     DateUtils.toLocalTime(customer.getTimezone(), tt.getStartTime()),
                                     DateUtils.toLocalTime(customer.getTimezone(), tt.getEndTime()),
-                                    getTimePeriodStatus(tt),
+                                    tt.getPeriodStatus(),
                                     tt.getPatrolDistributionId()
                             ))
                     .sorted(
@@ -202,44 +203,8 @@ public class TaskServiceImpl implements TaskService {
                     entry.getKey().getLocationAccessType()
             );
             tasks.add(task);
-            missedIds.addAll(times.stream().filter(t -> t.getStatus().equals(TaskDistributionStatus.MISSED.name())).map(t -> t.getPatrolDistributionId()).collect(Collectors.toList()));
-        }
-        if (missedIds.size() > 0) {
-            List<ContractOperationSiteDistributionPatrol> distributionPatrols = repository.findAllById(missedIds);
-            for (int i = 0; i < distributionPatrols.size() ; i++) {
-                distributionPatrols.get(i).setStatus(TaskDistributionStatus.MISSED.name());
-            }
-            repository.saveAll(distributionPatrols);
         }
         return new TodayTasksResponseDto(tasks);
-    }
-
-    private String getTimePeriodStatus(TodayTasks todayTasks) {
-        if (todayTasks.getPeriodStatus().equals(TaskDistributionStatus.FINISHED.name()) || todayTasks.getPeriodStatus().equals(TaskDistributionStatus.MISSED.name())) {
-            return todayTasks.getPeriodStatus();
-        }
-        if (todayTasks.getPatrolFreqType().equals(PatrolFrequencyEnum.EVERY_PERIOD.getFreq())) {
-            LocalTime current = LocalTime.now();
-            if (current.isBefore(todayTasks.getEndTime().toLocalTime()) && current.isAfter(todayTasks.getStartTime().toLocalTime())) {
-                return TaskDistributionStatus.CURRENT.name();
-            } else if (current.isAfter(todayTasks.getEndTime().toLocalTime()) && todayTasks.getPeriodStatus().equals(TaskDistributionStatus.CREATED.name())) {
-                return TaskDistributionStatus.MISSED.name();
-            }
-            return TaskDistributionStatus.CREATED.name();
-        } else {
-            LocalDate currentDate = LocalDate.now();
-            LocalTime current = LocalTime.now();
-            if (currentDate.equals(todayTasks.getEndDate()) && current.isAfter(todayTasks.getEndTime().toLocalTime())) {
-                return TaskDistributionStatus.MISSED.name();
-            } else if (
-                    ( currentDate.equals(todayTasks.getEndDate()) || currentDate.equals(todayTasks.getStartDate()) ) ||
-                            ( currentDate.isBefore(todayTasks.getEndDate()) && currentDate.isAfter(todayTasks.getStartDate()) )
-                            && current.isAfter(todayTasks.getStartTime().toLocalTime()) && current.isBefore(todayTasks.getEndTime().toLocalTime())
-            ) {
-                return TaskDistributionStatus.CURRENT.name();
-            }
-            return TaskDistributionStatus.CREATED.name();
-        }
     }
 
     @Override
@@ -273,14 +238,14 @@ public class TaskServiceImpl implements TaskService {
         OffsetDateTime startDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getStartDate(), distributionPatrol.getFromTime());
         OffsetDateTime endDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getEndDate(), distributionPatrol.getToTime());
         OffsetDateTime currentDateTime = OffsetDateTime.now();
-        boolean statusNotCreated = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CREATED.name());
+        boolean statusNotCurrent = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CURRENT.name());
         boolean currentDateTimeBeforeStartDateTime = currentDateTime.isBefore(startDateTime);
         boolean currentDateTimeAfterEndDateTime = currentDateTime.isAfter(endDateTime);
-        log.info("statusNotCreated: {}", statusNotCreated);
+        log.info("statusNotCurrent: {}", statusNotCurrent);
         log.info("currentDateTimeBeforeStartDateTime: {}", currentDateTimeBeforeStartDateTime);
         log.info("currentDateTimeAfterEndDateTime: {}", currentDateTimeAfterEndDateTime);
         if (
-            statusNotCreated
+            statusNotCurrent
                 || currentDateTimeBeforeStartDateTime
                 || currentDateTimeAfterEndDateTime
         ) {

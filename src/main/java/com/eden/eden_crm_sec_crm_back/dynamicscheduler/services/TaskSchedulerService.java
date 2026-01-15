@@ -31,9 +31,12 @@ public class TaskSchedulerService {
 
     private void scheduleTaskIfToday(ScheduledTaskEntity scheduledTask, OffsetDateTime now) {
         if (
-            schedulerOperator.isDateTimeTypeAndWithInToday(scheduledTask, now)
+            !scheduledTask.getIsExecutionFinished()
+            && (
+                schedulerOperator.isDateTimeTypeAndWithInToday(scheduledTask, now)
                 || schedulerOperator.isCronTypeAndWithInToday(scheduledTask, now)
                 || schedulerOperator.isStartDateTimeAndDurationAndWithInToday(scheduledTask, now)
+            )
         )
             schedulerOperator.scheduleTask(scheduledTask);
     }

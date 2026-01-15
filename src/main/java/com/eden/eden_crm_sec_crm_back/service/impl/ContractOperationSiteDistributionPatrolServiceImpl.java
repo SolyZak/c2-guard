@@ -2,11 +2,6 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.ContractDistributionForPatrol;
 import com.eden.eden_crm_sec_crm_back.dto.request.LocationsTasksForPatrol;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.dtos.DateTimeScheduledTaskRequest;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskEntity;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.services.TaskSchedulerService;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks.TaskCurrentStatusJob;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks.TaskMissedStatusJob;
 import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
 import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyRateEnum;
 import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
@@ -19,21 +14,18 @@ import com.eden.eden_crm_sec_crm_back.models.projections.LocationProjection;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ContractOperationSiteDistributionPatrolService;
+import com.eden.eden_crm_sec_crm_back.service.CreateScheduledTaskService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.time.OffsetTime;
 import java.time.temporal.ChronoUnit;
-
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,9 +42,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
     private final LKCustomerContractServiceRepository contractServiceRepository;
     private final Utils utils;
     private final SiteDistributionRepository siteDistributionRepository;
-    private final TaskSchedulerService taskSchedulerService;
-    private final TaskMissedStatusJob taskMissedStatusJob;
-    private final TaskCurrentStatusJob taskCurrentStatusJob;
+    private final CreateScheduledTaskService createScheduledTaskService;
 
     @Override
     @Transactional
@@ -109,52 +99,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                 }
             }
         }
-//        createScheduledTasks(distributionForPatrols, contractId, serviceId);
-    }
-
-    private void createScheduledTasks(
-        List<ContractOperationSiteDistributionPatrol> distributionForPatrols,
-        Long contractId,
-        Long serviceId
-    ) {
-        List<DateTimeScheduledTaskRequest> scheduledTaskMissedRequests = distributionForPatrols
-            .stream()
-            .map(distributionForPatrol -> {
-                OffsetDateTime taskStartDateTime = distributionForPatrol.getStartDate().atTime(distributionForPatrol.getFromTime());
-                String taskName = "TaskCurrentStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
-                        .formatted(distributionForPatrol.getId(), contractId, serviceId);
-                ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
-                taskParams.put("patrolDistributionId", distributionForPatrol.getId());
-                taskParams.put("contractId", contractId);
-                taskParams.put("serviceId", serviceId);
-                return DateTimeScheduledTaskRequest.builder()
-                        .name(taskName)
-                        .plannedExecutionTime(taskStartDateTime)
-                        .arguments(taskParams)
-                        .build();
-            }).toList();
-
-        List<DateTimeScheduledTaskRequest> scheduledTaskCurrentRequests = distributionForPatrols
-            .stream()
-            .map(distributionForPatrol -> {
-                OffsetDateTime taskEndDateTime = distributionForPatrol.getEndDate().atTime(distributionForPatrol.getToTime());
-                String taskName = "TaskMissedStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
-                        .formatted(distributionForPatrol.getId(), contractId, serviceId);
-                ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
-                taskParams.put("patrolDistributionId", distributionForPatrol.getId());
-                taskParams.put("contractId", contractId);
-                taskParams.put("serviceId", serviceId);
-                return DateTimeScheduledTaskRequest.builder()
-                        .name(taskName)
-                        .plannedExecutionTime(taskEndDateTime)
-                        .arguments(taskParams)
-                        .build();
-            }).toList();
-
-        List<ScheduledTaskEntity> tasksList = taskMissedStatusJob.createTasks(scheduledTaskMissedRequests);
-        List<ScheduledTaskEntity> tasksListCurrent = taskCurrentStatusJob.createTasks(scheduledTaskCurrentRequests);
-        tasksList.addAll(tasksListCurrent);
-        taskSchedulerService.scheduleTasksIfExecuteToday(tasksList);
+        createScheduledTaskService.createDistributionScheduledTasks(distributionForPatrols, contractId, serviceId);
     }
 
     private List<ContractOperationSiteDistributionPatrol> handlePatrolEveryPeriodFrequency(Optional<Patrol> patrolOptional, ContractDistributionForPatrol request,
@@ -217,7 +162,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                 }
             }
         }
-        return repository.saveAll(distributionForPatrols);
+        return repository.saveAllAndFlush(distributionForPatrols);
     }
 
     private List<ContractOperationSiteDistributionPatrol> handlePatrolOnceFrequency(
@@ -310,7 +255,7 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
             }
         }
 
-        return repository.saveAll(distributionForPatrols);
+        return repository.saveAllAndFlush(distributionForPatrols);
     }
 
     private LocalDate calculateEndDateForOncePatrolType(String frequencyRate, LocalDate startDate) {

@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Table(name = "service_platform")
 @Getter
@@ -18,10 +20,19 @@ public class ServicePlatform {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "name", unique = true)
-    @Enumerated(EnumType.STRING)
-    private ServicePlatformEnum name;
+    @Column(name = "name", nullable = false, unique = true)
+    private String name;
 
-    @Column(name = "code", unique = true)
-    private String code;
+    @Column(name = "name_ar", nullable = false, unique = true)
+    private String nameAr;
+
+    @Column(name = "code", nullable = false, unique = true)
+    @Enumerated(EnumType.STRING)
+    private ServicePlatformEnum code;
+
+    @OneToMany(mappedBy = "servicePlatform")
+    private List<AlertTrigger> alertTriggers;
+
+    @OneToMany(mappedBy = "servicePlatform")
+    private List<CrmTriggerLog> crmTriggerLogs;
 }

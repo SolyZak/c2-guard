@@ -5,6 +5,7 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories.DateTimeSc
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.mappers.ScheduledTaskMapper;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.utils.JsonNodeUtils;
 import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
 import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
@@ -47,19 +48,22 @@ public class TaskCurrentStatusJob extends DateTimeScheduledTaskFactory {
 
     @Override
     public JsonNode performTask(JsonNode arguments) {
-        Long patrolDistributionId = getArg("patrolDistributionId", 0L);
+        Long patrolDistributionId = JsonNodeUtils.getLongArg(arguments, "patrolDistributionId")
+                .orElseThrow(() -> new BusinessException("Patrol distribution id is required", HttpStatus.BAD_REQUEST));
 
         Optional<ContractOperationSiteDistributionPatrol> optionalDistribution = repository.findById(patrolDistributionId);
         if (optionalDistribution.isEmpty())
             throw new BusinessException("Patrol distribution not found", HttpStatus.NOT_FOUND);
 
         ContractOperationSiteDistributionPatrol distribution = optionalDistribution.get();
-        distribution.setStatus(TaskDistributionStatus.CURRENT.name());
-        repository.save(distribution);
+        if (!distribution.getStatus().equals(TaskDistributionStatus.MISSED.name())) {
+            distribution.setStatus(TaskDistributionStatus.CURRENT.name());
+            repository.saveAndFlush(distribution);
+        }
 
-        ObjectNode result = createObjectNode();
+        ObjectNode result = JsonNodeUtils.createObjectNode();
         result.put("status", "success");
-        result.set("usedIds", createObjectNode().put("patrolDistributionId", patrolDistributionId));
+        result.set("usedIds", JsonNodeUtils.createObjectNode().put("patrolDistributionId", patrolDistributionId));
         return result;
     }
 }

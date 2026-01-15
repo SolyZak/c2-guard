@@ -7,16 +7,17 @@ import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.enums.TaskExecutionT
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories.base.ScheduledTaskFactory;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
 import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
+import com.eden.eden_crm_sec_crm_back.dynamicscheduler.utils.JsonNodeUtils;
+import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Constructor;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -52,92 +53,53 @@ public abstract sealed class AbstractScheduledTaskFactory
     @Transactional
     public void run() {
         Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-        if (Boolean.FALSE.equals(taskEntity.getIsActive())) {
-            log.info("Task [{}] '{}' InActive - Skipping the execution", taskEntity.getTaskType(), taskEntity.getName());
+        ScheduledTaskEntity task = taskRepository.findById(taskEntity.getId())
+                .orElseThrow(() -> new BusinessException("Task not found with id: " + taskEntity.getId(), HttpStatus.BAD_REQUEST));
+
+        if (Boolean.FALSE.equals(task.getIsActive())) {
+            log.info("Task [{}] '{}' InActive - Skipping the execution", task.getTaskType(), task.getName());
             return;
         }
 
         ScheduledTaskExecutionLogEntity execution = new ScheduledTaskExecutionLogEntity();
-        execution.setTask(taskEntity);
+        execution.setTask(task);
         execution.setStatus(ScheduledTaskStatus.STARTED);
         execution.setStartedAt(OffsetDateTime.now());
-        taskEntity.getExecutionLogs().add(execution);
-        logRepository.save(execution);
+        task.getExecutionLogs().add(execution);
+        execution = logRepository.saveAndFlush(execution);
 
-        log.info("Task [{}] '{}' started", taskEntity.getTaskType(), taskEntity.getName());
+        log.info("Task [{}] is exists before execute", task.getId());
+
+        log.info("Task [{}] '{}' started", task.getTaskType(), task.getName());
 
         try {
-            JsonNode result = performTask(taskEntity.getArguments());
+            log.info("Task [{}] '{}' arguments: {}", task.getTaskType(), task.getName(), task.getArguments());
+            JsonNode result = performTask(task.getArguments());
+            log.info("Task [{}] '{}' result: {}", task.getTaskType(), task.getName(), result);
             execution.setResult(result);
             execution.setStatus(ScheduledTaskStatus.SUCCESS);
-            log.info("Task [{}] '{}' succeeded", taskEntity.getTaskType(), taskEntity.getName());
+            log.info("Task [{}] '{}' succeeded", task.getTaskType(), task.getName());
         } catch (Exception e) {
             execution.setStatus(ScheduledTaskStatus.FAILED);
-            execution.setResult(createObjectNode().put("error", e.getMessage()));
-            log.error("Task [{}] '{}' failed", taskEntity.getTaskType(), taskEntity.getName(), e);
+            execution.setResult(JsonNodeUtils.createObjectNode().put("error", e.getMessage()));
+            log.error("Task [{}] '{}' failed", task.getTaskType(), task.getName(), e);
         } finally {
             execution.setFinishedAt(OffsetDateTime.now());
-            logRepository.save(execution);
-            if (taskEntity.getTypeOfExecution() == TaskExecutionType.DATETIME) {
-                taskEntity.setIsExecutionFinished(true);
-                taskRepository.save(taskEntity);
+            logRepository.saveAndFlush(execution);
+            if (task.getTypeOfExecution() == TaskExecutionType.DATETIME) {
+                task.setIsExecutionFinished(true);
+                task = taskRepository.saveAndFlush(task);
             }
         }
     }
 
     @Override
-    public AbstractScheduledTaskFactory createInstanceAndSetEntity(ScheduledTaskFactory factory, ScheduledTaskEntity task) {
+    public AbstractScheduledTaskFactory setTask(ScheduledTaskEntity task) {
         try {
-            AbstractScheduledTaskFactory instance = factory.getApplicationContext().getBean(this.getClass());
-            instance.taskEntity = task;
-            return instance;
+            this.taskEntity = task;
+            return this;
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate concrete ScheduledTaskFactory via reflection. Ensure the subclass has a matching constructor.", e);
         }
-    }
-
-    protected ObjectNode createObjectNode() {
-        return objectMapper.createObjectNode();
-    }
-
-    protected <T> T readArguments(Class<T> clazz) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null || args.isNull()) {
-            return null;
-        }
-        try {
-            return objectMapper.treeToValue(args, clazz);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse task arguments", e);
-        }
-    }
-
-    protected String getArg(String fieldName, String defaultValue) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null) return defaultValue;
-        JsonNode node = args.get(fieldName);
-        return node != null && node.isTextual() ? node.asText() : defaultValue;
-    }
-
-    protected int getArg(String fieldName, int defaultValue) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null) return defaultValue;
-        JsonNode node = args.get(fieldName);
-        return node != null && node.isInt() ? node.asInt() : defaultValue;
-    }
-
-    protected Long getArg(String fieldName, Long defaultValue) {
-        Objects.requireNonNull(taskEntity, TASK_ENTITY_NOT_NULL_MESSAGE);
-
-        JsonNode args = taskEntity.getArguments();
-        if (args == null) return defaultValue;
-        JsonNode node = args.get(fieldName);
-        return node != null && node.isLong() ? node.asLong() : defaultValue;
     }
 }
