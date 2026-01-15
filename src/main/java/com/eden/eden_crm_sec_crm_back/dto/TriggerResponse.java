@@ -30,8 +30,8 @@ public class TriggerResponse {
                 .id(trigger.getId())
                 .dbVersion(trigger.getDbVersion())
                 .name(trigger.getName())
-//                .nameAr(trigger.getNameAr())
-//                .code(trigger.getCode())
+                .nameAr(trigger.getNameAr())
+                .code(trigger.getCode())
                 .creationType(trigger.getCreationType())
                 .build();
     }
