@@ -17,11 +17,10 @@ public class TriggerResponse {
     private Long dbVersion;
     @NonNull
     private String name;
-
+    @NonNull
     private String nameAr;
-
+    @NonNull
     private String code;
-
     @NonNull
     private CreationType creationType;
 
