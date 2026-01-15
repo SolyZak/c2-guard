@@ -17,6 +17,11 @@ public class TriggerResponse {
     private Long dbVersion;
     @NonNull
     private String name;
+
+    private String nameAr;
+
+    private String code;
+
     @NonNull
     private CreationType creationType;
 
@@ -25,6 +30,8 @@ public class TriggerResponse {
                 .id(trigger.getId())
                 .dbVersion(trigger.getDbVersion())
                 .name(trigger.getName())
+//                .nameAr(trigger.getNameAr())
+//                .code(trigger.getCode())
                 .creationType(trigger.getCreationType())
                 .build();
     }

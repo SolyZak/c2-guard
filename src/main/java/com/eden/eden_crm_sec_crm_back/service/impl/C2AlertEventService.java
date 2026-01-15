@@ -38,7 +38,7 @@ public class C2AlertEventService {
                 .triggerId(alertTrigger.getTriggerId())
                 .triggerName(crmTriggerLog.getTriggerName())
                 .servicePlatformId(crmTriggerLog.getServicePlatform().getId())
-                .servicePlatformName(crmTriggerLog.getServicePlatform().getName().name())
+                .servicePlatformName(crmTriggerLog.getServicePlatform().getCode().name())
                 .eventTime(crmTriggerLog.getEventTime())
                 .eventDate(crmTriggerLog.getEventDate())
                 .longitude(crmTriggerLog.getLongitude())

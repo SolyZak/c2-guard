@@ -9,5 +9,8 @@ public class TriggerWithAlertTriggerResponse {
     private Long id;
     private Long triggerId;
     private String name;
+    private String nameAr;
+    private String code;
     private String creationType;
+    private String severity;
 }

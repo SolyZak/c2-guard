@@ -8,6 +8,6 @@ public interface AlertTriggerWithSeverityProjection {
     Long getAlertId();
     Long getTriggerId();
     Long getServicePlatformId();
-    ServicePlatformEnum getServicePlatformName();
+    ServicePlatformEnum getServicePlatformCode();
     Severity getSeverity();
 }

@@ -19,7 +19,7 @@ public interface AlertTriggerRepository extends JpaRepository<AlertTrigger, Long
             at.alertId as alertId,
             at.triggerId as triggerId,
             at.servicePlatform.id as servicePlatformId,
-            at.servicePlatform.name as servicePlatformName,
+            at.servicePlatform.code as servicePlatformCode,
             ats.severity as severity
         FROM AlertTrigger at
         LEFT JOIN AlertTriggerSeverity ats ON at.id = ats.alertTrigger.id AND ats.customerId = :customerId
