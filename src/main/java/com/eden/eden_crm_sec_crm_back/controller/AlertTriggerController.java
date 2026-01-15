@@ -1,9 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
-import com.eden.eden_crm_sec_crm_back.dto.AlertTriggerDTO;
 import com.eden.eden_crm_sec_crm_back.dto.AlertTriggerSeverityRequest;
-import com.eden.eden_crm_sec_crm_back.dto.TriggerWithAlertTriggerResponse;
-import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
+import com.eden.eden_crm_sec_crm_back.dto.ServicePlatformWithTriggersResponse;
 import com.eden.eden_crm_sec_crm_back.service.AlertTriggerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,15 +19,16 @@ public class AlertTriggerController {
     private final AlertTriggerService alertTriggerService;
 
     @GetMapping
-    public ResponseEntity<Map<ServicePlatformEnum, List<TriggerWithAlertTriggerResponse>>> getAllAlertTriggers() {
+    public ResponseEntity<List<ServicePlatformWithTriggersResponse>> getAllAlertTriggers() {
         return ResponseEntity.ok(alertTriggerService.getAllAlertTriggers());
     }
 
     @PostMapping("/{id}/severity")
-    public ResponseEntity<AlertTriggerDTO> setAlertTriggerSeverity(
+    public ResponseEntity<Map<String, String>> setAlertTriggerSeverity(
         @PathVariable Long id,
         @Valid @RequestBody AlertTriggerSeverityRequest request
     ) {
-        return ResponseEntity.ok(alertTriggerService.setAlertTriggerSeverity(id, request));
+        alertTriggerService.setAlertTriggerSeverity(id, request);
+        return ResponseEntity.ok(Map.of("message", "Alert trigger severity updated successfully"));
     }
 }

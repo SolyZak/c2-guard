@@ -21,11 +21,11 @@ public class ServicePlatform {
     private Long id;
 
     @Column(name = "name", unique = true)
-    @Enumerated(EnumType.STRING)
-    private ServicePlatformEnum name;
+    private String name;
 
     @Column(name = "code", unique = true)
-    private String code;
+    @Enumerated(EnumType.STRING)
+    private ServicePlatformEnum code;
 
     @OneToMany(mappedBy = "servicePlatform")
     private List<AlertTrigger> alertTriggers;
