@@ -96,7 +96,7 @@ public class TaskMissedStatusJob extends DateTimeScheduledTaskFactory {
         final Task task = distribution.getTask();
         TriggerEventDto triggerEventDto = TriggerEventDto.builder()
                 .triggerId(trigger.getId())
-                .triggerName(trigger.getName())
+                .triggerName(trigger.getCode())
                 .operationSiteId(distribution.getSite().getId())
                 .customerId(distribution.getCustomer().getId())
                 .longitude(distribution.getSite().getLongitude())
