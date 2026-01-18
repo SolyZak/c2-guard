@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dto;
 
+import com.eden.eden_crm_sec_crm_back.enums.Severity;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,5 +13,5 @@ public class TriggerWithAlertTriggerResponse {
     private String nameAr;
     private String code;
     private String creationType;
-    private String severity;
+    private Severity severity;
 }

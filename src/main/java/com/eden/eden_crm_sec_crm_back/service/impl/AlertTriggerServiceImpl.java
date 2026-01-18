@@ -58,8 +58,6 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
 
         Map<ServicePlatformEnum, Map<Long, TriggerResponse>> triggers = new EnumMap<>(ServicePlatformEnum.class);
         Set<ServicePlatformEnum> servicePlatformCodes = alertTriggers.stream().map(AlertTriggerWithSeverityProjection::getServicePlatformCode).collect(Collectors.toSet());
-        if (servicePlatformCodes.contains(ServicePlatformEnum.PATROLS))
-            servicePlatformCodes.remove(ServicePlatformEnum.INCIDENTS);
 
         servicePlatformCodes.forEach(servicePlatform -> {
             List<TriggerResponse> responses = getTriggers(servicePlatform);
@@ -72,13 +70,11 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
         alertTriggers.forEach(alertTrigger -> {
             triggerMap.putIfAbsent(alertTrigger.getServicePlatformCode(), new ArrayList<>());
             ServicePlatformEnum servicePlatformEnum = alertTrigger.getServicePlatformCode();
-            if (servicePlatformEnum == ServicePlatformEnum.INCIDENTS)
-                servicePlatformEnum = ServicePlatformEnum.PATROLS;
 
             TriggerResponse triggerResponse = triggers.get(servicePlatformEnum).get(alertTrigger.getTriggerId());
             TriggerWithAlertTriggerResponse triggerWithAlertTriggerResponse = triggerMapper.toTriggerWithAlertTriggerResponse(triggerResponse);
             triggerWithAlertTriggerResponse.setId(alertTrigger.getId());
-            triggerWithAlertTriggerResponse.setSeverity(alertTrigger.getSeverity().name());
+            triggerWithAlertTriggerResponse.setSeverity(alertTrigger.getSeverity());
             triggerMap.get(servicePlatformEnum).add(triggerWithAlertTriggerResponse);
         });
 
