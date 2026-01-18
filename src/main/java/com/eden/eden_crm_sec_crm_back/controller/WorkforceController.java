@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
+import com.eden.eden_crm_sec_crm_back.dto.request.WorkforceLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteJobDescResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/workforce")
@@ -99,5 +101,14 @@ public class WorkforceController {
     public ApiResponse<TaskCheckDto> executeTask(@Valid @RequestBody AddTaskDistributionRequest request) {
         taskService.executeTask(request);
         return ApiResponse.created();
+    }
+
+    @PostMapping("/{id}/location")
+    public ApiResponse<Map<String, String>> addWorkforceLocation(
+        @PathVariable("id") Long workforceId,
+        @Valid@RequestBody WorkforceLocationRequest workforceLocationRequest
+    ) {
+        workforceService.addWorkforceLocation(workforceId, workforceLocationRequest);
+        return ApiResponse.ok(Map.of("message", "Workforce location updated successfully"));
     }
 }
