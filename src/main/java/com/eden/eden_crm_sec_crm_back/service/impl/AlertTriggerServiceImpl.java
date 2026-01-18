@@ -78,7 +78,7 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
             TriggerResponse triggerResponse = triggers.get(servicePlatformEnum).get(alertTrigger.getTriggerId());
             TriggerWithAlertTriggerResponse triggerWithAlertTriggerResponse = triggerMapper.toTriggerWithAlertTriggerResponse(triggerResponse);
             triggerWithAlertTriggerResponse.setId(alertTrigger.getId());
-            triggerWithAlertTriggerResponse.setSeverity(alertTrigger.getSeverity().name());
+            triggerWithAlertTriggerResponse.setSeverity(alertTrigger.getSeverity());
             triggerMap.get(servicePlatformEnum).add(triggerWithAlertTriggerResponse);
         });
 
