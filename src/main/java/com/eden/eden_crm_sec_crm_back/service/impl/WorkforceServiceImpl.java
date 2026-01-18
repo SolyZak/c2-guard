@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
+import com.eden.eden_crm_sec_crm_back.dto.request.WorkforceLocationRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionWorkingPeriodDto;
@@ -33,7 +34,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.time.*;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -217,6 +221,11 @@ public class WorkforceServiceImpl implements WorkforceService {
             log.error("WorkforceServiceImpl::customersDropdown, Error while try to get workforce details from org unit, error: {}", e.getMessage());
             throw new UserNotProvided();
         }
+    }
+
+    @Override
+    public void addWorkforceLocation(Long id, WorkforceLocationRequest workforceLocationRequest) {
+        orgUnitClient.addWorkforceLocation(id, workforceLocationRequest);
     }
 
     private boolean isWorkingPeriod(
