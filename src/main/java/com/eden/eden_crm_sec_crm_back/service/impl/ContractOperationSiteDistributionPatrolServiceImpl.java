@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -155,7 +156,9 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                                     customer,
                                     patrolOptional.get().getFrequency(),
                                     TaskDistributionStatus.CREATED.name(),
-                                    request.getTimePeriodId()
+                                    request.getTimePeriodId(),
+                                    OffsetDateTime.now(),
+                                    null
                             );
                             distributionForPatrols.add(contractDistributionForPatrol);
                     }
@@ -235,7 +238,9 @@ public class ContractOperationSiteDistributionPatrolServiceImpl implements Contr
                                     customer,
                                     patrolOptional.get().getFrequency(),
                                     TaskDistributionStatus.CREATED.name(),
-                                    request.getTimePeriodId()
+                                    request.getTimePeriodId(),
+                                    OffsetDateTime.now(),
+                                    null
                             );
 
                     if (weekDays.contains(currentStartDate.getDayOfWeek().name().toUpperCase())) {
