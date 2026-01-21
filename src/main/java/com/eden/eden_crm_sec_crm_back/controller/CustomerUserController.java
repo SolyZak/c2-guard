@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
@@ -45,5 +46,9 @@ public class CustomerUserController {
             @RequestParam(required = false, name = "search") String search
     ) {
         return ApiResponse.ok(customerUserService.paginated(search, page, size));
+    }
+    @GetMapping("/info")
+    ApiResponse<CustomerUserInfoResponse> getLoggedInCustomerUser() {
+        return ApiResponse.ok(customerUserService.getLoggedInUserInfo());
     }
 }
