@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
+import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.identity.KeycloakClient;
@@ -121,5 +122,17 @@ public class CustomerUserServiceImpl implements CustomerUserService {
                 ", password: " + password + "<br>" +
                 "You can login through the following link <a href=\"" + customerPortalUrl + "\">visit link</a>" + "<br>";
         asyncEmailService.sendHtmlEmailAsync(emailTo, subject, body);
+    }
+
+    @Override
+    public CustomerUserInfoResponse getLoggedInUserInfo() {
+        var userData = utils.getLoggedInUser();
+
+        return CustomerUserInfoResponse.builder()
+                .id(userData.getId())
+                .name(userData.getName())
+                .type(userData.getType())
+                .customerId(userData.getCustomerId())
+                .build();
     }
 }
