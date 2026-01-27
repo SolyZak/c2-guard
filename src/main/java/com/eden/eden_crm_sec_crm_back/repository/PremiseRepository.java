@@ -13,6 +13,12 @@ public interface PremiseRepository extends JpaRepository<Premise, Long>, JpaSpec
 
     Optional<Premise> findByCodeOrName(String code, String name);
 
+    Optional<Premise> findByCodeAndIdNot(String code, Long id);
+
+    Optional<Premise> findByNameAndIdNot(String name, Long id);
+
+    Optional<Premise> findByIdAndCustomer_Id(Long id, Long customerId);
+
     @Query("select p from Premise p where p.customer.id = :customerId")
     List<Premise> getCustomerPremises(@Param("customerId") Long customerId);
 }

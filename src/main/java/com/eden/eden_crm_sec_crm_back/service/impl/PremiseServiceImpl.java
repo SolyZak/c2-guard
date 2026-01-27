@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.PremiseRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.PremiseUpdateRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseResponseDto;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.exception.ValidationException;
@@ -43,5 +44,44 @@ public class PremiseServiceImpl {
     public List<PremiseResponseDto> getPremises() {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         return premiseRepository.getCustomerPremises(customer.getId()).stream().map(premiseMapper::fromEntity).toList();
+    }
+
+    public PremiseResponseDto getPremiseById(Long premiseId) {
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+
+        Premise premise = premiseRepository
+                .findByIdAndCustomer_Id(premiseId, customerId)
+                .orElseThrow(() -> new ValidationException("message", "Premise not found"));
+
+        return premiseMapper.fromEntity(premise);
+    }
+
+    public PremiseResponseDto updatePremisePartial(Long premiseId, PremiseUpdateRequestDto requestDto) {
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+
+        Premise premise = premiseRepository
+                .findByIdAndCustomer_Id(premiseId, customerId)
+                .orElseThrow(() -> new ValidationException("message", "Premise not found"));
+
+
+        if (requestDto.getCode() != null) {
+            premiseRepository.findByCodeAndIdNot(requestDto.getCode(), premiseId)
+                    .ifPresent(p -> {
+                        throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
+                    });
+        }
+
+        if (requestDto.getName() != null) {
+            premiseRepository.findByNameAndIdNot(requestDto.getName(), premiseId)
+                    .ifPresent(p -> {
+                        throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
+                    });
+        }
+
+        // Partial update: nulls are ignored
+        premiseMapper.updateEntityFromDto(requestDto, premise);
+
+        premiseRepository.save(premise);
+        return premiseMapper.fromEntity(premise);
     }
 }
