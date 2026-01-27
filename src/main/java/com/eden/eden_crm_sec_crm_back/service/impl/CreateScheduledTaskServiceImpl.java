@@ -7,10 +7,12 @@ import com.eden.eden_crm_sec_crm_back.tasks.TaskMissedStatusJob;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github._0xorigin.flexscheduler.base.dtos.DateTimeScheduledTaskRequest;
+import io.github._0xorigin.flexscheduler.base.entities.ScheduledTaskEntity;
 import io.github._0xorigin.flexscheduler.services.base.TaskSchedulerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -22,6 +24,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
     private final TaskSchedulerService taskSchedulerService;
 
     @Async
+    @Transactional
     public CompletableFuture<Void> createDistributionScheduledTasks(
             List<ContractOperationSiteDistributionPatrol> distributionForPatrols,
             Long contractId,
@@ -65,8 +68,9 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                             .build();
                 }).toList();
 
-        taskSchedulerService.createTasksAndSchedule(scheduledTaskCurrentRequests);
-        taskSchedulerService.createTasksAndSchedule(scheduledTaskMissedRequests);
+        List<ScheduledTaskEntity> tasks = taskSchedulerService.createTasksInstances(scheduledTaskCurrentRequests);
+        tasks.addAll(taskSchedulerService.createTasksInstances(scheduledTaskMissedRequests));
+        taskSchedulerService.scheduleTasksIfExecuteToday(tasks);
         return CompletableFuture.completedFuture(null);
     }
 }
