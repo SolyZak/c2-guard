@@ -42,6 +42,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                             .plannedExecutionTime(taskStartDateTime)
                             .arguments(taskParams)
                             .taskType(TaskMissedStatusJob.TASK_TYPE)
+                            .isActive(true)
                             .build();
                 }).toList();
 
@@ -60,6 +61,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                             .plannedExecutionTime(taskEndDateTime)
                             .arguments(taskParams)
                             .taskType(TaskCurrentStatusJob.TASK_TYPE)
+                            .isActive(true)
                             .build();
                 }).toList();
 
