@@ -28,14 +28,19 @@ public class PremiseServiceImpl {
     private final Utils utils;
 
     public PremiseResponseDto addPremise(PremiseRequestDto requestDto) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+        Customer customer = customerRepository.findById(customerId).orElseThrow(UserNotProvided::new);
+
         Premise premise = premiseMapper.toEntity(requestDto);
-        Optional<Premise> premiseExists = premiseRepository.findByCodeOrName(premise.getCode(), premise.getName());
+
+        Optional<Premise> premiseExists =
+                premiseRepository.findDuplicateByCustomerAndCodeOrName(customerId, premise.getCode(), premise.getName());
+
         if (premiseExists.isPresent()) {
             throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
         }
-        premise.setCustomer(customer);
 
+        premise.setCustomer(customer);
         premiseRepository.save(premise);
 
         return premiseMapper.fromEntity(premise);
@@ -63,25 +68,23 @@ public class PremiseServiceImpl {
                 .findByIdAndCustomer_Id(premiseId, customerId)
                 .orElseThrow(() -> new ValidationException("message", "Premise not found"));
 
-
         if (requestDto.getCode() != null) {
-            premiseRepository.findByCodeAndIdNot(requestDto.getCode(), premiseId)
+            premiseRepository.findByCustomerIdAndCodeAndIdNot(customerId, requestDto.getCode(), premiseId)
                     .ifPresent(p -> {
                         throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
                     });
         }
 
         if (requestDto.getName() != null) {
-            premiseRepository.findByNameAndIdNot(requestDto.getName(), premiseId)
+            premiseRepository.findByCustomerIdAndNameAndIdNot(customerId, requestDto.getName(), premiseId)
                     .ifPresent(p -> {
                         throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
                     });
         }
 
-        // Partial update: nulls are ignored
         premiseMapper.updateEntityFromDto(requestDto, premise);
-
         premiseRepository.save(premise);
+
         return premiseMapper.fromEntity(premise);
     }
 }
