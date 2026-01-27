@@ -1,45 +1,25 @@
-package com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks;
+package com.eden.eden_crm_sec_crm_back.tasks;
 
 import com.eden.eden_crm_sec_crm_back.base.exception.BusinessException;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.factories.DateTimeScheduledTaskFactory;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.mappers.ScheduledTaskMapper;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskExecutionLogRepository;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.repositories.ScheduledTaskRepository;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.utils.JsonNodeUtils;
 import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
 import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.validation.Validator;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Scope;
+import io.github._0xorigin.flexscheduler.base.factories.tasks.base.ScheduledTaskFactory;
+import io.github._0xorigin.flexscheduler.utils.JsonNodeUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
-@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class TaskCurrentStatusJob extends DateTimeScheduledTaskFactory {
+@RequiredArgsConstructor
+public class TaskCurrentStatusJob implements ScheduledTaskFactory {
 
     public static final String TASK_TYPE = "TaskCurrentStatus";
     private final ContractOperationSiteDistributionPatrolRepository repository;
-
-    public TaskCurrentStatusJob(
-        ApplicationContext applicationContext,
-        ObjectMapper objectMapper,
-        ScheduledTaskRepository taskRepository,
-        ScheduledTaskExecutionLogRepository logRepository,
-        ScheduledTaskMapper scheduledTaskMapper,
-        Validator validator,
-        ContractOperationSiteDistributionPatrolRepository repository
-    ) {
-        super(applicationContext, objectMapper, taskRepository, logRepository, scheduledTaskMapper, validator);
-        this.repository = repository;
-    }
 
     @Override
     public String getTaskType() {
@@ -48,7 +28,7 @@ public class TaskCurrentStatusJob extends DateTimeScheduledTaskFactory {
 
     @Override
     public JsonNode performTask(JsonNode arguments) {
-        Long patrolDistributionId = JsonNodeUtils.getLongArg(arguments, "patrolDistributionId")
+        Long patrolDistributionId = JsonNodeUtils.getOptionalLong(arguments, "patrolDistributionId")
                 .orElseThrow(() -> new BusinessException("Patrol distribution id is required", HttpStatus.BAD_REQUEST));
 
         Optional<ContractOperationSiteDistributionPatrol> optionalDistribution = repository.findById(patrolDistributionId);

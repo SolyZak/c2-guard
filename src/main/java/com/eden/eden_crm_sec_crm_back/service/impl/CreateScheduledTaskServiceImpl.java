@@ -1,14 +1,13 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.dtos.DateTimeScheduledTaskRequest;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskEntity;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.services.TaskSchedulerService;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks.TaskCurrentStatusJob;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks.TaskMissedStatusJob;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
 import com.eden.eden_crm_sec_crm_back.service.CreateScheduledTaskService;
+import com.eden.eden_crm_sec_crm_back.tasks.TaskCurrentStatusJob;
+import com.eden.eden_crm_sec_crm_back.tasks.TaskMissedStatusJob;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github._0xorigin.flexscheduler.base.dtos.DateTimeScheduledTaskRequest;
+import io.github._0xorigin.flexscheduler.services.base.TaskSchedulerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -17,11 +16,9 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskService {
-    private final TaskMissedStatusJob taskMissedStatusJob;
-    private final TaskCurrentStatusJob taskCurrentStatusJob;
     private final TaskSchedulerService taskSchedulerService;
 
     @Async
@@ -34,7 +31,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                 .stream()
                 .map(distributionForPatrol -> {
                     OffsetDateTime taskStartDateTime = distributionForPatrol.getEndDate().atTime(distributionForPatrol.getToTime());
-                    String taskName = "TaskMissedStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
+                    String taskName = "Patrol distribution id: %s, Contract id: %s, Service id: %s"
                             .formatted(distributionForPatrol.getId(), contractId, serviceId);
                     ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
                     taskParams.put("patrolDistributionId", distributionForPatrol.getId());
@@ -44,6 +41,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                             .name(taskName)
                             .plannedExecutionTime(taskStartDateTime)
                             .arguments(taskParams)
+                            .taskType(TaskMissedStatusJob.TASK_TYPE)
                             .build();
                 }).toList();
 
@@ -51,7 +49,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                 .stream()
                 .map(distributionForPatrol -> {
                     OffsetDateTime taskEndDateTime = distributionForPatrol.getStartDate().atTime(distributionForPatrol.getFromTime());
-                    String taskName = "TaskCurrentStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
+                    String taskName = "Patrol distribution id: %s, Contract id: %s, Service id: %s"
                             .formatted(distributionForPatrol.getId(), contractId, serviceId);
                     ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
                     taskParams.put("patrolDistributionId", distributionForPatrol.getId());
@@ -61,13 +59,12 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                             .name(taskName)
                             .plannedExecutionTime(taskEndDateTime)
                             .arguments(taskParams)
+                            .taskType(TaskCurrentStatusJob.TASK_TYPE)
                             .build();
                 }).toList();
 
-        List<ScheduledTaskEntity> tasksList = taskMissedStatusJob.createTasks(scheduledTaskMissedRequests);
-        List<ScheduledTaskEntity> tasksListCurrent = taskCurrentStatusJob.createTasks(scheduledTaskCurrentRequests);
-        tasksList.addAll(tasksListCurrent);
-        taskSchedulerService.scheduleTasksIfExecuteToday(tasksList);
+        taskSchedulerService.createTasksAndSchedule(scheduledTaskCurrentRequests);
+        taskSchedulerService.createTasksAndSchedule(scheduledTaskMissedRequests);
         return CompletableFuture.completedFuture(null);
     }
 }
