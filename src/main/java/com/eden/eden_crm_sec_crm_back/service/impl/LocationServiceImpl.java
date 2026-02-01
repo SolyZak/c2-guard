@@ -199,11 +199,14 @@ public class LocationServiceImpl implements LocationService {
         List<PremiseLocationDto> premiseLocationDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (LocationProjection location : resultPage.getContent()) {
+                Optional<Premise> premise = Optional.ofNullable(location.getPremise());
                 PremiseLocationDto dto = new PremiseLocationDto(
                         location.getId(),
                         location.getName(),
                         location.getAccessType(),
-                        location.getPremise() != null ? location.getPremise().getName() : "",
+                        premise.map(Premise::getName).orElse(""),
+                        premise.map(Premise::getLatitude).orElse(null),
+                        premise.map(Premise::getLongitude).orElse(null),
                         location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())
                                 ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())),
                         location.getLatitude(),
