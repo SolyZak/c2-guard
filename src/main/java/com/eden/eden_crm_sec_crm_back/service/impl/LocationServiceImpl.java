@@ -202,20 +202,24 @@ public class LocationServiceImpl implements LocationService {
                 .searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
 
         List<PremiseLocationDto> dtos = new ArrayList<>();
-        for (LocationProjection location : resultPage.getContent()) {
-            PremiseLocationDto dto = new PremiseLocationDto(
-                    location.getId(),
-                    location.getName(),
-                    location.getAccessType(),
-                    location.getPremise() != null ? location.getPremise().getName() : "",
-                    location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())
-                            ? ""
-                            : Base64.getEncoder().encodeToString(getQrImage(location.getId())),
-                    location.getLatitude(),
-                    location.getLongitude(),
-                    location.getTolerance()
-            );
-            dtos.add(dto);
+        if (resultPage.getContent() != null) {
+            for (LocationProjection location : resultPage.getContent()) {
+                Optional<Premise> premise = Optional.ofNullable(location.getPremise());
+                PremiseLocationDto dto = new PremiseLocationDto(
+                        location.getId(),
+                        location.getName(),
+                        location.getAccessType(),
+                        premise.map(Premise::getName).orElse(""),
+                        premise.map(Premise::getLatitude).orElse(null),
+                        premise.map(Premise::getLongitude).orElse(null),
+                        location.getAccessType().equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())
+                                ? "" : Base64.getEncoder().encodeToString(getQrImage(location.getId())),
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        location.getTolerance()
+                );
+                dtos.add(dto);
+            }
         }
 
         if (!paginated) {

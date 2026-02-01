@@ -26,6 +26,7 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     JOIN Premise p on p.id = l.premise.id 
     WHERE l.customer.id = :customerId 
     AND (lower(p.name) like lower(concat('%', :search, '%')) 
+         OR CAST(p.id AS string) like concat('%', :search, '%')
          OR lower(l.name) like lower(concat('%', :search, '%')) 
          OR lower(l.accessType) like lower(concat('%', :search, '%')) 
          OR :search is null)
