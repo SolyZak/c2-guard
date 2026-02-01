@@ -60,6 +60,8 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
             cosdp.status AS status,
             tc.evidence AS hasEvidence, 
             te.image AS evidenceImage, 
+            te.comment AS comment,
+            te.commentCheck AS commentCheck,
             MIN(cosdp.startDate) AS taskStartDate, 
             MAX(cosdp.endDate) AS taskEndDate
         FROM ContractOperationSiteDistributionPatrol cosdp
@@ -73,7 +75,7 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
         LEFT JOIN TaskCheckPatrolExecution te ON te.id = tc.id
         WHERE p.id = :premiseId
           AND patrol.id = :patrolId
-        GROUP BY locationId, siteId, serviceId, taskId, serviceName, siteName, taskName, status, hasEvidence, evidenceImage
+        GROUP BY locationId, siteId, serviceId, taskId, serviceName, siteName, taskName, status, hasEvidence, evidenceImage, te.comment, te.commentCheck
     """)
     List<PatrolReportDetailsAggregation> findPatrolDetails(@Param("premiseId") Long premiseId, @Param("patrolId") Long patrolId);
 

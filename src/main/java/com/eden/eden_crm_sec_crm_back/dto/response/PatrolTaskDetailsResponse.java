@@ -17,5 +17,7 @@ public record PatrolTaskDetailsResponse(
         String serviceName,
         Boolean hasEvidence,
         String evidenceImage,
-        Long locationId
+        Long locationId,
+        Boolean commentCheck,
+        String comment
 ) {}
