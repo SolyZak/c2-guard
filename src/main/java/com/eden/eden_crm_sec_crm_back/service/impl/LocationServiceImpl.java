@@ -189,14 +189,19 @@ public class LocationServiceImpl implements LocationService {
 
 
     @Override
-    public PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size) {
+    public PaginateResponse<PremiseLocationDto> getLocations(String search, int page, int size, boolean paginated) {
+
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId())
                 .orElseThrow(UserNotProvided::new);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        Pageable pageable = paginated
+                ? PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+                : Pageable.unpaged();
+
         Page<LocationProjection> resultPage = locationRepository
                 .searchByPremiseNameAndLocationNameAndAccessType(search, customer.getId(), pageable);
 
-        List<PremiseLocationDto> premiseLocationDtos = new ArrayList<>();
+        List<PremiseLocationDto> dtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (LocationProjection location : resultPage.getContent()) {
                 Optional<Premise> premise = Optional.ofNullable(location.getPremise());
@@ -213,11 +218,22 @@ public class LocationServiceImpl implements LocationService {
                         location.getLongitude(),
                         location.getTolerance()
                 );
-                premiseLocationDtos.add(dto);
+                dtos.add(dto);
             }
         }
+
+        if (!paginated) {
+            return new PaginateResponse<>(
+                    dtos,
+                    0,
+                    dtos.size(),
+                    (long) dtos.size(),
+                    1L
+            );
+        }
+
         return new PaginateResponse<>(
-                premiseLocationDtos,
+                dtos,
                 page,
                 size,
                 resultPage.getTotalElements(),
@@ -261,7 +277,7 @@ public class LocationServiceImpl implements LocationService {
                     lp.getName(),
                     lp.getLongitude() != null ? lp.getLongitude(): null,
                     lp.getLatitude() != null ? lp.getLatitude(): null,
-                    lp.getTolerance() != null ? lp.getLatitude(): null
+                    lp.getTolerance() != null ? lp.getTolerance(): null
             ));
         }
         return result;

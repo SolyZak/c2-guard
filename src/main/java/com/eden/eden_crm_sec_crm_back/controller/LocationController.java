@@ -39,10 +39,13 @@ public class LocationController {
     }
 
     @GetMapping
-    ApiResponse<PaginateResponse<PremiseLocationDto>> listLocations(@RequestParam(defaultValue = "0", name = "page") Integer page,
-                                                                                                   @RequestParam(defaultValue = "10", name = "size") Integer size,
-                                                                                                   @RequestParam(required = false, name = "search") String search) {
-        return ApiResponse.ok(locationService.getLocationsPaginated(search, page, size));
+    ApiResponse<PaginateResponse<PremiseLocationDto>> listLocations(
+            @RequestParam(defaultValue = "0", name = "page") Integer page,
+            @RequestParam(defaultValue = "10", name = "size") Integer size,
+            @RequestParam(required = false, name = "search") String search,
+            @RequestParam(defaultValue = "true", name = "paginated") boolean paginated
+    ) {
+        return ApiResponse.ok(locationService.getLocations(search, page, size, paginated));
     }
 
     @GetMapping("/all")
