@@ -29,11 +29,13 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
          OR lower(l.name) like lower(concat('%', :search, '%')) 
          OR lower(l.accessType) like lower(concat('%', :search, '%')) 
          OR :search is null)
+    ORDER BY l.id DESC
 """)
     Page<LocationProjection> searchByPremiseNameAndLocationNameAndAccessType(
             @Param("search") String search,
             @Param("customerId") Long customerId,
-            Pageable pageable);
+            Pageable pageable
+    );
 
     @Query(value = """
             select l.name from location l INNER JOIN patrol_detail lpd on l.id = lpd.location_id where lpd.id = :detailsId 

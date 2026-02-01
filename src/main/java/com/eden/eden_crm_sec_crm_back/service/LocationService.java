@@ -18,7 +18,7 @@
 
         UpdateLocationResponse updateLocation(Long id, UpdateLocationRequest request);
 
-        PaginateResponse<PremiseLocationDto> getLocationsPaginated(String search, int page, int size);
+        PaginateResponse<PremiseLocationDto> getLocations(String search, int page, int size,boolean paginated);
 
         List<LocationWithPremiseDto> findLoggedInCustomerLocations();
 
