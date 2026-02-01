@@ -7,6 +7,8 @@ public record PremiseLocationDto(
         String name,
         String accessType,
         String premiseName,
+        BigDecimal premiseLatitude,
+        BigDecimal premiseLongitude,
         String qrCode,
         BigDecimal latitude,
         BigDecimal longitude,
