@@ -105,7 +105,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             distributionsToSave.add(taskDistribution);
         }
 
-        distributionsToSave = taskDistributionRepository.saveAll(distributionsToSave);
+        distributionsToSave = taskDistributionRepository.saveAllAndFlush(distributionsToSave);
 
         // add scheduled tasks
     }
@@ -143,7 +143,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         List<TaskAssignment> taskAssignments = createTaskAssignmentsByWorkforceId(customer, distributeImmediateTaskRequest.workforceIds(), assignedAt);
         List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(customer, taskDistribution, taskAssignments);
         taskDistribution.setDistributionTimes(executionSlots);
-        taskDistribution = taskDistributionRepository.save(taskDistribution);
+        taskDistribution = taskDistributionRepository.saveAndFlush(taskDistribution);
 
         // add scheduled tasks
     }
