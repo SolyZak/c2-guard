@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -70,7 +72,20 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
 
         List<ScheduledTaskEntity> tasks = taskSchedulerService.createTasksInstances(scheduledTaskCurrentRequests);
         tasks.addAll(taskSchedulerService.createTasksInstances(scheduledTaskMissedRequests));
-        taskSchedulerService.scheduleTasksIfExecuteToday(tasks);
+
+        // Ensure tasks are scheduled only after the surrounding transaction successfully commits.
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    taskSchedulerService.scheduleTasksIfExecuteToday(tasks);
+                }
+            });
+        } else {
+            // If there's no active transaction synchronization, schedule immediately.
+            taskSchedulerService.scheduleTasksIfExecuteToday(tasks);
+        }
+
         return CompletableFuture.completedFuture(null);
     }
 }
