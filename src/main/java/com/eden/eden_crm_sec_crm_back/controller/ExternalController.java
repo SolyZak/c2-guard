@@ -2,7 +2,6 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
-import com.eden.eden_crm_sec_crm_back.dto.external.AttendanceWorkingPeriodData;
 import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/external")
@@ -118,6 +118,11 @@ public class ExternalController {
             @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         return externalService.getContractPlannedQnt(null, securityCompanyId, contractId, from, to);
+    }
+
+    @PostMapping("/workforce/has-activity")
+    public Map<String, Object> workforceHasActivity(@RequestBody WorkforceHasActivityRequest request) {
+        return externalService.workforceHasActivity(request);
     }
 
     @Operation(summary = "Get logged in customer user data")
