@@ -1,22 +1,18 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
+import com.eden.eden_crm_sec_crm_back.enums.LocationAccessTypeEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.*;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
-import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
-import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
-import com.eden.eden_crm_sec_crm_back.repository.PatrolDetailRepository;
-import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
+import com.eden.eden_crm_sec_crm_back.objects.UserData;
+import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributeImmediateTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskRequest;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.PatrolTaskDistribution;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskAssignment;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskDistribution;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskExecutionSlot;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskAssignmentRepository;
@@ -30,17 +26,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -52,13 +44,16 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     public static final String WEEKLY_RATE = "weekly";
     public static final String MONTHLY_RATE = "monthly";
     private final CustomerRepository customerRepository;
+    private final CustomerSiteRepository customerSiteRepository;
     private final CustomerContractRepository customerContractRepository;
     private final LKCustomerContractServiceRepository customerContractServiceRepository;
     private final SiteDistributionRepository siteDistributionRepository;
     private final LKCustomerContractOperationServiceRepository customerContractOperationServiceRepository;
     private final PatrolDetailRepository patrolDetailRepository;
+    private final TaskRepository taskRepository;
     private final TaskDistributionRepository taskDistributionRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
+    private final LocationRepository locationRepository;
     private final Utils utils;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
@@ -67,7 +62,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     public void distributePatrolTasks(DistributePatrolTaskRequest distributePatrolTaskRequest) {
         validatePatrolDistributionStartDate(distributePatrolTaskRequest.startDate());
 
-        Customer customer = getLoggedInCustomer();
+        UserData loggedInUser = getLoggedInUser();
+        Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
         CustomerContract contract = getContract(distributePatrolTaskRequest.contractId());
         LKCustomerContractService service = getService(distributePatrolTaskRequest.serviceId());
         SiteDistribution siteDistribution = getSiteDistribution(distributePatrolTaskRequest);
@@ -81,7 +77,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         Map<String, List<TaskTimeWindow>> timeWindowsCache = new HashMap<>();
         List<TaskDistribution> distributionsToSave = new ArrayList<>();
 
-        patrolDetails.forEach(patrolDetail -> {
+        for(PatrolDetail patrolDetail : patrolDetails) {
             Patrol patrol = validateAndGetPatrol(patrolDetail, customer);
             TaskDistribution taskDistribution = buildPatrolTaskDistributionBase(customer, contract, service, siteDistribution, patrolDetail);
             PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(customer, taskDistribution, patrolDetail, serviceTime, patrol);
@@ -107,16 +103,49 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             taskDistribution.setDistributionTimes(executionSlots);
 
             distributionsToSave.add(taskDistribution);
-        });
+        }
 
-        taskDistributionRepository.saveAll(distributionsToSave);
+        distributionsToSave = taskDistributionRepository.saveAll(distributionsToSave);
 
         // add scheduled tasks
     }
 
     @Override
+    @Transactional
     public void distributeImmediateTasks(DistributeImmediateTaskRequest distributeImmediateTaskRequest) {
+        UserData loggedInUser = getLoggedInUser();
+        Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
+        CustomerContract contract = getContract(distributeImmediateTaskRequest.contractId());
+        LKCustomerContractService service = getService(distributeImmediateTaskRequest.serviceId());
+        CustomerSite site = getSite(distributeImmediateTaskRequest.siteId());
+        Task task = getTask(distributeImmediateTaskRequest.taskId());
+        Location location = getOrCreateLocation(
+            distributeImmediateTaskRequest.locationId(),
+            distributeImmediateTaskRequest.locationName(),
+            distributeImmediateTaskRequest.latitude(),
+            distributeImmediateTaskRequest.longitude(),
+            site.getPremise(),
+            customer
+        );
 
+        TaskDistribution taskDistribution = buildImmediateTaskDistributionBase(
+            customer,
+            contract,
+            service,
+            site,
+            location,
+            task
+        );
+        ImmediateTaskDistribution immediateTaskDistribution = buildImmediateTaskDistribution(customer, taskDistribution, Long.valueOf(loggedInUser.getId()));
+        taskDistribution.setImmediateTaskDistribution(immediateTaskDistribution);
+
+        OffsetDateTime assignedAt = OffsetDateTime.now();
+        List<TaskAssignment> taskAssignments = createTaskAssignmentsByWorkforceId(customer, distributeImmediateTaskRequest.workforceIds(), assignedAt);
+        List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(customer, taskDistribution, taskAssignments);
+        taskDistribution.setDistributionTimes(executionSlots);
+        taskDistribution = taskDistributionRepository.save(taskDistribution);
+
+        // add scheduled tasks
     }
 
     private static void validatePatrolDistributionStartDate(LocalDate startDate) {
@@ -127,9 +156,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             );
     }
 
-    private Customer getLoggedInCustomer() {
-        return customerRepository
-            .findById(utils.getLoggedInUser().getCustomerId())
+    private Customer getLoggedInCustomer(Long customerId) {
+        return customerRepository.findById(customerId)
             .orElseThrow(UserNotProvided::new);
     }
 
@@ -153,6 +181,39 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
                 distributePatrolTaskRequest.serviceId()
             )
             .orElseThrow(() -> new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST));
+    }
+
+    private CustomerSite getSite(Long siteId) {
+        return customerSiteRepository.findById(siteId)
+            .orElseThrow(() -> new BusinessException("invalid site", HttpStatus.BAD_REQUEST));
+    }
+
+    private Task getTask(Long taskId) {
+        return taskRepository.findById(taskId)
+            .orElseThrow(() -> new BusinessException("invalid task", HttpStatus.BAD_REQUEST));
+    }
+
+    private Location getOrCreateLocation(
+        Long locationId,
+        String locationName,
+        BigDecimal latitude,
+        BigDecimal longitude,
+        Premise premise,
+        Customer customer
+    ) {
+        if (locationId != null)
+            return locationRepository.findById(locationId)
+                .orElseThrow(() -> new BusinessException("invalid location", HttpStatus.BAD_REQUEST));
+
+        Location location = Location.builder()
+            .name(locationName)
+            .latitude(latitude)
+            .longitude(longitude)
+            .premise(premise)
+            .accessType(LocationAccessTypeEnum.SPECIFIC_POINT.getType())
+            .customer(customer)
+            .build();
+        return locationRepository.save(location);
     }
 
     private LKCustomerContractOperationService getServiceTime(Long serviceTimeId, SiteDistribution siteDistribution) {
@@ -184,14 +245,18 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         );
     }
 
-    private TaskAssignment createTaskAssignmentByWorkforceId(Customer customer, Long workforceId, OffsetDateTime assignedAt) {
-        return taskAssignmentRepository.save(
-            TaskAssignment.builder()
-                .slotNumber(null)
-                .assignedAt(assignedAt)
-                .customer(customer)
-                .workforceId(workforceId)
-                .build()
+    private List<TaskAssignment> createTaskAssignmentsByWorkforceId(Customer customer, List<Long> workforceIds, OffsetDateTime assignedAt) {
+        return taskAssignmentRepository.saveAll(
+            workforceIds.stream()
+                .map(workforceId ->
+                    TaskAssignment.builder()
+                        .slotNumber(null)
+                        .assignedAt(assignedAt)
+                        .customer(customer)
+                        .workforceId(workforceId)
+                        .build()
+                )
+                .toList()
         );
     }
 
@@ -213,6 +278,25 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .build();
     }
 
+    private static TaskDistribution buildImmediateTaskDistributionBase(
+        Customer customer,
+        CustomerContract contract,
+        LKCustomerContractService service,
+        CustomerSite site,
+        Location location,
+        Task task
+    ) {
+        return TaskDistribution.builder()
+            .contract(contract)
+            .service(service)
+            .site(site)
+            .location(location)
+            .task(task)
+            .customer(customer)
+            .distributionType(DistributionType.IMMEDIATE)
+            .build();
+    }
+
     private static PatrolTaskDistribution buildPatrolTaskDistribution(
         Customer customer,
         TaskDistribution taskDistribution,
@@ -226,6 +310,21 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .serviceTime(serviceTime)
             .frequencyRate(patrol.getFrequencyRate())
             .customer(customer)
+            .build();
+    }
+
+    private static ImmediateTaskDistribution buildImmediateTaskDistribution(
+        Customer customer,
+        TaskDistribution taskDistribution,
+        Long loggedInUserId
+    ) {
+        CustomerUser user = new CustomerUser();
+        user.setId(loggedInUserId);
+
+        return ImmediateTaskDistribution.builder()
+            .taskDistribution(taskDistribution)
+            .customer(customer)
+            .dispatcher(user)
             .build();
     }
 
@@ -274,6 +373,24 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
                             .customer(customer)
                             .build()
                     )
+            )
+            .toList();
+    }
+
+    private static List<TaskExecutionSlot> buildExecutionSlotsForImmediateTask(
+        Customer customer,
+        TaskDistribution taskDistribution,
+        List<TaskAssignment> taskAssignments
+    ) {
+        return taskAssignments
+            .stream()
+            .map(taskAssignment ->
+                TaskExecutionSlot.builder()
+                    .taskDistribution(taskDistribution)
+                    .taskAssignment(taskAssignment)
+                    .status(TaskDistributionStatus.CREATED)
+                    .customer(customer)
+                    .build()
             )
             .toList();
     }
@@ -412,5 +529,9 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         return Stream
             .iterate(start, time -> time.isBefore(end), time -> time.plusMinutes(minutesStep))
             .toList();
+    }
+
+    private UserData getLoggedInUser() {
+        return utils.getLoggedInUser();
     }
 }
