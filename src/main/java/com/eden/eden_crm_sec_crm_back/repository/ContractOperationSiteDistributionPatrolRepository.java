@@ -16,9 +16,6 @@ import java.util.Set;
 @Repository
 public interface ContractOperationSiteDistributionPatrolRepository extends JpaRepository<ContractOperationSiteDistributionPatrol, Long>, JpaSpecificationExecutor<ContractOperationSiteDistributionPatrol> {
 
-    @Query("SELECT p FROM ContractOperationSiteDistributionPatrol p WHERE p.customerContract.id = :contractId")
-    List<ContractOperationSiteDistributionPatrol> findAllByCustomerContractId(@Param("contractId") Long contractId);
-
     @Query("""    
          SELECT
             COALESCE(s.premise.id, l.premise.id) AS premiseId,
