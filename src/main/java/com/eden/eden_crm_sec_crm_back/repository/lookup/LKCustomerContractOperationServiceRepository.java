@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface LKCustomerContractOperationServiceRepository extends JpaRepository<LKCustomerContractOperationService, Long> {
@@ -42,4 +43,6 @@ public interface LKCustomerContractOperationServiceRepository extends JpaReposit
     List<DistributionTimesProjection> findAllOffsetStartAndEndByDistributionId(
             @Param("distributionId") Long distributionId
     );
+
+    Optional<LKCustomerContractOperationService> findByIdAndSiteDistribution_Id(Long id, Long siteDistributionId);
 }

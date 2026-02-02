@@ -2,7 +2,6 @@ package com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Builder;
 
 import java.time.LocalDate;
@@ -21,8 +20,5 @@ public record DistributePatrolTaskRequest(
     @NotEmpty
     List<Long> patrolDetailIds,
     @NotNull
-    LocalDate startDate,
-    @NotNull
-    @Positive
-    Integer slotNumber
+    LocalDate startDate
 ) {}
