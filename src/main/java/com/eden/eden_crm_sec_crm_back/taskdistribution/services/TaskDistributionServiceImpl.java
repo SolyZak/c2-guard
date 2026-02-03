@@ -17,6 +17,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskAssignmentRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskDistributionRepository;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.CreateScheduledTaskForDistributionService;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.TaskDistributionService;
 import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
@@ -54,6 +55,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final TaskAssignmentRepository taskAssignmentRepository;
     private final LocationRepository locationRepository;
     private final AttendanceFeignClient attendanceClient;
+    private final CreateScheduledTaskForDistributionService createScheduledTaskForDistributionService;
     private final Utils utils;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
@@ -105,14 +107,19 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
                     timeWindows
             );
             patrolTaskDistribution.setDistributedQuantity(executionSlots.size());
-            taskDistribution.setDistributionTimes(executionSlots);
+            taskDistribution.setExecutionSlots(executionSlots);
 
             distributionsToSave.add(taskDistribution);
         }
 
         distributionsToSave = taskDistributionRepository.saveAllAndFlush(distributionsToSave);
-
-        // add scheduled tasks
+        distributionsToSave.forEach(taskDistribution ->
+            createScheduledTaskForDistributionService.createDistributionScheduledTasks(
+                "patrolTaskDistributionId",
+                taskDistribution.getPatrolTaskDistribution().getId(),
+                taskDistribution.getExecutionSlots()
+            )
+        );
     }
 
     @Override
@@ -143,10 +150,14 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         OffsetDateTime assignedAt = OffsetDateTime.now();
         List<TaskAssignment> taskAssignments = createTaskAssignmentsByWorkforceId(customer, distributeImmediateTaskRequest.workforceIds(), assignedAt);
         List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(customer, taskDistribution, taskAssignments);
-        taskDistribution.setDistributionTimes(executionSlots);
+        taskDistribution.setExecutionSlots(executionSlots);
         taskDistribution = taskDistributionRepository.saveAndFlush(taskDistribution);
 
-        // add scheduled tasks
+        createScheduledTaskForDistributionService.createDistributionScheduledTasks(
+            "ImmediateTaskDistributionId",
+            taskDistribution.getImmediateTaskDistribution().getId(),
+            taskDistribution.getExecutionSlots()
+        );
     }
 
     private static void validatePatrolDistributionStartDate(LocalDate startDate) {
@@ -261,7 +272,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     ) {
         return PatrolTaskDistribution.builder()
             .taskDistribution(taskDistribution)
-            .patrolDetailId(patrolDetail)
+            .patrolDetail(patrolDetail)
             .service(service)
             .location(patrolDetail.getLocation())
             .serviceTime(serviceTime)

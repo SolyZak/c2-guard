@@ -55,5 +55,5 @@ public class TaskDistribution {
     private PatrolTaskDistribution patrolTaskDistribution;
 
     @OneToMany(mappedBy = "taskDistribution", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TaskExecutionSlot> distributionTimes;
+    private List<TaskExecutionSlot> executionSlots;
 }

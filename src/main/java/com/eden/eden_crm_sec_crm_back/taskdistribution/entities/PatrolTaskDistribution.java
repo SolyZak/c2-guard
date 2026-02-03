@@ -28,9 +28,9 @@ public class PatrolTaskDistribution {
     @JoinColumn(name = "task_distribution_id")
     private TaskDistribution taskDistribution;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patrol_detail_id")
-    private PatrolDetail patrolDetailId; // Note one or many
+    private PatrolDetail patrolDetail;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id")
