@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/task-distribution/workforce")
+@RequestMapping("/workforce/task-distribution")
 public class TaskDistributionWorkforceController {
 
     private final DistributedTaskService distributedTaskService;

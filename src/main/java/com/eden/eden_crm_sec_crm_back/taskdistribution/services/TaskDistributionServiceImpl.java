@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
 import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.*;
@@ -10,8 +11,10 @@ import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.AvailableServiceTimesRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributeImmediateTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskRequest;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
@@ -158,6 +161,31 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             taskDistribution.getImmediateTaskDistribution().getId(),
             taskDistribution.getExecutionSlots()
         );
+    }
+
+    @Override
+    public List<AvailableServiceTimeResponse> getAllAvailableServiceTimes(AvailableServiceTimesRequest availableServiceTimesRequest) {
+        UserData loggedInUser = getLoggedInUser();
+        Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
+        CustomTimezone customerTimezone = customer.getTimezone();
+        List<LKCustomerContractOperationService> serviceTimes = customerContractOperationServiceRepository.findAvailableServiceTimes(
+            availableServiceTimesRequest.contractId(),
+            availableServiceTimesRequest.serviceId(),
+            availableServiceTimesRequest.siteId(),
+            availableServiceTimesRequest.patrolId()
+        );
+
+        List<AvailableServiceTimeResponse> result = new ArrayList<>();
+        serviceTimes.forEach(serviceTime ->
+            result.add(
+                AvailableServiceTimeResponse.builder()
+                    .serviceTimeId(serviceTime.getId())
+                    .startTime(DateUtils.withTimeZone(customerTimezone, serviceTime.getFromTime()))
+                    .endTime(DateUtils.withTimeZone(customerTimezone, serviceTime.getToTime()))
+                    .build()
+            )
+        );
+        return result;
     }
 
     private static void validatePatrolDistributionStartDate(LocalDate startDate) {

@@ -45,4 +45,22 @@ public interface LKCustomerContractOperationServiceRepository extends JpaReposit
     );
 
     Optional<LKCustomerContractOperationService> findByIdAndSiteDistribution_Id(Long id, Long siteDistributionId);
+
+    @Query("""
+        SELECT DISTINCT s FROM LKCustomerContractOperationService s
+        JOIN s.siteDistribution sd
+        LEFT JOIN s.patrolTaskDistributions ptd
+        LEFT JOIN ptd.patrolDetail pd
+        LEFT JOIN pd.patrol p
+        WHERE sd.customerContract.id = :contractId
+        AND sd.lkCustomerContractService.id = :serviceId
+        AND sd.site.id = :siteId
+        AND (p.id IS NULL OR p.id != :patrolId)
+    """)
+    List<LKCustomerContractOperationService> findAvailableServiceTimes(
+        @Param("contractId") Long contractId,
+        @Param("serviceId") Long serviceId,
+        @Param("siteId") Long siteId,
+        @Param("patrolId") Long patrolId
+    ); // TODO: revisit the filtration after add unique contraint on serviceTimeId and patrolDetailId
 }
