@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/task-distribution")
-public class TaskDistributionController {
+@RequestMapping("/task-distribution/customer")
+public class TaskDistributionCustomerController {
 
     private final TaskDistributionService taskDistributionService;
 
