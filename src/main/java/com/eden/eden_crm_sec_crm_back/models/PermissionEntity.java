@@ -1,6 +1,5 @@
 package com.eden.eden_crm_sec_crm_back.models;
-
-import com.eden.eden_crm_sec_crm_back.models.BaseEntity;
+import com.eden.eden_crm_sec_crm_back.models.PermissionScreenEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,6 +27,11 @@ public class PermissionEntity extends BaseEntity {
 
     @Column(name = "name_ar", length = 100)
     private String nameAr;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "permission_screen_id")
+    private PermissionScreenEntity permissionScreen;
 
     @JsonIgnore
     @ManyToMany(mappedBy = "permissions")

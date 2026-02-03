@@ -9,6 +9,12 @@ import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<RoleEntity, Integer> {
 
+    interface RoleSummaryProjection {
+        Integer getId();
+        String getName();
+        String getDescription();
+    }
+
     @EntityGraph(attributePaths = "permissions")
     Optional<RoleEntity> findById(Integer id);
 
@@ -16,4 +22,5 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Integer> {
 
     List<RoleEntity> findByDeletedFalseOrderByIdDesc();
 
+    List<RoleSummaryProjection> findByDeletedFalseOrderByNameAsc();
 }

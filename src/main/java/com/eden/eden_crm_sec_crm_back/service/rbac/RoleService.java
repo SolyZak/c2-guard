@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.service.rbac;
 
+import com.eden.eden_crm_sec_crm_back.dto.rbac.RoleSummaryDto;
 import com.eden.eden_crm_sec_crm_back.identity.impl.KeycloakRoleAdminService;
 import com.eden.eden_crm_sec_crm_back.models.PermissionEntity;
 import com.eden.eden_crm_sec_crm_back.models.RoleEntity;
@@ -61,10 +62,16 @@ public class RoleService {
         RoleEntity role = roleRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + id));
 
-        // delete in Keycloak (realm role)
         keycloakRoleAdmin.deleteRealmRole(role.getName());
 
         role.setDeleted(true);
         roleRepo.save(role);
+    }
+
+    public List<RoleSummaryDto> getAllSummaries() {
+        return roleRepo.findByDeletedFalseOrderByNameAsc()
+                .stream()
+                .map(p -> new RoleSummaryDto(p.getId(), p.getName(), p.getDescription()))
+                .toList();
     }
 }
