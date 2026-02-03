@@ -16,7 +16,16 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "task_execution_slot")
+@Table(name = "task_execution_slot", indexes = {
+    @Index(name = "idx_task_execution_slot_task_distribution_id", columnList = "task_distribution_id"),
+    @Index(name = "idx_task_execution_slot_task_assignment_id", columnList = "task_assignment_id"),
+    @Index(name = "idx_task_execution_slot_customer_date_range", columnList = "customer_id, start_date_time, end_date_time"),
+    @Index(name = "idx_task_execution_slot_status", columnList = "status"),
+    @Index(name = "idx_task_execution_slot_executed_by_workforce_id", columnList = "executed_by_workforce_id"),
+    @Index(name = "idx_task_execution_slot_task_execution_id", columnList = "task_execution_id"),
+    @Index(name = "idx_task_execution_slot_status_created_at", columnList = "status, created_at"),
+    @Index(name = "idx_task_execution_slot_workforce_status", columnList = "executed_by_workforce_id, status")
+})
 public class TaskExecutionSlot {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

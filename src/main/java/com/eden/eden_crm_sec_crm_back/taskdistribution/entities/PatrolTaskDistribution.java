@@ -12,13 +12,23 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 
-@Entity
-@Table(name = "patrol_task_distribution")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
+@Table(name = "patrol_task_distribution", uniqueConstraints = {
+    @UniqueConstraint(name = "uc_patroltaskdistribution_patroldetailid_servicetimeid", columnNames = {"patrol_detail_id", "service_time_id"})
+}, indexes = {
+    @Index(name = "idx_patrol_task_distribution_task_distribution_id", columnList = "task_distribution_id"),
+    @Index(name = "idx_patrol_task_distribution_service_lookup", columnList = "service_id, service_time_id"),
+    @Index(name = "idx_patrol_task_distribution_location_id", columnList = "location_id"),
+    @Index(name = "idx_patrol_task_distribution_customer_id", columnList = "customer_id"),
+    @Index(name = "idx_patrol_task_distribution_patrol_detail_id", columnList = "patrol_detail_id"),
+    @Index(name = "idx_patrol_task_distribution_customer_location", columnList = "customer_id, location_id"),
+    @Index(name = "idx_patrol_task_distribution_service_customer", columnList = "service_id, customer_id")
+})
 public class PatrolTaskDistribution {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

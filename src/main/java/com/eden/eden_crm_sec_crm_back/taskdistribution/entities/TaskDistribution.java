@@ -18,7 +18,15 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "task_distribution")
+@Table(name = "task_distribution", indexes = {
+    @Index(name = "idx_task_distribution_contract_type", columnList = "contract_id, distribution_type"),
+    @Index(name = "idx_task_distribution_customer_id", columnList = "customer_id"),
+    @Index(name = "idx_task_distribution_task_id", columnList = "task_id"),
+    @Index(name = "idx_task_distribution_created_at", columnList = "created_at"),
+    @Index(name = "idx_task_distribution_distribution_type", columnList = "distribution_type"),
+    @Index(name = "idx_task_distribution_customer_created", columnList = "customer_id, created_at"),
+    @Index(name = "idx_task_distribution_contract_customer", columnList = "contract_id, customer_id")
+})
 public class TaskDistribution {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

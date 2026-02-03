@@ -14,7 +14,15 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "task_assignment")
+@Table(name = "task_assignment", indexes = {
+    @Index(name = "idx_task_assignment_workforce_id", columnList = "workforce_id"),
+    @Index(name = "idx_task_assignment_customer_id", columnList = "customer_id"),
+    @Index(name = "idx_task_assignment_slot_number", columnList = "slot_number"),
+    @Index(name = "idx_task_assignment_assigned_at", columnList = "assigned_at"),
+    @Index(name = "idx_task_assignment_workforce_customer", columnList = "workforce_id, customer_id"),
+    @Index(name = "idx_task_assignment_customer_assigned", columnList = "customer_id, assigned_at"),
+    @Index(name = "idx_task_assignment_workforce_slot", columnList = "workforce_id, slot_number")
+})
 public class TaskAssignment {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

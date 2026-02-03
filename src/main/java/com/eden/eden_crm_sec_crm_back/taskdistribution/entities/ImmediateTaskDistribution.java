@@ -11,13 +11,21 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-@Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "immediate_task_distribution")
+@Entity
+@Table(name = "immediate_task_distribution", indexes = {
+    @Index(name = "idx_immediate_task_distribution_task_distribution_id", columnList = "task_distribution_id"),
+    @Index(name = "idx_immediate_task_distribution_location_id", columnList = "location_id"),
+    @Index(name = "idx_immediate_task_distribution_customer_id", columnList = "customer_id"),
+    @Index(name = "idx_immediate_task_distribution_dispatcher_id", columnList = "dispatcher_id"),
+    @Index(name = "idx_immediate_task_distribution_created_at", columnList = "created_at"),
+    @Index(name = "idx_immediate_task_distribution_customer_created", columnList = "customer_id, created_at"),
+    @Index(name = "idx_immediate_task_distribution_dispatcher_customer", columnList = "dispatcher_id, customer_id")
+})
 public class ImmediateTaskDistribution {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
