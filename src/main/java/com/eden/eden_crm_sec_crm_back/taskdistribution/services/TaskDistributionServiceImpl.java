@@ -403,8 +403,9 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .filter(date -> targetDays.contains(date.getDayOfWeek()))
             .map(date -> {
                 LocalDate currentEndDate = calculateEndDateForOncePatrolType(patrol.getFrequencyRate(), date);
+                LocalDate actualEndDate = toTime.isBefore(fromTime) ? currentEndDate.plusDays(1) : currentEndDate;
                 OffsetDateTime startDateTime = DateUtils.withTimeZone(customer.getTimezone(), date, fromTime);
-                OffsetDateTime endDateTime = DateUtils.withTimeZone(customer.getTimezone(), currentEndDate, toTime);
+                OffsetDateTime endDateTime = DateUtils.withTimeZone(customer.getTimezone(), actualEndDate, toTime);
                 return new TaskTimeWindow(startDateTime, endDateTime);
             })
             .toList();
@@ -431,8 +432,9 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
                     .mapToObj(x -> {
                         OffsetTime slotStart = executionTimes.get(x);
                         OffsetTime slotEnd = x < executionTimes.size() - 1 ? executionTimes.get(x + 1) : toTime;
+                        LocalDate actualEndDate = slotEnd.isBefore(slotStart) ? date.plusDays(1) : date;
                         OffsetDateTime startDateTime = DateUtils.withTimeZone(customer.getTimezone(), date, slotStart);
-                        OffsetDateTime endDateTime = DateUtils.withTimeZone(customer.getTimezone(), date, slotEnd);
+                        OffsetDateTime endDateTime = DateUtils.withTimeZone(customer.getTimezone(), actualEndDate, slotEnd);
                         return new TaskTimeWindow(startDateTime, endDateTime);
                     })
             )
@@ -500,9 +502,32 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         if (minutesStep <= 0)
             throw new IllegalArgumentException("Step must be greater than zero");
 
-        return Stream
-            .iterate(start, time -> time.isBefore(end), time -> time.plusMinutes(minutesStep))
-            .toList();
+        // Handle overnight shifts (when end time is before start time)
+        if (!start.isBefore(end)) {
+            // Generate time steps from start to midnight
+            List<OffsetTime> beforeMidnight = Stream
+                .iterate(start, time -> time.isBefore(OffsetTime.MAX), time -> time.plusMinutes(minutesStep))
+                .limit(1440 / minutesStep) // Maximum 24 hours worth of steps
+                .toList();
+            
+            // Generate time steps from midnight to end
+            List<OffsetTime> afterMidnight = Stream
+                .iterate(OffsetTime.MIN, time -> time.isBefore(end), time -> time.plusMinutes(minutesStep))
+                .toList();
+            
+            // Combine both lists, removing duplicate midnight if it exists
+            List<OffsetTime> combined = new ArrayList<>(beforeMidnight);
+            if (!afterMidnight.isEmpty()) {
+                combined.addAll(afterMidnight);
+            }
+            
+            return combined;
+        } else {
+            // Same-day time range (original logic)
+            return Stream
+                .iterate(start, time -> time.isBefore(end), time -> time.plusMinutes(minutesStep))
+                .toList();
+        }
     }
 
     private UserData getLoggedInUser() {
