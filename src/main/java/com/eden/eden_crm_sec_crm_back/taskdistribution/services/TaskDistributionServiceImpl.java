@@ -500,27 +500,69 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
     private static List<OffsetTime> getTimeSteps(OffsetTime start, OffsetTime end, int minutesStep) {
         if (minutesStep <= 0)
-            throw new IllegalArgumentException("Step must be greater than zero");
+            throw new RuntimeException("Step must be greater than zero");
 
-        // Handle overnight shifts (when end time is before start time)
+        // Handle overnight shifts (when end time is before start time or equal for full day)
         if (!start.isBefore(end)) {
-            // Generate time steps from start to midnight
-            List<OffsetTime> beforeMidnight = Stream
-                .iterate(start, time -> time.isBefore(OffsetTime.MAX), time -> time.plusMinutes(minutesStep))
-                .limit(1440 / minutesStep) // Maximum 24 hours worth of steps
-                .toList();
-            
-            // Generate time steps from midnight to end
-            List<OffsetTime> afterMidnight = Stream
-                .iterate(OffsetTime.MIN, time -> time.isBefore(end), time -> time.plusMinutes(minutesStep))
-                .toList();
-            
-            // Combine both lists, removing duplicate midnight if it exists
-            List<OffsetTime> combined = new ArrayList<>(beforeMidnight);
-            if (!afterMidnight.isEmpty()) {
-                combined.addAll(afterMidnight);
+            // Special case: same time (00:00 to 00:00) represents a full 24-hour shift
+            if (start.equals(end)) {
+                // Generate time steps for a full 24-hour period
+                List<OffsetTime> fullDaySteps = new ArrayList<>();
+                OffsetTime currentTime = start;
+                
+                // Generate steps until we've completed 24 hours
+                for (int i = 0; i < 1440 / minutesStep; i++) {
+                    fullDaySteps.add(currentTime);
+                    currentTime = currentTime.plusMinutes(minutesStep);
+                }
+                
+                return fullDaySteps;
             }
             
+            // Create midnight with the same offset as start time to maintain timezone consistency
+            OffsetTime midnight = OffsetTime.of(0, 0, 0, 0, start.getOffset());
+            // Generate time steps from start to midnight (inclusive)
+            List<OffsetTime> beforeMidnight = new ArrayList<>();
+            OffsetTime currentTime = start;
+            OffsetTime nextTime = null;
+            
+            // For overnight shifts, we need to iterate until we reach midnight
+            // We compare the hour values to handle the day wraparound
+            while (true) {
+                beforeMidnight.add(currentTime);
+
+                // If we've reached midnight, break
+                if (currentTime.equals(midnight)) {
+                    break;
+                }
+                
+                nextTime = currentTime.plusMinutes(minutesStep);
+                
+                // Check if we've passed midnight by comparing hour values
+                // If current hour < previous hour, we've wrapped around to next day
+                int currentHour = currentTime.getHour();
+                int nextHour = nextTime.getHour();
+                
+                if (nextHour < currentHour || (nextHour == 0 && currentHour > 0)) {
+                    // We've passed midnight, so break without adding nextTime
+                    break;
+                }
+                
+                currentTime = nextTime;
+            }
+            
+            // Generate time steps from the continuation point to end (exclusive)
+            // The key fix: start from the actual next time step, not midnight
+            List<OffsetTime> afterMidnight = new ArrayList<>();
+            if (nextTime != null && nextTime.isBefore(end)) {
+                afterMidnight = Stream
+                    .iterate(nextTime, time -> time.isBefore(end), time -> time.plusMinutes(minutesStep))
+                    .toList();
+            }
+            
+            // Combine both lists
+            List<OffsetTime> combined = new ArrayList<>(beforeMidnight);
+            combined.addAll(afterMidnight);
             return combined;
         } else {
             // Same-day time range (original logic)
