@@ -7,16 +7,10 @@ import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
+import java.util.Set;
 
 @Builder
 public record DistributeImmediateTaskRequest(
-    @NotNull
-    Long contractId,
-    @NotNull
-    Long serviceId,
-    @NotNull
-    Long siteId,
     @NotNull
     Long taskId,
     @NotNull
@@ -24,7 +18,7 @@ public record DistributeImmediateTaskRequest(
     @NotNull
     OffsetDateTime endDateTime,
     @NotEmpty
-    List<Long> workforceIds,
+    Set<Long> workforceIds,
     Long locationId,
     String locationName,
     BigDecimal latitude,

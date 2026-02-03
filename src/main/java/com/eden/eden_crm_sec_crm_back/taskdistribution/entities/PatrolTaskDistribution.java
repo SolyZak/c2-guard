@@ -1,8 +1,10 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.entities;
 
 import com.eden.eden_crm_sec_crm_back.models.Customer;
+import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.PatrolDetail;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,6 +31,14 @@ public class PatrolTaskDistribution {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patrol_detail_id")
     private PatrolDetail patrolDetailId; // Note one or many
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id")
+    private LKCustomerContractService service;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
+    private Location location;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_time_id")

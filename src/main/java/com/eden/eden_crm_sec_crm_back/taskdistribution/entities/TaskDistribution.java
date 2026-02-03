@@ -1,7 +1,8 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.entities;
 
-import com.eden.eden_crm_sec_crm_back.models.*;
-import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
+import com.eden.eden_crm_sec_crm_back.models.Customer;
+import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
+import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,18 +27,6 @@ public class TaskDistribution {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id")
     private CustomerContract contract;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id")
-    private LKCustomerContractService service;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "site_id")
-    private CustomerSite site;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
-    private Location location;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")

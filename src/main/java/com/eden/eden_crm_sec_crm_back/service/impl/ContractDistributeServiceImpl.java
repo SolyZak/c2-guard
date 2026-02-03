@@ -130,7 +130,8 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
                     result.add(new DistributionTimesWithQuantity(
                             DateUtils.withTimeZone(customerTimezone, service.getFromTime()),
                             DateUtils.withTimeZone(customerTimezone, service.getToTime()),
-                            service.getId() + "_" + i
+                            service.getId() + "_" + i,
+                            service.getId()
                     ));
                 }
             }
