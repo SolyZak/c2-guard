@@ -120,6 +120,9 @@ public class PatrolReportServiceImpl implements PatrolReportService {
                         .serviceId(taskDetail.getServiceId())
                         .serviceName(taskDetail.getServiceName())
                         .locationId(taskDetail.getLocationId())
+                        .commentCheck(taskDetail.getCommentCheck())
+                        .comment(taskDetail.getComment())
+
                         .build()
                 );
         });

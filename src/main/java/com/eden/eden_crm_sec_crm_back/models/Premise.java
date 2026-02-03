@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Builder
 @Getter
@@ -23,6 +25,19 @@ public class Premise extends BaseEntity {
 
     @Column(name = "code")
     private String code;
+
+    @Column(name = "longitude",
+            precision = 13,
+            scale     = 10,
+            nullable  = true, columnDefinition = "DECIMAL(13,10)")
+    private BigDecimal longitude;
+
+    @Column(name = "latitude",
+            precision = 13,
+            scale     = 10,
+            nullable  = true, columnDefinition = "DECIMAL(13,10)")
+    private BigDecimal latitude;
+
 
     @ManyToOne
     @JoinColumn(name = "customer_id", referencedColumnName = "id", nullable = false)

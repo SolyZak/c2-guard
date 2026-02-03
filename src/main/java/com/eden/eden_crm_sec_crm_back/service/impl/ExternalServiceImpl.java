@@ -9,7 +9,7 @@ import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.CustomerContract;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
-import com.eden.eden_crm_sec_crm_back.dto.external.AttendanceWorkingPeriodData;
+import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
@@ -186,6 +186,16 @@ public class ExternalServiceImpl implements ExternalService {
         return customerContracts.stream()
                 .map(contract -> buildContractPlannedQntDto(contract, from, to))
                 .toList(); // Use collect(Collectors.toList()) if you're on Java <16
+    }
+
+    @Override
+    public Map<String, Object> workforceHasActivity(WorkforceHasActivityRequest request) {
+        boolean hasActivity;
+        LKCustomerContractOperationService operationService = contractOperationServiceRepository
+                .findById(request.contractOperationSiteDistributionDetailId())
+                .orElseThrow(() -> new BusinessException("Can`t find operation service by id: %d".formatted(request.contractOperationSiteDistributionDetailId()), HttpStatus.NOT_FOUND));
+        hasActivity = operationService.getSiteDistribution().getActivities().contains(request.activity());
+        return Map.of("hasActivity", hasActivity);
     }
 
     private void validateDateRange(LocalDate from, LocalDate to) {

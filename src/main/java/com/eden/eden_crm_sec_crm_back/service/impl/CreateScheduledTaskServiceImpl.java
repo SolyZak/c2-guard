@@ -1,30 +1,32 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.dtos.DateTimeScheduledTaskRequest;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.base.entities.ScheduledTaskEntity;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.services.TaskSchedulerService;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks.TaskCurrentStatusJob;
-import com.eden.eden_crm_sec_crm_back.dynamicscheduler.tasks.TaskMissedStatusJob;
 import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
 import com.eden.eden_crm_sec_crm_back.service.CreateScheduledTaskService;
+import com.eden.eden_crm_sec_crm_back.tasks.TaskCurrentStatusJob;
+import com.eden.eden_crm_sec_crm_back.tasks.TaskMissedStatusJob;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github._0xorigin.flexscheduler.base.dtos.DateTimeScheduledTaskRequest;
+import io.github._0xorigin.flexscheduler.base.entities.ScheduledTaskEntity;
+import io.github._0xorigin.flexscheduler.services.base.TaskSchedulerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskService {
-    private final TaskMissedStatusJob taskMissedStatusJob;
-    private final TaskCurrentStatusJob taskCurrentStatusJob;
     private final TaskSchedulerService taskSchedulerService;
 
     @Async
+    @Transactional
     public CompletableFuture<Void> createDistributionScheduledTasks(
             List<ContractOperationSiteDistributionPatrol> distributionForPatrols,
             Long contractId,
@@ -34,7 +36,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                 .stream()
                 .map(distributionForPatrol -> {
                     OffsetDateTime taskStartDateTime = distributionForPatrol.getEndDate().atTime(distributionForPatrol.getToTime());
-                    String taskName = "TaskMissedStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
+                    String taskName = "Patrol distribution id: %s, Contract id: %s, Service id: %s"
                             .formatted(distributionForPatrol.getId(), contractId, serviceId);
                     ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
                     taskParams.put("patrolDistributionId", distributionForPatrol.getId());
@@ -44,6 +46,8 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                             .name(taskName)
                             .plannedExecutionTime(taskStartDateTime)
                             .arguments(taskParams)
+                            .taskType(TaskMissedStatusJob.TASK_TYPE)
+                            .isActive(true)
                             .build();
                 }).toList();
 
@@ -51,7 +55,7 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                 .stream()
                 .map(distributionForPatrol -> {
                     OffsetDateTime taskEndDateTime = distributionForPatrol.getStartDate().atTime(distributionForPatrol.getFromTime());
-                    String taskName = "TaskCurrentStatus - Patrol distribution id: %s, Contract id: %s, Service id: %s"
+                    String taskName = "Patrol distribution id: %s, Contract id: %s, Service id: %s"
                             .formatted(distributionForPatrol.getId(), contractId, serviceId);
                     ObjectNode taskParams = JsonNodeFactory.instance.objectNode();
                     taskParams.put("patrolDistributionId", distributionForPatrol.getId());
@@ -61,13 +65,27 @@ public class CreateScheduledTaskServiceImpl implements CreateScheduledTaskServic
                             .name(taskName)
                             .plannedExecutionTime(taskEndDateTime)
                             .arguments(taskParams)
+                            .taskType(TaskCurrentStatusJob.TASK_TYPE)
+                            .isActive(true)
                             .build();
                 }).toList();
 
-        List<ScheduledTaskEntity> tasksList = taskMissedStatusJob.createTasks(scheduledTaskMissedRequests);
-        List<ScheduledTaskEntity> tasksListCurrent = taskCurrentStatusJob.createTasks(scheduledTaskCurrentRequests);
-        tasksList.addAll(tasksListCurrent);
-        taskSchedulerService.scheduleTasksIfExecuteToday(tasksList);
+        List<ScheduledTaskEntity> tasks = taskSchedulerService.createTasksInstances(scheduledTaskCurrentRequests);
+        tasks.addAll(taskSchedulerService.createTasksInstances(scheduledTaskMissedRequests));
+
+        // Ensure tasks are scheduled only after the surrounding transaction successfully commits.
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    taskSchedulerService.scheduleTasksIfExecuteToday(tasks);
+                }
+            });
+        } else {
+            // If there's no active transaction synchronization, schedule immediately.
+            taskSchedulerService.scheduleTasksIfExecuteToday(tasks);
+        }
+
         return CompletableFuture.completedFuture(null);
     }
 }
