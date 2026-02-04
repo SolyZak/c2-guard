@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 public interface TodayTaskSlotProjection {
@@ -23,6 +24,9 @@ public interface TodayTaskSlotProjection {
     OffsetDateTime getStartDateTime();
     OffsetDateTime getEndDateTime();
     String getAccessType();
+
+    BigDecimal getLongitude();
+    BigDecimal getLatitude();
     TaskDistributionStatus getStatus();
 
     Long getTaskDistributionId();

@@ -49,6 +49,16 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
                 WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN il.accessType
                 ELSE NULL
             END AS accessType,
+            CASE
+                WHEN td.distributionType = 'PATROL' THEN pl.latitude
+                WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN il.latitude
+                ELSE itd.latitude
+            END AS latitude,
+            CASE
+                WHEN td.distributionType = 'PATROL' THEN pl.longitude
+                WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN il.longitude
+                ELSE itd.longitude
+            END AS longitude,
             tes.status AS status,
             td.id AS taskDistributionId,
             td.distributionType AS distributionType,

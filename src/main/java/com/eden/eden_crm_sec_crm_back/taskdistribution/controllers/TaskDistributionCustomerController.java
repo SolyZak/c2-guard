@@ -2,9 +2,11 @@ package com.eden.eden_crm_sec_crm_back.taskdistribution.controllers;
 
 import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.AvailableServiceTimesRequest;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributableTasksRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributeImmediateTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.TaskDistributionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +41,8 @@ public class TaskDistributionCustomerController {
         return ApiResponse.ok(taskDistributionService.getAllAvailableServiceTimes(availableServiceTimesRequest));
     }
 
-//    @GetMapping("/all/{patrolId}/{locationId}")
-//    public ApiResponse<List<TaskDto>> listLoggedInTasksNoPagination(@PathVariable("patrolId") Long patrolId, @PathVariable("locationId") Long locationId) {
-//        return ApiResponse.ok(taskService.listTasksNoPaginationForLoggedInCustomerByLocationIdAndPatrolId(locationId, patrolId));
-//    }
+    @PostMapping("/distributable-tasks")
+    public ApiResponse<List<DistributableTaskResponse>> getDistributableTasks(@Valid @RequestBody DistributableTasksRequest distributableTasksRequest) {
+        return ApiResponse.ok(taskDistributionService.getDistributableTasks(distributableTasksRequest));
+    }
 }
