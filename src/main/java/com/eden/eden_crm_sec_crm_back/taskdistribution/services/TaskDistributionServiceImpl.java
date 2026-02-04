@@ -18,6 +18,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableSe
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskAssignmentRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.CreateScheduledTaskForDistributionService;
@@ -55,6 +56,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final PatrolDetailRepository patrolDetailRepository;
     private final TaskRepository taskRepository;
     private final TaskDistributionRepository taskDistributionRepository;
+    private final PatrolTaskDistributionRepository patrolTaskDistributionRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
     private final LocationRepository locationRepository;
     private final AttendanceFeignClient attendanceClient;
@@ -74,6 +76,11 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         SiteDistribution siteDistribution = getSiteDistribution(distributePatrolTaskRequest);
         LKCustomerContractOperationService serviceTime = getServiceTime(distributePatrolTaskRequest.serviceTimeId(), siteDistribution);
         List<PatrolDetail> patrolDetails = getPatrolDetails(distributePatrolTaskRequest.patrolDetailIds());
+
+        patrolDetails.forEach(patrolDetail -> {
+            if (patrolTaskDistributionRepository.existsByServiceTime_IdAndPatrolDetail_Id(serviceTime.getId(), patrolDetail.getId()))
+                throw new BusinessException("This patrol combination is distributed before, patrolDetailId: " + patrolDetail.getId(), HttpStatus.BAD_REQUEST);
+        });
 
         OffsetDateTime assignedAt = OffsetDateTime.now();
         List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(customer, serviceTime.getQuantity().intValue(), assignedAt);
