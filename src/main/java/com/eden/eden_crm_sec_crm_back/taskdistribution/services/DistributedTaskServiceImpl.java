@@ -52,11 +52,14 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
         Customer customer = getCustomer(workforceFullDataDto.securityCompany().id());
         OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime todayMidnight = now.toLocalDate().atStartOfDay().atOffset(now.getOffset());
+        OffsetDateTime tomorrowMidnight = todayMidnight.plusDays(1);
 
         List<TodayTaskSlotProjection> slots = taskExecutionSlotRepository.findTodayTasks(
             customer.getId(),
             todayTasksRequest.contractId(),
-            now,
+            todayMidnight,
+            tomorrowMidnight,
             todayTasksRequest.serviceId(),
             todayTasksRequest.serviceTimeId(),
             todayTasksRequest.slotNumber(),

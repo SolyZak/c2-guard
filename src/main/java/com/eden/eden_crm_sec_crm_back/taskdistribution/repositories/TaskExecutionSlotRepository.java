@@ -70,7 +70,8 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
         WHERE
             tes.customer.id = :customerId
             AND td.contract.id = :contractId
-            AND :currentDateTime BETWEEN tes.startDateTime AND tes.endDateTime
+            AND tes.startDateTime < :tomorrow
+            AND tes.endDateTime >= :today
             AND (
                 (
                     td.distributionType = 'PATROL'
@@ -90,7 +91,8 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
     List<TodayTaskSlotProjection> findTodayTasks(
         @Param("customerId") Long customerId,
         @Param("contractId") Long contractId,
-        @Param("currentDateTime") OffsetDateTime currentDateTime,
+        @Param("today") OffsetDateTime today, // midnight today
+        @Param("tomorrow") OffsetDateTime tomorrow, // midnight tomorrow
         @Param("serviceId") Long serviceId,
         @Param("serviceTimeId") Long serviceTimeId,
         @Param("slotNumber") Integer slotNumber,
