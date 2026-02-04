@@ -138,7 +138,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             ContractIdsRequest.builder().workforceIds(distributeImmediateTaskRequest.workforceIds()).build()
         );
         if (contractIds.size() != 1)
-            throw new BusinessException("Workforces must belong to the same contract", HttpStatus.BAD_REQUEST);
+            throw new BusinessException("No contracts found or Workforces must belong to the same contract", HttpStatus.BAD_REQUEST);
 
         CustomerContract contract = getContract(contractIds.iterator().next());
         Task task = getTask(distributeImmediateTaskRequest.taskId());
@@ -158,7 +158,12 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
         OffsetDateTime assignedAt = OffsetDateTime.now();
         List<TaskAssignment> taskAssignments = createTaskAssignmentsByWorkforceId(customer, distributeImmediateTaskRequest.workforceIds(), assignedAt);
-        List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(customer, taskDistribution, taskAssignments);
+        List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(
+            customer,
+            taskDistribution,
+            taskAssignments,
+            distributeImmediateTaskRequest
+        );
         taskDistribution.setExecutionSlots(executionSlots);
         taskDistribution = taskDistributionRepository.saveAndFlush(taskDistribution);
 
@@ -235,6 +240,9 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     }
 
     private Optional<Location> getOptionalLocation(Long locationId) {
+        if (locationId == null)
+            return Optional.empty();
+
         return locationRepository.findById(locationId);
     }
 
@@ -395,7 +403,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private static List<TaskExecutionSlot> buildExecutionSlotsForImmediateTask(
         Customer customer,
         TaskDistribution taskDistribution,
-        List<TaskAssignment> taskAssignments
+        List<TaskAssignment> taskAssignments,
+        DistributeImmediateTaskRequest distributeImmediateTaskRequest
     ) {
         return taskAssignments
             .stream()
@@ -403,6 +412,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
                 TaskExecutionSlot.builder()
                     .taskDistribution(taskDistribution)
                     .taskAssignment(taskAssignment)
+                    .startDateTime(distributeImmediateTaskRequest.startDateTime())
+                    .endDateTime(distributeImmediateTaskRequest.endDateTime())
                     .status(TaskDistributionStatus.CREATED)
                     .customer(customer)
                     .build()
