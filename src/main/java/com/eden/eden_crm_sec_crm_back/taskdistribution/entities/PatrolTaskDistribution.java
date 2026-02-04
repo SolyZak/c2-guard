@@ -31,7 +31,7 @@ import java.time.OffsetDateTime;
 })
 public class PatrolTaskDistribution {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
