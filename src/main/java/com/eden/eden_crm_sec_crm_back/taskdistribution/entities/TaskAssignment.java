@@ -25,7 +25,7 @@ import java.time.OffsetDateTime;
 })
 public class TaskAssignment {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "slot_number")

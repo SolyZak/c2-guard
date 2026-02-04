@@ -28,7 +28,7 @@ import java.time.OffsetDateTime;
 })
 public class ImmediateTaskDistribution {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
