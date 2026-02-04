@@ -1,0 +1,20 @@
+package com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request;
+
+import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDTO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+
+import java.util.List;
+
+@Builder
+public record ExecuteDistributedTaskRequest(
+    @NotNull
+    Long executionSlotId,
+    @NotNull
+    Long taskId,
+    @NotEmpty
+    @Valid
+    List<TaskCheckDTO> checks
+) {}

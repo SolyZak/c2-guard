@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.models.lookup;
 import com.eden.eden_crm_sec_crm_back.base.model.BaseEntity;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.PatrolTaskDistribution;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.Setter;
 
 import java.time.OffsetTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -31,4 +33,6 @@ public class LKCustomerContractOperationService extends BaseEntity<Long> {
     @JsonBackReference
     private SiteDistribution  siteDistribution;
 
+    @OneToMany(mappedBy = "serviceTime")
+    private List<PatrolTaskDistribution> patrolTaskDistributions;
 }
