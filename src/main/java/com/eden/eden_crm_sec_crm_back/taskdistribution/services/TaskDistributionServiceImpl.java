@@ -76,11 +76,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         SiteDistribution siteDistribution = getSiteDistribution(distributePatrolTaskRequest);
         LKCustomerContractOperationService serviceTime = getServiceTime(distributePatrolTaskRequest.serviceTimeId(), siteDistribution);
         List<PatrolDetail> patrolDetails = getPatrolDetails(distributePatrolTaskRequest.patrolDetailIds());
-
-        patrolDetails.forEach(patrolDetail -> {
-            if (patrolTaskDistributionRepository.existsByServiceTime_IdAndPatrolDetail_Id(serviceTime.getId(), patrolDetail.getId()))
-                throw new BusinessException("This patrol combination is distributed before, patrolDetailId: " + patrolDetail.getId(), HttpStatus.BAD_REQUEST);
-        });
+        validatePatrolDetailNotDistributedBefore(serviceTime.getId(), patrolDetails);
 
         OffsetDateTime assignedAt = OffsetDateTime.now();
         List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(customer, serviceTime.getQuantity().intValue(), assignedAt);
@@ -335,6 +331,13 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .customer(customer)
             .dispatcher(user)
             .build();
+    }
+
+    private void validatePatrolDetailNotDistributedBefore(Long serviceTimeId, List<PatrolDetail> patrolDetails) {
+        patrolDetails.forEach(patrolDetail -> {
+            if (patrolTaskDistributionRepository.existsByServiceTime_IdAndPatrolDetail_Id(serviceTimeId, patrolDetail.getId()))
+                throw new BusinessException("This patrol combination is distributed before, patrolDetailId: " + patrolDetail.getId(), HttpStatus.BAD_REQUEST);
+        });
     }
 
     private static List<TaskTimeWindow> getOrBuildPatrolTimeWindows(
