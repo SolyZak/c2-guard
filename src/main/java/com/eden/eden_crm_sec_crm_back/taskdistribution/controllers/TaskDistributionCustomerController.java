@@ -38,4 +38,9 @@ public class TaskDistributionCustomerController {
     public ApiResponse<List<AvailableServiceTimeResponse>> getAllAvailableServiceTimes(@Valid @RequestBody AvailableServiceTimesRequest availableServiceTimesRequest) {
         return ApiResponse.ok(taskDistributionService.getAllAvailableServiceTimes(availableServiceTimesRequest));
     }
+
+//    @GetMapping("/all/{patrolId}/{locationId}")
+//    public ApiResponse<List<TaskDto>> listLoggedInTasksNoPagination(@PathVariable("patrolId") Long patrolId, @PathVariable("locationId") Long locationId) {
+//        return ApiResponse.ok(taskService.listTasksNoPaginationForLoggedInCustomerByLocationIdAndPatrolId(locationId, patrolId));
+//    }
 }
