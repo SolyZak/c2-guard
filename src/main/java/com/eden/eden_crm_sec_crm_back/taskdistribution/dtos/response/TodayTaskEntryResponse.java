@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import lombok.Builder;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -23,6 +24,8 @@ public record TodayTaskEntryResponse(
 
     OffsetDateTime endDateTime,
     String accessType,
+    BigDecimal latitude,
+    BigDecimal longitude,
 
     Long taskDistributionId,
     DistributionType distributionType,

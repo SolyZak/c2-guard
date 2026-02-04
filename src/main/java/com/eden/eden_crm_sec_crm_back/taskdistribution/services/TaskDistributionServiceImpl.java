@@ -13,15 +13,19 @@ import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.AvailableServiceTimesRequest;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributableTasksRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributeImmediateTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.mappers.TaskDistributionMapper;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskAssignmentRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskDistributionRepository;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.DistributableTaskProjection;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.CreateScheduledTaskForDistributionService;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.TaskDistributionService;
 import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
@@ -49,7 +53,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     public static final String WEEKLY_RATE = "weekly";
     public static final String MONTHLY_RATE = "monthly";
     private final CustomerRepository customerRepository;
-    private final CustomerSiteRepository customerSiteRepository;
     private final CustomerContractRepository customerContractRepository;
     private final LKCustomerContractServiceRepository customerContractServiceRepository;
     private final SiteDistributionRepository siteDistributionRepository;
@@ -62,6 +65,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final LocationRepository locationRepository;
     private final AttendanceFeignClient attendanceClient;
     private final CreateScheduledTaskForDistributionService createScheduledTaskForDistributionService;
+    private final TaskDistributionMapper taskDistributionMapper;
     private final Utils utils;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
@@ -197,6 +201,18 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             )
         );
         return result;
+    }
+
+    @Override
+    public List<DistributableTaskResponse> getDistributableTasks(DistributableTasksRequest distributableTasksRequest) {
+        UserData loggedInUser = getLoggedInUser();
+        Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
+        List<DistributableTaskProjection> tasks = patrolDetailRepository.getDistributableTasks(
+            customer.getId(),
+            distributableTasksRequest.patrolId(),
+            distributableTasksRequest.locationId()
+        );
+        return taskDistributionMapper.toDistributableTaskResponseList(tasks);
     }
 
     private static void validatePatrolDistributionStartDate(LocalDate startDate) {

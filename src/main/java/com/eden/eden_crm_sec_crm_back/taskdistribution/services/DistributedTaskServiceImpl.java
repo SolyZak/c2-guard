@@ -9,7 +9,6 @@ import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskCheckPatrolExe
 import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecution;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
-import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.ExecuteDistributedTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.TodayTasksRequest;
@@ -42,7 +41,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     private final WorkforceService workforceService;
     private final CustomerRepository customerRepository;
     private final TaskExecutionSlotRepository taskExecutionSlotRepository;
-    private final TaskRepository taskRepository;
     private final TaskPatrolExecutionRepository taskPatrolExecutionRepository;
     private final TaskDistributionMapper taskDistributionMapper;
 
