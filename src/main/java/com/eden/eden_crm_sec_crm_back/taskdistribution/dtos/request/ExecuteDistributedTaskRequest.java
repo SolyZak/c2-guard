@@ -12,8 +12,6 @@ import java.util.List;
 public record ExecuteDistributedTaskRequest(
     @NotNull
     Long executionSlotId,
-    @NotNull
-    Long taskId,
     @NotEmpty
     @Valid
     List<TaskCheckDTO> checks
