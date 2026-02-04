@@ -8,6 +8,8 @@ import com.eden.eden_crm_sec_crm_back.repository.PermissionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.RoleRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -68,10 +70,8 @@ public class RoleService {
         roleRepo.save(role);
     }
 
-    public List<RoleSummaryDto> getAllSummaries() {
-        return roleRepo.findByDeletedFalseOrderByNameAsc()
-                .stream()
-                .map(p -> new RoleSummaryDto(p.getId(), p.getName(), p.getDescription()))
-                .toList();
+    public Page<RoleSummaryDto> getAllSummaries(String q, Pageable pageable) {
+        return roleRepo.searchSummaries(q, pageable)
+                .map(p -> new RoleSummaryDto(p.getId(), p.getName(), p.getDescription()));
     }
 }
