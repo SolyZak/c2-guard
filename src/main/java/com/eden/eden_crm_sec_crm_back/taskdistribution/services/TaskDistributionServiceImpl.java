@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
 import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
+import com.eden.eden_crm_sec_crm_back.dto.ContractIdsRequest;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
@@ -18,6 +19,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableSe
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskAssignmentRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.CreateScheduledTaskForDistributionService;
@@ -55,6 +57,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final PatrolDetailRepository patrolDetailRepository;
     private final TaskRepository taskRepository;
     private final TaskDistributionRepository taskDistributionRepository;
+    private final PatrolTaskDistributionRepository patrolTaskDistributionRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
     private final LocationRepository locationRepository;
     private final AttendanceFeignClient attendanceClient;
@@ -74,6 +77,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         SiteDistribution siteDistribution = getSiteDistribution(distributePatrolTaskRequest);
         LKCustomerContractOperationService serviceTime = getServiceTime(distributePatrolTaskRequest.serviceTimeId(), siteDistribution);
         List<PatrolDetail> patrolDetails = getPatrolDetails(distributePatrolTaskRequest.patrolDetailIds());
+        validatePatrolDetailNotDistributedBefore(serviceTime.getId(), patrolDetails);
 
         OffsetDateTime assignedAt = OffsetDateTime.now();
         List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(customer, serviceTime.getQuantity().intValue(), assignedAt);
@@ -130,7 +134,9 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     public void distributeImmediateTasks(DistributeImmediateTaskRequest distributeImmediateTaskRequest) {
         UserData loggedInUser = getLoggedInUser();
         Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
-        Set<Long> contractIds = attendanceClient.getContractIdsForCheckedInWorkforcesToday(distributeImmediateTaskRequest.workforceIds());
+        Set<Long> contractIds = attendanceClient.getContractIdsForCheckedInWorkforcesToday(
+            ContractIdsRequest.builder().workforceIds(distributeImmediateTaskRequest.workforceIds()).build()
+        );
         if (contractIds.size() != 1)
             throw new BusinessException("Workforces must belong to the same contract", HttpStatus.BAD_REQUEST);
 
@@ -328,6 +334,13 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .customer(customer)
             .dispatcher(user)
             .build();
+    }
+
+    private void validatePatrolDetailNotDistributedBefore(Long serviceTimeId, List<PatrolDetail> patrolDetails) {
+        patrolDetails.forEach(patrolDetail -> {
+            if (patrolTaskDistributionRepository.existsByServiceTime_IdAndPatrolDetail_Id(serviceTimeId, patrolDetail.getId()))
+                throw new BusinessException("This patrol combination is distributed before, patrolDetailId: " + patrolDetail.getId(), HttpStatus.BAD_REQUEST);
+        });
     }
 
     private static List<TaskTimeWindow> getOrBuildPatrolTimeWindows(
