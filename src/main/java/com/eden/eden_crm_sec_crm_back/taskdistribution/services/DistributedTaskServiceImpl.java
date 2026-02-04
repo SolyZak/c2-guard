@@ -86,7 +86,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
         Customer customer = getCustomer(workforceFullDataDto.securityCompany().id());
         TaskExecutionSlot taskExecutionSlot = getTaskExecutionSlot(executeDistributedTaskRequest.executionSlotId());
-        Task task = getTask(executeDistributedTaskRequest.taskId());
+        Task task = taskExecutionSlot.getTaskDistribution().getTask();
         checkTaskExecutionConstraints(executeDistributedTaskRequest, taskExecutionSlot, task);
         TaskPatrolExecution taskPatrolExecution = createTaskPatrolExecution(executeDistributedTaskRequest, task, customer);
         taskPatrolExecution = taskPatrolExecutionRepository.save(taskPatrolExecution);
@@ -101,9 +101,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         Task task
     ) {
         OffsetDateTime now = OffsetDateTime.now();
-        if (!executeDistributedTaskRequest.taskId().equals(taskExecutionSlot.getTaskDistribution().getTask().getId()))
-            throw new BusinessException("Task not belong to the execution slot", HttpStatus.BAD_REQUEST);
-
         if (
             taskExecutionSlot.getStatus() != TaskDistributionStatus.CURRENT
                 || now.isBefore(taskExecutionSlot.getStartDateTime())
@@ -146,11 +143,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         executeDistributedTaskRequest.checks()
             .forEach(check -> taskChecksPatrolExecution.add(check.mapToExecutionEntity(taskPatrolExecution)));
         return taskChecksPatrolExecution;
-    }
-
-    private Task getTask(Long taskId) {
-        return taskRepository.findById(taskId)
-            .orElseThrow(() -> new BusinessException("Task not found", HttpStatus.NOT_FOUND));
     }
 
     private TaskExecutionSlot getTaskExecutionSlot(Long executionSlotId) {
