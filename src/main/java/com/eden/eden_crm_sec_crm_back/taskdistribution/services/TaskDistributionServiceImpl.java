@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
 import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
+import com.eden.eden_crm_sec_crm_back.dto.ContractIdsRequest;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
@@ -133,7 +134,9 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     public void distributeImmediateTasks(DistributeImmediateTaskRequest distributeImmediateTaskRequest) {
         UserData loggedInUser = getLoggedInUser();
         Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
-        Set<Long> contractIds = attendanceClient.getContractIdsForCheckedInWorkforcesToday(distributeImmediateTaskRequest.workforceIds());
+        Set<Long> contractIds = attendanceClient.getContractIdsForCheckedInWorkforcesToday(
+            ContractIdsRequest.builder().workforceIds(distributeImmediateTaskRequest.workforceIds()).build()
+        );
         if (contractIds.size() != 1)
             throw new BusinessException("Workforces must belong to the same contract", HttpStatus.BAD_REQUEST);
 
