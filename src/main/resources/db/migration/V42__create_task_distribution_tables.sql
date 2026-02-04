@@ -2,7 +2,7 @@
 CREATE TABLE task_distribution (
     id BIGSERIAL PRIMARY KEY,
     contract_id BIGINT REFERENCES customer_contract(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    customer_id BIGINT REFERENCES customer(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE ON UPDATE CASCADE,
     task_id BIGINT REFERENCES task(id) ON DELETE CASCADE ON UPDATE CASCADE,
     distribution_type VARCHAR(50) NOT NULL CHECK (distribution_type IN ('PATROL', 'IMMEDIATE')),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -23,7 +23,7 @@ CREATE TABLE task_assignment (
     id BIGSERIAL PRIMARY KEY,
     slot_number INTEGER NOT NULL,
     workforce_id BIGINT NOT NULL,
-    customer_id BIGINT REFERENCES customer(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE ON UPDATE CASCADE,
     assigned_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE
@@ -48,7 +48,7 @@ CREATE TABLE task_execution_slot (
     status VARCHAR(50) NOT NULL CHECK (status IN ('FINISHED', 'MISSED', 'CREATED', 'CURRENT')),
     task_execution_id BIGINT REFERENCES task_patrol_execution(id) ON DELETE CASCADE ON UPDATE CASCADE,
     executed_by_workforce_id BIGINT,
-    customer_id BIGINT REFERENCES customer(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE ON UPDATE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE
 );
@@ -67,12 +67,12 @@ CREATE INDEX idx_task_execution_slot_workforce_status ON task_execution_slot(exe
 CREATE TABLE immediate_task_distribution (
     id BIGSERIAL PRIMARY KEY,
     task_distribution_id BIGINT REFERENCES task_distribution(id) ON DELETE CASCADE ON UPDATE CASCADE UNIQUE,
-    dispatcher_id BIGINT REFERENCES customer_user(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    dispatcher_id BIGINT REFERENCES customer_users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     location_id BIGINT REFERENCES location(id) ON DELETE CASCADE ON UPDATE CASCADE,
     location_name VARCHAR(255),
     longitude NUMERIC(13,10),
     latitude NUMERIC(13,10),
-    customer_id BIGINT REFERENCES customer(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE ON UPDATE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE
 );
@@ -96,7 +96,7 @@ CREATE TABLE patrol_task_distribution (
     service_time_id BIGINT REFERENCES lk_customer_contract_operation_service(id) ON DELETE CASCADE ON UPDATE CASCADE,
     distributed_quantity INTEGER,
     frequency_rate VARCHAR(100),
-    customer_id BIGINT REFERENCES customer(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE ON UPDATE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE,
     CONSTRAINT uc_patroltaskdistribution_patroldetailid_servicetimeid UNIQUE (patrol_detail_id, service_time_id)
