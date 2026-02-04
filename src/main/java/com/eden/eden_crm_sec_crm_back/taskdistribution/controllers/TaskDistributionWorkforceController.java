@@ -18,7 +18,7 @@ public class TaskDistributionWorkforceController {
 
     private final DistributedTaskService distributedTaskService;
 
-    @GetMapping("/today-tasks")
+    @PostMapping("/today-tasks")
     public ApiResponse<TodayTasksResponse> getTodayTasks(@Valid @RequestBody TodayTasksRequest todayTasksRequest) {
         return ApiResponse.ok(distributedTaskService.getTodayTasks(todayTasksRequest));
     }
