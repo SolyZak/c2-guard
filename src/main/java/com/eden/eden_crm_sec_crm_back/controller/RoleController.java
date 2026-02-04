@@ -7,6 +7,10 @@ import com.eden.eden_crm_sec_crm_back.dto.rbac.UpdateRoleRequest;
 import com.eden.eden_crm_sec_crm_back.mapper.RbacMapper;
 import com.eden.eden_crm_sec_crm_back.service.rbac.RoleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,7 +39,15 @@ public class RoleController {
     }
 
     @GetMapping
-    public List<RoleSummaryDto> getAll() {
-        return roleService.getAllSummaries();
+    public Page<RoleSummaryDto> getAll(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        Pageable pageable = (page != null && size != null)
+                ? PageRequest.of(page, size, Sort.by("name").ascending())
+                : Pageable.unpaged();
+
+        return roleService.getAllSummaries(q, pageable);
     }
 }
