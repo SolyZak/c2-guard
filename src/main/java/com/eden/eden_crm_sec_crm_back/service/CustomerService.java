@@ -17,4 +17,5 @@ public interface CustomerService {
     CustomerResponseDto show(Long id);
     CustomerResponseDto update(Long id, UpdateCustomerRequestDto dto);
     void enableCustomer(Long customerId);
+    void setCustomerActivation(Long customerId, boolean active);
 }

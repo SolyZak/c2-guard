@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.CustomerActivationRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.CustomerPaginateDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.CustomerRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerRequestDto;
@@ -85,6 +86,18 @@ public class CustomersController {
             @Valid @RequestBody UpdateCustomerRequestDto dto
     ) {
         return ApiResponse.ok(customerService.update(id, dto));
+    }
+
+    @Operation(summary = "Activate/Deactivate customer (sync with Keycloak enabled flag)")
+    @PatchMapping(path = "{id}/activation")
+    ApiResponse<String> setCustomerActivation(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CustomerActivationRequestDto dto
+    ) {
+        customerService.setCustomerActivation(id, dto.active());
+        return ApiResponse.ok(dto.active()
+                ? MessageUtil.getMessage("customer.activated")
+                : MessageUtil.getMessage("customer.deactivated"));
     }
 
     @Operation(summary = "Enable customer account via keycloak")

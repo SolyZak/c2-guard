@@ -49,6 +49,30 @@ public class KeycloakClientImpl implements KeycloakClient {
         }
         return false;
     }
+    @Override
+    public void setUserEnabled(String username, boolean enabled) {
+        UsersResource usersResource = getRealmResource().users();
+
+        UserRepresentation user = usersResource.search(username, 0, 1)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("identity-manager.user.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        try {
+            UserRepresentation rep = usersResource.get(user.getId()).toRepresentation();
+            rep.setEnabled(enabled);
+            usersResource.get(user.getId()).update(rep);
+        } catch (Exception e) {
+            log.error("Failed to set enabled={} for user [{}]: {}", enabled, username, e.getMessage());
+            throw new BusinessException(
+                    MessageUtil.getMessage("identity-manager.failed.update.user"),
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+        }
+    }
 
     @Override
     public void createUser(UserRequest userRequest) {

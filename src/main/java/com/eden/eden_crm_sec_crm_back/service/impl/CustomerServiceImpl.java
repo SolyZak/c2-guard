@@ -104,37 +104,100 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    @Transactional
     public CustomerResponseDto update(Long id, UpdateCustomerRequestDto dto) {
         Customer customer = repository.findById(id)
-                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("exception.customer.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
 
-        // validate email
         isEmailExists(dto.email(), id);
         if (keycloakClient.userExitsIgnoreUserId(dto.email(), id)) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("email-cant-login"),
-                    HttpStatus.BAD_REQUEST
-            );
+            throw new BusinessException(MessageUtil.getMessage("email-cant-login"), HttpStatus.BAD_REQUEST);
         }
+
         String oldUsername = customer.getEmail();
 
         mapper.updateCustomerFromDto(dto, customer);
-
         repository.save(customer);
 
+        UserRequest userRequest = new UserRequest(
+                customer.getId(),
+                UserType.CUSTOMER,
+                customer.getEmail(),
+                customer.getName(),
+                "",
+                customer.getEmail() + "@123",
+                customer.getEmail(),
+                true
+        );
+
+        boolean oldExists = !ObjectUtils.isEmpty(oldUsername) && keycloakClient.userExits(oldUsername);
+        boolean newExists = !ObjectUtils.isEmpty(customer.getEmail()) && keycloakClient.userExits(customer.getEmail());
+
         if (customer.isActive()) {
-            UserRequest userRequest = new UserRequest(
-                    customer.getId(), UserType.CUSTOMER, customer.getEmail(), customer.getName(), "",
-                    customer.getEmail() + "@123", customer.getEmail(), true
-            );
-            if (keycloakClient.userExits(oldUsername)) {
-                keycloakClient.updateUser(oldUsername, userRequest);
+            if (oldExists) {
+                keycloakClient.updateUser(oldUsername, userRequest);     // handles email change
+                keycloakClient.setUserEnabled(customer.getEmail(), true);
+            } else if (newExists) {
+                keycloakClient.updateUser(customer.getEmail(), userRequest);
+                keycloakClient.setUserEnabled(customer.getEmail(), true);
             } else {
                 keycloakClient.createUser(userRequest);
+                keycloakClient.setUserEnabled(customer.getEmail(), true);
             }
+        } else {
+            if (newExists) keycloakClient.setUserEnabled(customer.getEmail(), false);
+            if (oldExists) keycloakClient.setUserEnabled(oldUsername, false);
         }
 
         return mapper.customerToResponse(customer);
+    }
+    @Override
+    @Transactional
+    public void setCustomerActivation(Long customerId, boolean active) {
+        Customer customer = repository.findById(customerId)
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("exception.customer.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (ObjectUtils.isEmpty(customer.getEmail())) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.email.not.empty"),
+                    HttpStatus.UNPROCESSABLE_ENTITY
+            );
+        }
+
+        customer.setActive(active);
+        repository.save(customer);
+
+        boolean exists = keycloakClient.userExits(customer.getEmail());
+
+        if (active) {
+            if (exists) {
+                keycloakClient.setUserEnabled(customer.getEmail(), true);
+            } else {
+                String password = customer.getEmail() + "@123";
+                keycloakClient.createUser(new UserRequest(
+                        customer.getId(),
+                        UserType.CUSTOMER,
+                        customer.getEmail(),
+                        customer.getName(),
+                        "",
+                        password,
+                        customer.getEmail(),
+                        true
+                ));
+                sendEmailToEnabledCustomer(customer.getEmail(), customer.getId().toString(), password);
+            }
+        } else {
+
+            if (exists) {
+                keycloakClient.setUserEnabled(customer.getEmail(), false);
+            }
+        }
     }
 
     @Override

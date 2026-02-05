@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.rbac.AssignCustomerUserRoleRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddCustomerUserDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.CustomerActivationRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
@@ -10,6 +11,7 @@ import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
 import com.eden.eden_crm_sec_crm_back.service.rbac.CustomerUserRoleService;
 
+import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -62,5 +64,17 @@ public class CustomerUserController {
     public Map<String, String> assign(@PathVariable Long id, @RequestBody AssignCustomerUserRoleRequest req) {
         String roleName = CustomerUserRoleService.assignRole(id, req.roleId());
         return Map.of("roleName", roleName);
+    }
+
+    @Operation(summary = "Activate/Deactivate customer user (DB + Keycloak)")
+    @PatchMapping("{id}/activation")
+    ApiResponse<String> setActivation(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CustomerActivationRequestDto dto
+    ) {
+        customerUserService.setCustomerUserActivation(id, dto.active());
+        return ApiResponse.ok(dto.active()
+                ? MessageUtil.getMessage("customer-user.activated")
+                : MessageUtil.getMessage("customer-user.deactivated"));
     }
 }

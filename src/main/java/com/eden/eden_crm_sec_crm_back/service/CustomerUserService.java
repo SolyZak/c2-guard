@@ -16,4 +16,6 @@ public interface CustomerUserService {
 
         CustomerUserInfoResponse getLoggedInUserInfo();
 
+    void setCustomerUserActivation(Long id, boolean active);
+
 }

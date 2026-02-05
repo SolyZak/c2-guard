@@ -50,6 +50,7 @@ public class CustomerUserServiceImpl implements CustomerUserService {
 
         CustomerUser entity = mapper.toEntity(dto);
         entity.setCustomer(customer);
+        entity.setActive(true);
         customerUserRepository.save(entity);
 
         keycloakClient.createUser(new UserRequest(
@@ -61,6 +62,45 @@ public class CustomerUserServiceImpl implements CustomerUserService {
         sendEmailToEnabledCustomer(entity.getName(), entity.getEmail(), dto.getPassword());
 
         return MessageUtil.getMessage("customer-user.created");
+    }
+    @Override
+    @Transactional
+    public void setCustomerUserActivation(Long id, boolean active) {
+        CustomerUser user = customerUserRepository.findByIdAncCustomerId(id, getLoggedInCustomerId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("customer-user")}),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        user.setActive(active);
+        customerUserRepository.save(user);
+
+        boolean exists = keycloakClient.userExits(user.getEmail());
+
+        if (active) {
+            if (exists) {
+                keycloakClient.setUserEnabled(user.getEmail(), true);
+            } else {
+                String tempPassword = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 10) + "@1";
+
+                keycloakClient.createUser(new UserRequest(
+                        user.getId(),
+                        UserType.USER_CUSTOMER,
+                        user.getEmail(),
+                        user.getName(),
+                        "",
+                        tempPassword,
+                        user.getEmail(),
+                        true // force change on first login
+                ));
+
+                sendEmailToEnabledCustomer(user.getName(), user.getEmail(), tempPassword);
+            }
+        } else {
+            if (exists) {
+                keycloakClient.setUserEnabled(user.getEmail(), false);
+            }
+        }
     }
 
     @Override
