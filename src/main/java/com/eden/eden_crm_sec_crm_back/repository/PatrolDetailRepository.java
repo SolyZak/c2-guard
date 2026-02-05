@@ -14,14 +14,18 @@ public interface PatrolDetailRepository extends JpaRepository<PatrolDetail,Long>
             pd.id as patrolDetailId,
             pd.task.name as taskName
         FROM PatrolDetail pd
+        LEFT JOIN PatrolTaskDistribution ptd
+            WITH ptd.patrolDetail = pd AND ptd.serviceTime.id = :serviceTimeId
         WHERE pd.patrol.id = :patrolId
           AND pd.location.id = :locationId
           AND pd.task.customer.id = :customerId
+          AND ptd.id IS NULL
     """)
     List<DistributableTaskProjection> getDistributableTasks(
         @Param("customerId") Long customerId,
         @Param("patrolId") Long patrolId,
-        @Param("locationId") Long locationId
+        @Param("locationId") Long locationId,
+        @Param("serviceTimeId") Long serviceTimeId
     );
 
     long countByPatrol_Id(Long patrolId);
