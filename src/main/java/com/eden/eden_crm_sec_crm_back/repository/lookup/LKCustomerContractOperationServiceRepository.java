@@ -46,29 +46,25 @@ public interface LKCustomerContractOperationServiceRepository extends JpaReposit
 
     Optional<LKCustomerContractOperationService> findByIdAndSiteDistribution_Id(Long id, Long siteDistributionId);
 
-    /* Include the service only when there exists at least one PatrolDetail for the given
-       patrol that is NOT yet paired (via PatrolTaskDistribution) with this service.
-     */
     @Query("""
-        SELECT DISTINCT s FROM LKCustomerContractOperationService s
+        SELECT
+            s.id as id,
+            s.fromTime as startTime,
+            s.toTime as endTime
+        FROM LKCustomerContractOperationService s
         JOIN s.siteDistribution sd
+        LEFT JOIN s.patrolTaskDistributions ptd WITH ptd.patrolDetail.patrol.id = :patrolId
         WHERE sd.customerContract.id = :contractId
-        AND sd.lkCustomerContractService.id = :serviceId
-        AND sd.site.id = :siteId
-        AND EXISTS (
-            SELECT pd FROM PatrolDetail pd
-            WHERE pd.patrol.id = :patrolId
-              AND NOT EXISTS (
-                  SELECT ptd FROM PatrolTaskDistribution ptd
-                  WHERE ptd.serviceTime = s
-                    AND ptd.patrolDetail = pd
-              )
-        )
+          AND sd.lkCustomerContractService.id = :serviceId
+          AND sd.site.id = :siteId
+        GROUP BY s.id, s.fromTime, s.toTime
+        HAVING COUNT(DISTINCT ptd.patrolDetail.id) < :patrolDetailCount
     """)
-    List<LKCustomerContractOperationService> findAvailableServiceTimes(
+    List<DistributionTimesProjection> findAvailableServiceTimesProjection(
         @Param("contractId") Long contractId,
         @Param("serviceId") Long serviceId,
         @Param("siteId") Long siteId,
-        @Param("patrolId") Long patrolId
+        @Param("patrolId") Long patrolId,
+        @Param("patrolDetailCount") long patrolDetailCount
     );
 }

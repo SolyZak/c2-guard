@@ -8,6 +8,7 @@ import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.*;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractService;
+import com.eden.eden_crm_sec_crm_back.models.projections.DistributionTimesProjection;
 import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
@@ -184,23 +185,27 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         UserData loggedInUser = getLoggedInUser();
         Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
         CustomTimezone customerTimezone = customer.getTimezone();
-        List<LKCustomerContractOperationService> serviceTimes = customerContractOperationServiceRepository.findAvailableServiceTimes(
+
+        long patrolDetailCount = patrolDetailRepository.countByPatrol_Id(availableServiceTimesRequest.patrolId());
+        List<AvailableServiceTimeResponse> result = new ArrayList<>();
+        if (patrolDetailCount == 0)
+            return result;
+
+        List<DistributionTimesProjection> serviceTimes = customerContractOperationServiceRepository.findAvailableServiceTimesProjection(
             availableServiceTimesRequest.contractId(),
             availableServiceTimesRequest.serviceId(),
             availableServiceTimesRequest.siteId(),
-            availableServiceTimesRequest.patrolId()
+            availableServiceTimesRequest.patrolId(),
+            patrolDetailCount
         );
 
-        List<AvailableServiceTimeResponse> result = new ArrayList<>();
-        serviceTimes.forEach(serviceTime ->
-            result.add(
-                AvailableServiceTimeResponse.builder()
-                    .serviceTimeId(serviceTime.getId())
-                    .startTime(DateUtils.withTimeZone(customerTimezone, serviceTime.getFromTime()))
-                    .endTime(DateUtils.withTimeZone(customerTimezone, serviceTime.getToTime()))
-                    .build()
-            )
-        );
+        serviceTimes.forEach(serviceTime -> result.add(
+            AvailableServiceTimeResponse.builder()
+                .serviceTimeId(serviceTime.getId())
+                .startTime(DateUtils.withTimeZone(customerTimezone, serviceTime.getStartTime()))
+                .endTime(DateUtils.withTimeZone(customerTimezone, serviceTime.getEndTime()))
+                .build()
+        ));
         return result;
     }
 
