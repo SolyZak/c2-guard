@@ -23,4 +23,6 @@ public interface PatrolDetailRepository extends JpaRepository<PatrolDetail,Long>
         @Param("patrolId") Long patrolId,
         @Param("locationId") Long locationId
     );
+
+    long countByPatrol_Id(Long patrolId);
 }
