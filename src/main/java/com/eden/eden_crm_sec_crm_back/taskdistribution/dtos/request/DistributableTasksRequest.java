@@ -8,5 +8,7 @@ public record DistributableTasksRequest(
     @NotNull
     Long patrolId,
     @NotNull
-    Long locationId
+    Long locationId,
+    @NotNull
+    Long serviceTimeId
 ) {}

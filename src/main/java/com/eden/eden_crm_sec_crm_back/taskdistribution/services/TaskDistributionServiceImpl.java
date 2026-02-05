@@ -216,7 +216,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         List<DistributableTaskProjection> tasks = patrolDetailRepository.getDistributableTasks(
             customer.getId(),
             distributableTasksRequest.patrolId(),
-            distributableTasksRequest.locationId()
+            distributableTasksRequest.locationId(),
+            distributableTasksRequest.serviceTimeId()
         );
         return taskDistributionMapper.toDistributableTaskResponseList(tasks);
     }
