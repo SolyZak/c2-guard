@@ -35,23 +35,23 @@ public class PatrolTaskDistribution {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_distribution_id")
+    @JoinColumn(name = "task_distribution_id", nullable = false)
     private TaskDistribution taskDistribution;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patrol_detail_id")
+    @JoinColumn(name = "patrol_detail_id", nullable = false)
     private PatrolDetail patrolDetail;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id")
+    @JoinColumn(name = "service_id", nullable = false)
     private LKCustomerContractService service;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
+    @JoinColumn(name = "location_id", nullable = false)
     private Location location;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_time_id")
+    @JoinColumn(name = "service_time_id", nullable = false)
     private LKCustomerContractOperationService serviceTime;
 
     @Column(name = "distributed_quantity")
@@ -61,7 +61,7 @@ public class PatrolTaskDistribution {
     private String frequencyRate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
     @Column(name = "created_at", updatable = false)
