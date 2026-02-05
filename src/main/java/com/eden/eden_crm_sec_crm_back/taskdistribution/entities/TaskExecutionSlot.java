@@ -64,7 +64,7 @@ public class TaskExecutionSlot {
     @CreationTimestamp
     private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", insertable = false)
     @UpdateTimestamp
     private OffsetDateTime updatedAt;
 }
