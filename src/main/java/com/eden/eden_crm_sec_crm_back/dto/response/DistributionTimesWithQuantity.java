@@ -11,4 +11,5 @@ public class DistributionTimesWithQuantity {
     OffsetTime startTime;
     OffsetTime endTime;
     String id;
+    Long serviceTimeId;
 }

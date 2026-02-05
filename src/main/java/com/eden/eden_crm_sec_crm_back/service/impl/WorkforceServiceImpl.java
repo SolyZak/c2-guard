@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -189,10 +189,12 @@ public class WorkforceServiceImpl implements WorkforceService {
                                             d.getOperationServices().stream()
                                                     .filter(os -> os.getDays().contains(weekDaysEnum))
                                                     .flatMap(os ->
-                                                            LongStream.range(0, os.getQuantity())  // repeat for quantity times
+                                                            IntStream.range(0, os.getQuantity().intValue())
                                                                     .mapToObj(i -> WorkforceSiteDistributionWorkingPeriodDto.builder()
                                                                             .id(os.getId())
                                                                             .patrolPeriodId(os.getId() + "_" + i)
+                                                                            .serviceTimeId(os.getId())
+                                                                            .slotNumber(i + 1)
                                                                             .fromTime(DateUtils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os)))
                                                                             .toTime(DateUtils.toLocalTime(site.getTimezone(), getToTime(os)))
                                                                             .isWorking(isWorkingPeriod(contractOperationRule, os))
