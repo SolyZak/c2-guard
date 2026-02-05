@@ -77,6 +77,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         CustomerContract contract = getContract(distributePatrolTaskRequest.contractId());
         LKCustomerContractService service = getService(distributePatrolTaskRequest.serviceId());
 
+        Map<String, List<TaskTimeWindow>> timeWindowsCache = new HashMap<>();
         List<TaskDistribution> distributionsToSave = new ArrayList<>();
 
         for (DistributePatrolTaskEntryRequest entry : distributePatrolTaskRequest.distributions()) {
@@ -89,40 +90,38 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
              List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(customer, serviceTime.getQuantity().intValue(), assignedAt);
              Set<DayOfWeek> targetDays = extractTargetDays(serviceTime);
 
-             Map<String, List<TaskTimeWindow>> timeWindowsCache = new HashMap<>();
+              for(PatrolDetail patrolDetail : patrolDetails) {
+                  Patrol patrol = validateAndGetPatrol(patrolDetail, customer);
+                  TaskDistribution taskDistribution = buildTaskDistributionBase(
+                      customer,
+                      contract,
+                      patrolDetail.getTask(),
+                      DistributionType.PATROL
+                  );
+                  PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(customer, taskDistribution, service, patrolDetail, serviceTime, patrol);
+                  taskDistribution.setPatrolTaskDistribution(patrolTaskDistribution);
 
-             for(PatrolDetail patrolDetail : patrolDetails) {
-                 Patrol patrol = validateAndGetPatrol(patrolDetail, customer);
-                 TaskDistribution taskDistribution = buildTaskDistributionBase(
-                     customer,
-                     contract,
-                     patrolDetail.getTask(),
-                     DistributionType.PATROL
-                 );
-                 PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(customer, taskDistribution, service, patrolDetail, serviceTime, patrol);
-                 taskDistribution.setPatrolTaskDistribution(patrolTaskDistribution);
+                  List<TaskTimeWindow> timeWindows = getOrBuildPatrolTimeWindows(
+                          timeWindowsCache,
+                          customer,
+                          patrol,
+                          entry.startDate(),
+                          contract.getEndAgreementDate(),
+                          serviceTime,
+                          targetDays
+                  );
 
-                 List<TaskTimeWindow> timeWindows = getOrBuildPatrolTimeWindows(
-                         timeWindowsCache,
-                         customer,
-                         patrol,
-                         entry.startDate(),
-                         contract.getEndAgreementDate(),
-                         serviceTime,
-                         targetDays
-                 );
+                  List<TaskExecutionSlot> executionSlots = buildExecutionSlotsFromTimeWindows(
+                          customer,
+                          taskDistribution,
+                          taskAssignments,
+                          timeWindows
+                  );
+                  patrolTaskDistribution.setDistributedQuantity(executionSlots.size());
+                  taskDistribution.setExecutionSlots(executionSlots);
 
-                 List<TaskExecutionSlot> executionSlots = buildExecutionSlotsFromTimeWindows(
-                         customer,
-                         taskDistribution,
-                         taskAssignments,
-                         timeWindows
-                 );
-                 patrolTaskDistribution.setDistributedQuantity(executionSlots.size());
-                 taskDistribution.setExecutionSlots(executionSlots);
-
-                 distributionsToSave.add(taskDistribution);
-             }
+                  distributionsToSave.add(taskDistribution);
+              }
         }
 
         distributionsToSave = taskDistributionRepository.saveAllAndFlush(distributionsToSave);
@@ -378,20 +377,23 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         LKCustomerContractOperationService serviceTime,
         Set<DayOfWeek> targetDays
     ) {
-        String scheduleKey = patrol.getFrequency() + "|" + patrol.getFrequencyRate();
-        return timeWindowsCache.computeIfAbsent(
-            scheduleKey,
-            k -> buildPatrolTimeWindows(
-                customer,
-                patrol,
-                startDate,
-                endDate,
-                serviceTime.getFromTime(),
-                serviceTime.getToTime(),
-                targetDays
-            )
-        );
-    }
+        String scheduleKey = patrol.getFrequency()
+            + "|" + patrol.getFrequencyRate()
+            + "|" + serviceTime.getId()
+            + "|" + startDate.toString();
+         return timeWindowsCache.computeIfAbsent(
+             scheduleKey,
+             k -> buildPatrolTimeWindows(
+                 customer,
+                 patrol,
+                 startDate,
+                 endDate,
+                 serviceTime.getFromTime(),
+                 serviceTime.getToTime(),
+                 targetDays
+             )
+         );
+     }
 
     private static List<TaskExecutionSlot> buildExecutionSlotsFromTimeWindows(
         Customer customer,
