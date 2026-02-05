@@ -32,11 +32,11 @@ public class ImmediateTaskDistribution {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_distribution_id")
+    @JoinColumn(name = "task_distribution_id", nullable = false)
     private TaskDistribution taskDistribution;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dispatcher_id")
+    @JoinColumn(name = "dispatcher_id", nullable = false)
     private CustomerUser dispatcher;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -53,7 +53,7 @@ public class ImmediateTaskDistribution {
     private BigDecimal latitude;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
     @Column(name = "created_at", updatable = false)

@@ -12,10 +12,7 @@ import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.AvailableServiceTimesRequest;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributableTasksRequest;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributeImmediateTaskRequest;
-import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskRequest;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
@@ -72,55 +69,59 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     @Override
     @Transactional
     public void distributePatrolTasks(DistributePatrolTaskRequest distributePatrolTaskRequest) {
-        validatePatrolDistributionStartDate(distributePatrolTaskRequest.startDate());
+        distributePatrolTaskRequest.distributions()
+                .forEach(distribution -> validatePatrolDistributionStartDate(distribution.startDate()));
 
         UserData loggedInUser = getLoggedInUser();
         Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
         CustomerContract contract = getContract(distributePatrolTaskRequest.contractId());
         LKCustomerContractService service = getService(distributePatrolTaskRequest.serviceId());
-        SiteDistribution siteDistribution = getSiteDistribution(distributePatrolTaskRequest);
-        LKCustomerContractOperationService serviceTime = getServiceTime(distributePatrolTaskRequest.serviceTimeId(), siteDistribution);
-        List<PatrolDetail> patrolDetails = getPatrolDetails(distributePatrolTaskRequest.patrolDetailIds());
-        validatePatrolDetailNotDistributedBefore(serviceTime.getId(), patrolDetails);
-
-        OffsetDateTime assignedAt = OffsetDateTime.now();
-        List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(customer, serviceTime.getQuantity().intValue(), assignedAt);
-        Set<DayOfWeek> targetDays = extractTargetDays(serviceTime);
 
         Map<String, List<TaskTimeWindow>> timeWindowsCache = new HashMap<>();
         List<TaskDistribution> distributionsToSave = new ArrayList<>();
 
-        for(PatrolDetail patrolDetail : patrolDetails) {
-            Patrol patrol = validateAndGetPatrol(patrolDetail, customer);
-            TaskDistribution taskDistribution = buildTaskDistributionBase(
-                customer,
-                contract,
-                patrolDetail.getTask(),
-                DistributionType.PATROL
-            );
-            PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(customer, taskDistribution, service, patrolDetail, serviceTime, patrol);
-            taskDistribution.setPatrolTaskDistribution(patrolTaskDistribution);
+        for (DistributePatrolTaskEntryRequest entry : distributePatrolTaskRequest.distributions()) {
+             SiteDistribution siteDistribution = getSiteDistribution(entry.siteId(), distributePatrolTaskRequest.contractId(), distributePatrolTaskRequest.serviceId());
+             LKCustomerContractOperationService serviceTime = getServiceTime(entry.serviceTimeId(), siteDistribution);
+             List<PatrolDetail> patrolDetails = getPatrolDetails(entry.patrolDetailIds());
+             validatePatrolDetailNotDistributedBefore(serviceTime.getId(), patrolDetails);
 
-            List<TaskTimeWindow> timeWindows = getOrBuildPatrolTimeWindows(
-                    timeWindowsCache,
-                    customer,
-                    patrol,
-                    distributePatrolTaskRequest.startDate(),
-                    contract.getEndAgreementDate(),
-                    serviceTime,
-                    targetDays
-            );
+             OffsetDateTime assignedAt = OffsetDateTime.now();
+             List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(customer, serviceTime.getQuantity().intValue(), assignedAt);
+             Set<DayOfWeek> targetDays = extractTargetDays(serviceTime);
 
-            List<TaskExecutionSlot> executionSlots = buildExecutionSlotsFromTimeWindows(
-                    customer,
-                    taskDistribution,
-                    taskAssignments,
-                    timeWindows
-            );
-            patrolTaskDistribution.setDistributedQuantity(executionSlots.size());
-            taskDistribution.setExecutionSlots(executionSlots);
+              for(PatrolDetail patrolDetail : patrolDetails) {
+                  Patrol patrol = validateAndGetPatrol(patrolDetail, customer);
+                  TaskDistribution taskDistribution = buildTaskDistributionBase(
+                      customer,
+                      contract,
+                      patrolDetail.getTask(),
+                      DistributionType.PATROL
+                  );
+                  PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(customer, taskDistribution, service, patrolDetail, serviceTime, patrol);
+                  taskDistribution.setPatrolTaskDistribution(patrolTaskDistribution);
 
-            distributionsToSave.add(taskDistribution);
+                  List<TaskTimeWindow> timeWindows = getOrBuildPatrolTimeWindows(
+                          timeWindowsCache,
+                          customer,
+                          patrol,
+                          entry.startDate(),
+                          contract.getEndAgreementDate(),
+                          serviceTime,
+                          targetDays
+                  );
+
+                  List<TaskExecutionSlot> executionSlots = buildExecutionSlotsFromTimeWindows(
+                          customer,
+                          taskDistribution,
+                          taskAssignments,
+                          timeWindows
+                  );
+                  patrolTaskDistribution.setDistributedQuantity(executionSlots.size());
+                  taskDistribution.setExecutionSlots(executionSlots);
+
+                  distributionsToSave.add(taskDistribution);
+              }
         }
 
         distributionsToSave = taskDistributionRepository.saveAllAndFlush(distributionsToSave);
@@ -240,12 +241,12 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("validation.service.invalid"), HttpStatus.NOT_FOUND));
     }
 
-    private SiteDistribution getSiteDistribution(DistributePatrolTaskRequest distributePatrolTaskRequest) {
+    private SiteDistribution getSiteDistribution(Long siteId, Long contractId, Long serviceId) {
         return siteDistributionRepository
             .findBySiteIdAndContractIdAndServiceId(
-                distributePatrolTaskRequest.siteId(),
-                distributePatrolTaskRequest.contractId(),
-                distributePatrolTaskRequest.serviceId()
+                siteId,
+                contractId,
+                serviceId
             )
             .orElseThrow(() -> new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST));
     }
@@ -376,20 +377,23 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         LKCustomerContractOperationService serviceTime,
         Set<DayOfWeek> targetDays
     ) {
-        String scheduleKey = patrol.getFrequency() + "|" + patrol.getFrequencyRate();
-        return timeWindowsCache.computeIfAbsent(
-            scheduleKey,
-            k -> buildPatrolTimeWindows(
-                customer,
-                patrol,
-                startDate,
-                endDate,
-                serviceTime.getFromTime(),
-                serviceTime.getToTime(),
-                targetDays
-            )
-        );
-    }
+        String scheduleKey = patrol.getFrequency()
+            + "|" + patrol.getFrequencyRate()
+            + "|" + serviceTime.getId()
+            + "|" + startDate.toString();
+         return timeWindowsCache.computeIfAbsent(
+             scheduleKey,
+             k -> buildPatrolTimeWindows(
+                 customer,
+                 patrol,
+                 startDate,
+                 endDate,
+                 serviceTime.getFromTime(),
+                 serviceTime.getToTime(),
+                 targetDays
+             )
+         );
+     }
 
     private static List<TaskExecutionSlot> buildExecutionSlotsFromTimeWindows(
         Customer customer,
@@ -580,7 +584,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
     private static void validateStepSize(int minutesStep) {
         if (minutesStep <= 0)
-            throw new RuntimeException("Step must be greater than zero");
+            throw new IllegalArgumentException("Step must be greater than zero");
     }
 
     private static boolean representsFullDayShift(OffsetTime start, OffsetTime end) {
@@ -647,6 +651,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     }
 
     private static OffsetTime calculateContinuationPointAfterMidnight(List<OffsetTime> beforeMidnight, int minutesStep) {
+        if (beforeMidnight == null || beforeMidnight.isEmpty())
+            return null;
         OffsetTime lastTimeBeforeMidnight = beforeMidnight.getLast();
         return lastTimeBeforeMidnight.plusMinutes(minutesStep);
     }

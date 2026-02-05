@@ -33,19 +33,19 @@ public class TaskDistribution {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contract_id")
+    @JoinColumn(name = "contract_id", nullable = false)
     private CustomerContract contract;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
+    @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "distribution_type")
+    @Column(name = "distribution_type", nullable = false)
     private DistributionType distributionType;
 
     @Column(name = "created_at", updatable = false)

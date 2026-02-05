@@ -32,21 +32,21 @@ public class TaskExecutionSlot {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_distribution_id")
+    @JoinColumn(name = "task_distribution_id", nullable = false)
     private TaskDistribution taskDistribution;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_assignment_id")
+    @JoinColumn(name = "task_assignment_id", nullable = false)
     private TaskAssignment taskAssignment;
 
-    @Column(name = "start_date_time")
+    @Column(name = "start_date_time", nullable = false)
     private OffsetDateTime startDateTime;
 
-    @Column(name = "end_date_time")
+    @Column(name = "end_date_time", nullable = false)
     private OffsetDateTime endDateTime;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private TaskDistributionStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -57,7 +57,7 @@ public class TaskExecutionSlot {
     private Long executedByWorkforceId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
     @Column(name = "created_at", updatable = false)
