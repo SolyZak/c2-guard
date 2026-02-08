@@ -1,31 +1,18 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
-import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
-import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskDistributionRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.AddTaskRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDTO;
-import com.eden.eden_crm_sec_crm_back.dto.response.*;
-import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
-import com.eden.eden_crm_sec_crm_back.enums.PatrolFrequencyEnum;
-import com.eden.eden_crm_sec_crm_back.enums.TaskDistributionStatus;
+import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.TaskDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
-import com.eden.eden_crm_sec_crm_back.models.ContractOperationSiteDistributionPatrol;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.models.TaskCheck;
-import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskCheckPatrolExecution;
-import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecution;
-import com.eden.eden_crm_sec_crm_back.models.projections.TodayTasksProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
-import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
-import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.TaskService;
-import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
-import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
-import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,20 +24,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
-    private final TaskPatrolExecutionRepository taskPatrolExecutionRepository;
     private final CustomerRepository customerRepository;
-    private final ContractOperationSiteDistributionPatrolRepository repository;
     private final Utils utils;
-    private final WorkforceService workforceService;
+
     @Override
     public PaginateResponse<TaskCheckDto> listTasks(Integer page, Integer size) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
@@ -94,120 +79,6 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public List<TaskDto> listTasksNoPaginationForLoggedInCustomerByLocationIdAndPatrolId(Long locationId, Long patrolId) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
-        List<Task> tasks = taskRepository.listLoggedInTasksByPatrolIdAndLocationId(customer.getId(), patrolId, locationId);
-        List<TaskDto> taskDtos = new ArrayList<>();
-        for (Task task : tasks) {
-            TaskDto taskDto = new TaskDto(task.getName(), task.getId());
-            taskDtos.add(taskDto);
-        }
-        return taskDtos;
-    }
-
-    @Override
-    public TodayTasksResponseDto getTodayTasks(Long contractId, Long serviceId, Long siteId, String uniqueId) {
-        WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
-        Customer customer = customerRepository.findById(workforceFullDataDto.securityCompany().id()).orElseThrow(UserNotProvided::new);
-        List<TodayTasksProjection> todayTasksProjections = taskRepository.getTodayTasksByServiceIdAndContractId(
-                customer.getId(), contractId, serviceId, siteId, LocalDate.now(), uniqueId
-                );
-        Map<TodayTasks, List<TodayTasks>> map = new HashMap<>();
-        for (TodayTasksProjection projection : todayTasksProjections) {
-            TodayTasks search = new TodayTasks(
-                    projection.getTaskName(),
-                    projection.getPatrolId(),
-                    projection.getPatrolName(),
-                    projection.getLocationId(),
-                    projection.getLocationAccessType(),
-                    projection.getLocationName(),
-                    projection.getPremiseId(),
-                    projection.getPremiseName(),
-                    projection.getStartDate(),
-                    projection.getEndDate(),
-                    projection.getStartTime(),
-                    projection.getEndTime(),
-                    projection.getPatrolFreqType(),
-                    projection.getTaskId(),
-                    projection.getPatrolDistributionId(),
-                    projection.getPeriodStatus()
-            );
-            if (map.get(search) == null) {
-                List<TodayTasks> list = new ArrayList<>();
-                list.add(new TodayTasks(
-                        projection.getTaskName(),
-                        projection.getPatrolId(),
-                        projection.getPatrolName(),
-                        projection.getLocationId(),
-                        projection.getLocationAccessType(),
-                        projection.getLocationName(),
-                        projection.getPremiseId(),
-                        projection.getPremiseName(),
-                        projection.getStartDate(),
-                        projection.getEndDate(),
-                        projection.getStartTime(),
-                        projection.getEndTime(),
-                        projection.getPatrolFreqType(),
-                        projection.getTaskId(),
-                        projection.getPatrolDistributionId(),
-                        projection.getPeriodStatus()
-                ));
-                map.put(search, list);
-            } else {
-                map.get(search).add(new TodayTasks(
-                        projection.getTaskName(),
-                        projection.getPatrolId(),
-                        projection.getPatrolName(),
-                        projection.getLocationId(),
-                        projection.getLocationAccessType(),
-                        projection.getLocationName(),
-                        projection.getPremiseId(),
-                        projection.getPremiseName(),
-                        projection.getStartDate(),
-                        projection.getEndDate(),
-                        projection.getStartTime(),
-                        projection.getEndTime(),
-                        projection.getPatrolFreqType(),
-                        projection.getTaskId(),
-                        projection.getPatrolDistributionId(),
-                        projection.getPeriodStatus()
-                ));
-            }
-        }
-        List<TodayTaskEntryDto> tasks = new ArrayList<>();
-        for (Map.Entry<TodayTasks, List<TodayTasks>> entry : map.entrySet()) {
-            List<TodayTaskEntryTimesDto> times = entry.getValue().stream()
-                    .map(tt ->
-                            new TodayTaskEntryTimesDto(
-                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getStartTime()),
-                                    DateUtils.toLocalTime(customer.getTimezone(), tt.getEndTime()),
-                                    tt.getPeriodStatus(),
-                                    tt.getPatrolDistributionId()
-                            ))
-                    .sorted(
-                            Comparator.comparing(TodayTaskEntryTimesDto::getStartTime)
-                    )
-                    .toList();
-            TodayTaskEntryDto task = new TodayTaskEntryDto(
-                    entry.getKey().getTaskName(),
-                    entry.getKey().getPatrolName(),
-                    entry.getKey().getLocationName(),
-                    entry.getKey().getPremiseName(),
-                    entry.getKey().getPatrolFreqType(),
-                    entry.getKey().getEndDate(),
-                    times,
-                    entry.getKey().getTaskId(),
-                    entry.getKey().getPatrolId(),
-                    entry.getKey().getPremiseId(),
-                    entry.getKey().getLocationId(),
-                    entry.getKey().getLocationAccessType()
-            );
-            tasks.add(task);
-        }
-        return new TodayTasksResponseDto(tasks);
-    }
-
-    @Override
     public TaskCheckDto getTaskById(Long taskId) {
         Optional<Task> optionalTask = taskRepository.findById(taskId);
         if (!optionalTask.isPresent()){
@@ -224,73 +95,6 @@ public class TaskServiceImpl implements TaskService {
             dto = new TaskCheckDto(task.getName(), null);
         }
         return dto;
-    }
-
-    @Override
-    @Transactional
-    public void executeTask(AddTaskDistributionRequest request) {
-        Optional<ContractOperationSiteDistributionPatrol> optionalDistribution =  repository.findById(request.getPatrolDistributionId());
-        if (optionalDistribution.isEmpty()) {
-            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
-        }
-        ContractOperationSiteDistributionPatrol distributionPatrol = optionalDistribution.get();
-        CustomTimezone customTimezone = distributionPatrol.getCustomer().getTimezone();
-        OffsetDateTime startDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getStartDate(), distributionPatrol.getFromTime());
-        OffsetDateTime endDateTime = DateUtils.withTimeZone(customTimezone, distributionPatrol.getEndDate(), distributionPatrol.getToTime());
-        OffsetDateTime currentDateTime = OffsetDateTime.now();
-        boolean statusNotCurrent = !distributionPatrol.getStatus().equals(TaskDistributionStatus.CURRENT.name());
-        boolean currentDateTimeBeforeStartDateTime = currentDateTime.isBefore(startDateTime);
-        boolean currentDateTimeAfterEndDateTime = currentDateTime.isAfter(endDateTime);
-        log.info("statusNotCurrent: {}", statusNotCurrent);
-        log.info("currentDateTimeBeforeStartDateTime: {}", currentDateTimeBeforeStartDateTime);
-        log.info("currentDateTimeAfterEndDateTime: {}", currentDateTimeAfterEndDateTime);
-        if (
-            statusNotCurrent
-                || currentDateTimeBeforeStartDateTime
-                || currentDateTimeAfterEndDateTime
-        ) {
-            throw new BusinessException(MessageUtil.getMessage("task.execute.error"), HttpStatus.BAD_REQUEST);
-        }
-        Optional<Task> optionalTask = taskRepository.findById(request.getTaskId());
-        if (!optionalTask.isPresent()) {
-            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
-        }
-        ContractOperationSiteDistributionPatrol patrolDistribution = optionalDistribution.get();
-        Task task = optionalTask.get();
-
-        if (patrolDistribution.getPatrolFrequencyType().equals(PatrolFrequencyEnum.EVERY_PERIOD.getFreq()) && !LocalDate.now().equals(optionalDistribution.get().getStartDate())) {
-            throw new BusinessException("Too early to start task", HttpStatus.BAD_REQUEST);
-        }
-
-        if (!patrolDistribution.getTask().getId().equals(task.getId())) {
-            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
-        }
-
-        if (task.getTaskChecks().size() != request.getChecks().size()) {
-            throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
-        } else {
-            for (int i=0;i<task.getTaskChecks().size();i++) {
-                if (!task.getTaskChecks().get(i).mapToResponse().getClass().equals(request.getChecks().get(i).getClass()))
-                    throw new BusinessException("not-found", HttpStatus.NOT_FOUND);
-            }
-        }
-
-        WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
-
-        Customer customer = customerRepository.findById(workforceFullDataDto.securityCompany().id()).orElseThrow(UserNotProvided::new);
-        TaskPatrolExecution taskPatrolExecution = new TaskPatrolExecution();
-        taskPatrolExecution.setId(request.getTaskId());
-        taskPatrolExecution.setName(task.getName());
-        if (request.getChecks() != null) {
-            List<TaskCheckPatrolExecution> taskChecksPatrolExecution = new ArrayList<>(request.getChecks().size());
-            for (TaskCheckDTO dto : request.getChecks()) {
-                taskChecksPatrolExecution.add(dto.mapToExecutionEntity(taskPatrolExecution));
-            }
-            taskPatrolExecution.setTaskCheckPatrolExecutions(taskChecksPatrolExecution);
-        }
-        taskPatrolExecution.setCustomer(customer);
-        taskPatrolExecutionRepository.save(taskPatrolExecution);
-        patrolDistribution.setStatus(TaskDistributionStatus.FINISHED.name());
     }
 
     @Override

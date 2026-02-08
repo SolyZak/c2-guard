@@ -34,14 +34,4 @@ public class TaskController {
     public ApiResponse<List<TaskDto>> listLoggedInTasksNoPagination() {
         return ApiResponse.ok(taskService.listTasksNoPaginationForLoggedInCustomer());
     }
-
-    @GetMapping("/all/{patrolId}/{locationId}")
-    public ApiResponse<List<TaskDto>> listLoggedInTasksNoPagination(@PathVariable("patrolId") Long patrolId, @PathVariable("locationId") Long locationId) {
-        return ApiResponse.ok(taskService.listTasksNoPaginationForLoggedInCustomerByLocationIdAndPatrolId(locationId, patrolId));
-    }
-
-//    @GetMapping("/today/{contractId}/{serviceId}/{siteId}/{periodId}")
-//    public ApiResponse<TodayTasksResponseDto> getTodayTasks(@PathVariable("contractId") Long contractId, @PathVariable("serviceId") Long serviceId, @PathVariable("siteId") Long siteId, @PathVariable("periodId") String periodId) {
-//        return ApiResponse.ok(taskService.getTodayTasks(contractId, serviceId, siteId, periodId));
-//    }
 }
