@@ -1,9 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
-import com.eden.eden_crm_sec_crm_back.dto.rbac.CreateRoleRequest;
-import com.eden.eden_crm_sec_crm_back.dto.rbac.RoleDto;
-import com.eden.eden_crm_sec_crm_back.dto.rbac.RoleSummaryDto;
-import com.eden.eden_crm_sec_crm_back.dto.rbac.UpdateRoleRequest;
+import com.eden.eden_crm_sec_crm_back.dto.rbac.*;
 import com.eden.eden_crm_sec_crm_back.mapper.RbacMapper;
 import com.eden.eden_crm_sec_crm_back.service.rbac.RoleService;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +36,7 @@ public class RoleController {
     }
 
     @GetMapping
-    public Page<RoleSummaryDto> getAll(
+    public PagedResponse<RoleSummaryDto> getAll(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size
@@ -48,6 +45,7 @@ public class RoleController {
                 ? PageRequest.of(page, size, Sort.by("name").ascending())
                 : Pageable.unpaged();
 
-        return roleService.getAllSummaries(q, pageable);
+        Page<RoleSummaryDto> result = roleService.getAllSummaries(q, pageable);
+        return PagedResponse.from(result);
     }
 }
