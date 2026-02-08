@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -52,12 +51,9 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
     public JsonNode performTask(JsonNode arguments) {
         Long executionSlotId = JsonNodeUtils.getOptionalLong(arguments, "executionSlotId")
             .orElseThrow(() -> new BusinessException("Execution slot id is required", HttpStatus.BAD_REQUEST));
+        TaskExecutionSlot executionSlot = repository.findById(executionSlotId)
+                .orElseThrow(() -> new BusinessException("Execution slot not found", HttpStatus.NOT_FOUND));
 
-        Optional<TaskExecutionSlot> executionSlotOptional = repository.findById(executionSlotId);
-        if (executionSlotOptional.isEmpty())
-            throw new BusinessException("Execution slot not found", HttpStatus.NOT_FOUND);
-
-        TaskExecutionSlot executionSlot = executionSlotOptional.get();
         if (executionSlot.getStatus() != TaskDistributionStatus.FINISHED) {
             executionSlot.setStatus(TaskDistributionStatus.MISSED);
             repository.saveAndFlush(executionSlot);
@@ -102,7 +98,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
             case PATROL -> {
                 PatrolTaskDistribution patrolTaskDistribution = taskDistribution.getPatrolTaskDistribution();
                 if (patrolTaskDistribution == null || patrolTaskDistribution.getLocation() == null) {
-                    throw new RuntimeException("Patrol task distribution or location is null");
+                    throw new IllegalArgumentException("Patrol task distribution or location is null");
                 }
                 yield LocationPoints.builder()
                     .longitude(patrolTaskDistribution.getLocation().getLongitude())
@@ -112,7 +108,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
             case IMMEDIATE -> {
                 ImmediateTaskDistribution immediateTaskDistribution = taskDistribution.getImmediateTaskDistribution();
                 if (immediateTaskDistribution == null) {
-                    throw new RuntimeException("Immediate task distribution is null");
+                    throw new IllegalArgumentException("Immediate task distribution is null");
                 }
                 if (immediateTaskDistribution.getLocation() != null) {
                     yield LocationPoints.builder()
@@ -125,7 +121,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
                     .latitude(immediateTaskDistribution.getLatitude())
                     .build();
             }
-            default -> throw new RuntimeException(
+            default -> throw new IllegalArgumentException(
                 "Unsupported distribution type: " + taskDistribution.getDistributionType()
             );
         };

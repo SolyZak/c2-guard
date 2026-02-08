@@ -12,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class DistributedTaskCurrentStatusJob implements ScheduledTaskFactory {
@@ -30,12 +28,9 @@ public class DistributedTaskCurrentStatusJob implements ScheduledTaskFactory {
     public JsonNode performTask(JsonNode arguments) {
         Long executionSlotId = JsonNodeUtils.getOptionalLong(arguments, "executionSlotId")
                 .orElseThrow(() -> new BusinessException("Execution slot id is required", HttpStatus.BAD_REQUEST));
+        TaskExecutionSlot executionSlot = repository.findById(executionSlotId)
+                .orElseThrow(() -> new BusinessException("Execution slot not found", HttpStatus.NOT_FOUND));
 
-        Optional<TaskExecutionSlot> executionSlotOptional = repository.findById(executionSlotId);
-        if (executionSlotOptional.isEmpty())
-            throw new BusinessException("Execution slot not found", HttpStatus.NOT_FOUND);
-
-        TaskExecutionSlot executionSlot = executionSlotOptional.get();
         if (executionSlot.getStatus() != TaskDistributionStatus.MISSED) {
             executionSlot.setStatus(TaskDistributionStatus.CURRENT);
             repository.saveAndFlush(executionSlot);

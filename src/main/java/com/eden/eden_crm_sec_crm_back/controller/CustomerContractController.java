@@ -4,12 +4,10 @@ import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.dto.GeneralDropdown;
 import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddContractDto;
-import com.eden.eden_crm_sec_crm_back.dto.request.ContractDistributionForPatrol;
 import com.eden.eden_crm_sec_crm_back.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.models.projections.DistributionTimesProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.ContractDistributeService;
-import com.eden.eden_crm_sec_crm_back.service.ContractOperationSiteDistributionPatrolService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerContractService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,7 +28,6 @@ import java.util.List;
 public class CustomerContractController {
     private final CustomerContractService customerContractService;
     private final ContractDistributeService contractDistributeService;
-    private final ContractOperationSiteDistributionPatrolService contractOperationSiteDistributionPatrolService;
 
     @Operation(summary = "Create Contract API")
     @PostMapping
@@ -96,33 +93,12 @@ public class CustomerContractController {
         return ApiResponse.ok(contractDistributeService.contractDistribute(contractId, serviceId, listDto));
     }
 
-    @Operation(summary = "Distribute Patrols")
-    @PostMapping("/patrol/{id}/distribute/{serviceId}")
-    public ApiResponse<String> contractDistributeForPatrol(
-            @PathVariable("id") Long contractId,
-            @PathVariable("serviceId") Long serviceId,
-            @RequestBody @Valid List<ContractDistributionForPatrol> requestList
-    ) {
-        contractOperationSiteDistributionPatrolService.add(requestList, contractId, serviceId);
-        return ApiResponse.created(null);
-    }
-
     @Operation(summary = "Get times for a distribution")
     @GetMapping("/distribute/{id}")
     public ApiResponse<List<DistributionTimesProjection>> getTimesForDistribution(
             @PathVariable("id") Long id
     ) {
         return ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistribution(id));
-    }
-
-    @Operation(summary = "Get times for a distribution (repeat with quantity more than one)")
-    @GetMapping("/distribute/quantity/{contractId}/{serviceId}/{siteId}")
-    public ApiResponse<List<DistributionTimesWithQuantity>> getTimesForDistributionWithQuantity(
-            @PathVariable("contractId") Long contractId,
-            @PathVariable("serviceId") Long serviceId,
-            @PathVariable("siteId") Long siteId
-    ) {
-        return ApiResponse.ok(contractDistributeService.getAllStartEndTimesForDistributionWithQuantity(contractId, serviceId, siteId));
     }
 
     @Operation(summary = "Get distributed operation sites for a selected contract & contract service API")
