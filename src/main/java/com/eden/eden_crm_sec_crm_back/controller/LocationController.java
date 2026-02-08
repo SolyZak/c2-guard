@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/location")
@@ -68,11 +67,8 @@ public class LocationController {
     }
 
     @PostMapping("/validate-qr")
-    public ResponseEntity<ValidateQrResponse> validateQr(
-            @Valid @RequestBody ValidateQrRequest req) {
-
-        ValidateQrResponse resp = locationService.validateQr(req);   // <-- pass DTO
-
+    public ResponseEntity<ValidateQrResponse> validateQr(@Valid @RequestBody ValidateQrRequest req) {
+        ValidateQrResponse resp = locationService.validateQr(req);
         return resp.isSuccess()
                 ? ResponseEntity.ok(resp)
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
