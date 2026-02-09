@@ -20,11 +20,8 @@ public class C2AlertEventService {
 
     public void sendNewC2AlertEvent(final CrmTriggerLog crmTriggerLog) {
         List<AlertTriggerSeverity> alertTriggerSeverities =
-                alertTriggerSeverityService.findByTriggerIdAndServicePlatformIdAndCustomerId(
-                        crmTriggerLog.getTriggerId(),
-                        crmTriggerLog.getServicePlatform().getId(),
-                        crmTriggerLog.getCustomerId()
-                );
+                alertTriggerSeverityService.findByTriggerIdAndServicePlatformId(crmTriggerLog.getTriggerId(),
+                        crmTriggerLog.getServicePlatform().getId());
         alertTriggerSeverities.stream()
                 .map(s -> buildC2AlertEvent(crmTriggerLog, s))
                 .forEach(c2EventProducer::publishC2Events);

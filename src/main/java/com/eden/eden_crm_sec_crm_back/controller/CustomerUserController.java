@@ -1,6 +1,5 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
-import com.eden.eden_crm_sec_crm_back.dto.rbac.AssignCustomerUserRoleRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
@@ -8,15 +7,11 @@ import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
-import com.eden.eden_crm_sec_crm_back.service.rbac.CustomerUserRoleService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/customer/users")
@@ -27,7 +22,6 @@ import java.util.Map;
 public class CustomerUserController {
 
     private final CustomerUserService customerUserService;
-    private final CustomerUserRoleService CustomerUserRoleService;
 
     @PostMapping
     @Operation(summary = "Create customer user")
@@ -36,7 +30,7 @@ public class CustomerUserController {
     }
 
     @PutMapping("{id}")
-    @Operation(summary = "Reset customer user password")
+    @Operation(summary = "Rest customer user password")
     ApiResponse<String> resetPassword(
             @PathVariable("id") Long id,
             @RequestBody @Valid ResetCustomerUserPassword dto
@@ -56,11 +50,5 @@ public class CustomerUserController {
     @GetMapping("/info")
     ApiResponse<CustomerUserInfoResponse> getLoggedInCustomerUser() {
         return ApiResponse.ok(customerUserService.getLoggedInUserInfo());
-    }
-
-    @PutMapping("/{id}/role")
-    public Map<String, String> assign(@PathVariable Long id, @RequestBody AssignCustomerUserRoleRequest req) {
-        String roleName = CustomerUserRoleService.assignRole(id, req.roleId());
-        return Map.of("roleName", roleName);
     }
 }
