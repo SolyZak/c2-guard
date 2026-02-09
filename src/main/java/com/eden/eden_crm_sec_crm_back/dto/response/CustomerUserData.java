@@ -10,6 +10,4 @@ public class CustomerUserData {
     private String email;
     private String phone;
     private String countryCode;
-    private Integer roleId;
-    private String roleName;
 }
