@@ -44,18 +44,46 @@ public class RoleService {
     }
 
     @Transactional
-    public RoleEntity update(Integer id, String description, List<Long> permissionIds) {
+    public RoleEntity update(Integer id, String newName, String description, List<Long> permissionIds) {
         RoleEntity role = roleRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + id));
 
-        //keep role name immutable to avoid rename complexity
+        boolean hasNewName = newName != null && !newName.isBlank();
+        String oldName = role.getName();
+        String effectiveNewName = hasNewName ? newName.trim() : oldName;
+
+        // if name changed -> validate uniqueness in DB + Keycloak
+        boolean nameChanged = !oldName.equalsIgnoreCase(effectiveNewName);
+        if (nameChanged) {
+            roleRepo.findByNameIgnoreCase(effectiveNewName).ifPresent(existing -> {
+                if (!existing.getId().equals(id)) {
+                    throw new IllegalArgumentException("Role already exists: " + effectiveNewName);
+                }
+            });
+
+            if (keycloakRoleAdmin.realmRoleExists(effectiveNewName)) {
+                throw new IllegalArgumentException("Role already exists in Keycloak: " + effectiveNewName);
+            }
+        }
+
         List<PermissionEntity> perms = permissionRepo.findAllById(permissionIds);
 
-        keycloakRoleAdmin.updateRealmRoleDescription(role.getName(), description);
-        keycloakRoleAdmin.replaceRoleComposites(role.getName(), perms.stream().map(PermissionEntity::getKeycloakRoleName).toList());
+        if (nameChanged) {
+            keycloakRoleAdmin.updateRealmRole(oldName, effectiveNewName, description);
+        } else {
+            keycloakRoleAdmin.updateRealmRoleDescription(oldName, description);
+        }
 
+        // composites should be applied to the FINAL name
+        keycloakRoleAdmin.replaceRoleComposites(
+                effectiveNewName,
+                perms.stream().map(PermissionEntity::getKeycloakRoleName).toList()
+        );
+
+        role.setName(effectiveNewName);
         role.setDescription(description);
         role.setPermissions(perms);
+
         return roleRepo.save(role);
     }
 

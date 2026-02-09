@@ -22,7 +22,7 @@ public class PredefinedDataController {
     }
 
     @GetMapping("/{roleId}")
-    public ApiResponse<List<PredefinedClassCheckedDto>> getPredefinedForRole(@PathVariable Integer roleId) {
+    public ApiResponse<PredefinedRoleWithChecksDto> getPredefinedForRole(@PathVariable Integer roleId) {
         return ApiResponse.ok(service.predefinedWithChecks(roleId));
     }
 }

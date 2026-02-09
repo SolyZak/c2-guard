@@ -44,6 +44,14 @@ public class KeycloakRoleAdminService {
         roleResource.update(rep);
     }
 
+    public void updateRealmRole(String oldName, String newName, String description) {
+        var roleResource = keycloak.realm(realm).roles().get(oldName);
+        var rep = roleResource.toRepresentation();
+        rep.setName(newName);
+        rep.setDescription(description);
+        roleResource.update(rep);
+    }
+
     public void deleteRealmRole(String roleName) {
         rr().roles().deleteRole(roleName);
     }

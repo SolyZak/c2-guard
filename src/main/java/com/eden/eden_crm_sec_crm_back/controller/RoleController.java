@@ -27,7 +27,9 @@ public class RoleController {
 
     @PutMapping("/{id}")
     public RoleDto update(@PathVariable Integer id, @RequestBody UpdateRoleRequest req) {
-        return rbacMapper.toDto(roleService.update(id, req.description(), req.permissionIds()));
+        return rbacMapper.toDto(
+                roleService.update(id, req.name(), req.description(), req.permissionIds())
+        );
     }
 
     @DeleteMapping("/{id}")

@@ -54,11 +54,10 @@ public class PredefinedDataService {
         return result;
     }
 
-    public List<PredefinedClassCheckedDto> predefinedWithChecks(Integer roleId) {
+    public PredefinedRoleWithChecksDto predefinedWithChecks(Integer roleId) {
         RoleEntity role = roleRepo.findById(roleId)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleId));
 
-        // RoleRepository.findById has @EntityGraph(permissions) in your code, so this will be populated.
         Set<Long> rolePermIds = new HashSet<>();
         if (role.getPermissions() != null) {
             role.getPermissions().forEach(p -> rolePermIds.add(p.getId()));
@@ -71,24 +70,30 @@ public class PredefinedDataService {
         Map<Integer, List<PredefinedPermissionCheckedDto>> permsByScreenId = new HashMap<>();
         for (var p : permissions) {
             if (p.getPermissionScreen() == null) continue;
+
             Integer screenId = p.getPermissionScreen().getId();
             boolean checked = rolePermIds.contains(p.getId());
 
             permsByScreenId.computeIfAbsent(screenId, k -> new ArrayList<>())
-                    .add(new PredefinedPermissionCheckedDto(p.getId(), p.getNameEn(), p.getNameAr(), checked));
+                    .add(new PredefinedPermissionCheckedDto(
+                            p.getId(), p.getNameEn(), p.getNameAr(), checked
+                    ));
         }
 
         Map<Integer, List<PredefinedActivityCheckedDto>> activitiesByClassId = new HashMap<>();
         for (var s : screens) {
             Integer classId = s.getPermissionClass().getId();
             var perms = permsByScreenId.getOrDefault(s.getId(), List.of());
+
             activitiesByClassId.computeIfAbsent(classId, k -> new ArrayList<>())
-                    .add(new PredefinedActivityCheckedDto(s.getId(), s.getNameEn(), s.getNameAr(), perms));
+                    .add(new PredefinedActivityCheckedDto(
+                            s.getId(), s.getNameEn(), s.getNameAr(), perms
+                    ));
         }
 
-        List<PredefinedClassCheckedDto> result = new ArrayList<>();
+        List<PredefinedClassCheckedDto> tree = new ArrayList<>();
         for (var c : classes) {
-            result.add(new PredefinedClassCheckedDto(
+            tree.add(new PredefinedClassCheckedDto(
                     c.getId(),
                     c.getNameEn(),
                     c.getNameAr(),
@@ -96,6 +101,11 @@ public class PredefinedDataService {
             ));
         }
 
-        return result;
+        return new PredefinedRoleWithChecksDto(
+                role.getId(),
+                role.getName(),
+                role.getDescription(),
+                tree
+        );
     }
 }
