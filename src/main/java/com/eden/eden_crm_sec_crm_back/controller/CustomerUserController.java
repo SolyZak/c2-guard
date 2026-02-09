@@ -36,7 +36,7 @@ public class CustomerUserController {
     }
 
     @PutMapping("{id}")
-    @Operation(summary = "Rest customer user password")
+    @Operation(summary = "Reset customer user password")
     ApiResponse<String> resetPassword(
             @PathVariable("id") Long id,
             @RequestBody @Valid ResetCustomerUserPassword dto
