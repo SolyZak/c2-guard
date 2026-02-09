@@ -12,6 +12,9 @@ public class KeycloakConfig {
     @Value("${keycloak.admin-cli-secret}")
     private String adminClientSecret;
 
+    @Value("${keycloak.admin-client-id}")
+    private String adminClientId;
+
     @Value("${keycloak.auth-url}")
     private String authServerUrl;
 
@@ -24,7 +27,7 @@ public class KeycloakConfig {
                 .serverUrl(authServerUrl)
                 .realm(realm)
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .clientId("admin-cli")
+                .clientId(adminClientId)
                 .clientSecret(adminClientSecret)
                 .build();
     }
