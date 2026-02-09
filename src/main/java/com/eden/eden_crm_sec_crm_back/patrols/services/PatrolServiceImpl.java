@@ -9,8 +9,13 @@ import com.eden.eden_crm_sec_crm_back.models.projections.PatrolPremiseAggregatio
 import com.eden.eden_crm_sec_crm_back.models.projections.PatrolReportDetailsAggregation;
 import com.eden.eden_crm_sec_crm_back.patrols.dtos.request.PatrolReportRequest;
 import com.eden.eden_crm_sec_crm_back.patrols.dtos.response.*;
+import com.eden.eden_crm_sec_crm_back.patrols.mappers.PatrolReportMapper;
 import com.eden.eden_crm_sec_crm_back.patrols.services.base.PatrolService;
-import com.eden.eden_crm_sec_crm_back.repository.*;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
+import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
+import com.eden.eden_crm_sec_crm_back.repository.PatrolRepository;
+import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,10 +29,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PatrolServiceImpl implements PatrolService {
     private final CustomerContractRepository customerContractRepository;
-    private final ContractOperationSiteDistributionPatrolRepository distributionPatrolRepository;
+    private final PatrolTaskDistributionRepository patrolTaskDistributionRepository;
     private final PremiseRepository premiseRepository;
     private final LocationRepository locationRepository;
     private final PatrolRepository patrolRepository;
+    private final PatrolReportMapper patrolReportMapper;
 
     @Override
     @Transactional
@@ -37,7 +43,7 @@ public class PatrolServiceImpl implements PatrolService {
             throw new BusinessException(MessageUtil.getMessage("validation.security-company.contract-id.not-found"), HttpStatus.BAD_REQUEST);
 
         CustomerContract contract = contractOpt.get();
-        List<PatrolPremiseAggregation> aggs = distributionPatrolRepository.aggregatePatrolsByPremiseAndPatrol(
+        List<PatrolPremiseAggregation> aggs = patrolTaskDistributionRepository.aggregatePatrolsByPremiseAndPatrol(
                 contract.getId(),
                 reportRequest.premiseIds(),
                 reportRequest.patrolIds(),
@@ -52,37 +58,21 @@ public class PatrolServiceImpl implements PatrolService {
 
         List<Premise> premises = premiseRepository.findAllById(premiseIds);
 
-        Map<Long, List<PatrolSummaryDto>> patrolsPerPremise = new HashMap<>();
-
-        aggs.forEach(agg -> {
-            Long premiseId = agg.getPremiseId();
-            patrolsPerPremise
-                    .computeIfAbsent(premiseId, k -> new ArrayList<>())
-                    .add(
-                            PatrolSummaryDto.builder()
-                                    .id(agg.getPatrolId())
-                                    .name(agg.getPatrolName())
-                                    .startDate(agg.getPatrolStartDate())
-                                    .frequencyType(agg.getPatrolFrequencyType())
-                                    .assignedTasksCount(agg.getAssignedCount())
-                                    .finishedTasksCount(agg.getFinishedCount())
-                                    .build()
-                    );
-        });
+        Map<Long, List<PatrolSummaryDto>> patrolsPerPremise = aggs.stream()
+                .collect(Collectors.groupingBy(
+                        PatrolPremiseAggregation::getPremiseId,
+                        Collectors.mapping(patrolReportMapper::toPatrolSummary, Collectors.toList())
+                ));
 
         return premises.stream()
-                .map(pr -> PatrolReportResponseDto.builder()
-                        .id(pr.getId())
-                        .name(pr.getName())
-                        .code(pr.getCode())
-                        .patrols(patrolsPerPremise.getOrDefault(pr.getId(), Collections.emptyList()))
-                        .build())
+                .map(pr -> patrolReportMapper.toPatrolReportResponse(pr, patrolsPerPremise.get(pr.getId())))
                 .toList();
     }
 
     @Override
     public PatrolReportDetailsResponse getPatrolReportDetails(Long premiseId, Long patrolId) {
-        List<PatrolReportDetailsAggregation> taskDetails = distributionPatrolRepository.findPatrolDetails(premiseId, patrolId);
+        List<PatrolReportDetailsAggregation> taskDetails = patrolTaskDistributionRepository.findPatrolDetails(premiseId, patrolId);
+
         Optional<Patrol> patrolOpt = patrolRepository.findById(patrolId);
         Optional<Premise> premiseOpt = premiseRepository.findById(premiseId);
 
@@ -98,45 +88,14 @@ public class PatrolServiceImpl implements PatrolService {
 
         List<Location> locations = locationRepository.findAllById(locationIds);
 
-        Map<Long, List<PatrolTaskDetailsResponse>> tasksPerLocation = new HashMap<>();
-
-        taskDetails.forEach(taskDetail -> {
-            Long locationId = taskDetail.getLocationId();
-            tasksPerLocation.computeIfAbsent(locationId, k -> new ArrayList<>())
-                    .add(
-                            PatrolTaskDetailsResponse.builder()
-                                    .id(taskDetail.getTaskId())
-                                    .name(taskDetail.getTaskName())
-                                    .status(taskDetail.getStatus())
-                                    .startDate(taskDetail.getTaskStartDate())
-                                    .endDate(taskDetail.getTaskEndDate())
-                                    .hasEvidence(taskDetail.getHasEvidence())
-                                    .evidenceImage(taskDetail.getEvidenceImage())
-                                    .siteId(taskDetail.getSiteId())
-                                    .siteName(taskDetail.getSiteName())
-                                    .serviceId(taskDetail.getServiceId())
-                                    .serviceName(taskDetail.getServiceName())
-                                    .locationId(taskDetail.getLocationId())
-                                    .commentCheck(taskDetail.getCommentCheck())
-                                    .comment(taskDetail.getComment())
-
-                                    .build()
-                    );
-        });
+        Map<Long, List<PatrolTaskDetailsResponse>> tasksPerLocation = taskDetails.stream()
+                .map(patrolReportMapper::toTaskDetails)
+                .collect(Collectors.groupingBy(PatrolTaskDetailsResponse::locationId));
 
         List<PatrolLocationDetailsResponse> locationDetails = locations.stream()
-                .map(loc -> PatrolLocationDetailsResponse.builder()
-                        .id(loc.getId())
-                        .name(loc.getName())
-                        .tasks(tasksPerLocation.getOrDefault(loc.getId(), Collections.emptyList()))
-                        .build()
-                )
+                .map(loc -> patrolReportMapper.toLocationDetails(loc, tasksPerLocation.get(loc.getId())))
                 .toList();
 
-        return PatrolReportDetailsResponse.builder()
-                .premiseName(premise.getName())
-                .patrolName(patrol.getName())
-                .locations(locationDetails)
-                .build();
+        return patrolReportMapper.toPatrolReportDetails(premise, patrol, locationDetails);
     }
 }

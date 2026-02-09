@@ -8,7 +8,7 @@ import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import java.util.List;
 
 
-public interface PatrolService {
+public interface PatrolsService {
     void addPatrol(AddPatrolRequest request);
     PaginateResponse<PatrolResponseDto> listPatrol(Integer page, Integer size, String search);
     List<PatrolKeyValueDto> listAllPatrols();

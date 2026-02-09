@@ -15,7 +15,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
-import com.eden.eden_crm_sec_crm_back.service.PatrolService;
+import com.eden.eden_crm_sec_crm_back.service.PatrolsService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class PatrolServiceImpl implements PatrolService {
+public class PatrolsServiceImpl implements PatrolsService {
     private final PatrolRepository patrolRepository;
     private final LocationRepository locationRepository;
     private final TaskRepository taskRepository;
