@@ -35,8 +35,4 @@ public class CustomerUser extends BaseAuditEntity {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false, foreignKey = @ForeignKey(name = "fk_customer"))
     private Customer customer;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "fk_customer_users_role"))
-    private RoleEntity role;
 }
