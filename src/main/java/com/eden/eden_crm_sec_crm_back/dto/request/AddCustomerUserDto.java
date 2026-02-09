@@ -32,7 +32,4 @@ public class AddCustomerUserDto {
     @NotBlank(message = "{validation.password.not-empty}")
     @NotNull(message = "{validation.password.not-empty}")
     String password;
-
-    @NotNull(message = "{validation.role.not.empty}")
-    private Integer roleId;
 }
