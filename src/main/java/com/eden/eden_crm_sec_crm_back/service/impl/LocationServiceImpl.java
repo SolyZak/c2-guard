@@ -11,11 +11,11 @@ import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.models.projections.LocationProjection;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
-import com.eden.eden_crm_sec_crm_back.repository.ContractOperationSiteDistributionPatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.utils.LocationUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.QrCodeUtil;
@@ -47,8 +47,7 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
     private final PremiseRepository premiseRepository;
     private final CustomerRepository customerRepository;
-    private final ContractOperationSiteDistributionPatrolRepository contractOperationSiteDistributionPatrolRepository; // ADD THIS
-
+    private final PatrolTaskDistributionRepository patrolTaskDistributionRepository;
     private final Utils utils;
 
     private final EntityManager em;
@@ -339,16 +338,15 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
-        final Long id = Long.valueOf(request.getPayload());
+        final Long id = Long.valueOf(request.payload());
         Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
                 .findLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
-
-        boolean isValid = contractOperationSiteDistributionPatrolRepository
-                .existsByIdAndTaskIdAndLocationId(
-                        request.getPatrolDistributionId(),
-                        request.getTaskId(),
-                        id
+        boolean isValid = patrolTaskDistributionRepository
+                .existsByIdAndLocation_IdAndTaskDistribution_Task_Id(
+                        request.patrolDistributionId(),
+                        id,
+                        request.taskId()
                 );
 
         if (!isValid) {

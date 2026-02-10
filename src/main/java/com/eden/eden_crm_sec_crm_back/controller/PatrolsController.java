@@ -4,7 +4,7 @@ import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.PatrolReportRequest;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
-import com.eden.eden_crm_sec_crm_back.service.PatrolService;
+import com.eden.eden_crm_sec_crm_back.service.PatrolsService;
 import com.google.zxing.WriterException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +15,9 @@ import java.io.IOException;
 @RestController
 @RequestMapping(path = "/patrol")
 @RequiredArgsConstructor
-public class PatrolController {
+public class PatrolsController {
 
-    private final PatrolService patrolService;
+    private final PatrolsService patrolService;
     private final PatrolReportService patrolReportService;
     @PostMapping
     ApiResponse addPatrol(@RequestBody @Valid AddPatrolRequest request) throws IOException, WriterException {

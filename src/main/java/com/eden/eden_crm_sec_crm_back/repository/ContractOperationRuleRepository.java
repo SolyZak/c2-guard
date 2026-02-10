@@ -9,8 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface ContractOperationRuleRepository extends JpaRepository<ContractOperationRule, Long> {
-    ContractOperationRule findByCustomerAgreementId(Long customerAgreementId);
-
     @Query("SELECT DISTINCT cr FROM ContractOperationRule cr " +
             "WHERE cr.customerAgreement.id = :contractId")
     Optional<ContractOperationRule> findContractRule(Long contractId);

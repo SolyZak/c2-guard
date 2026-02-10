@@ -3,7 +3,6 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.dto.SiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.dto.lookup.LKCustomerContractOperationServiceDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.ContractDistributionResponseDto;
-import com.eden.eden_crm_sec_crm_back.dto.response.DistributionTimesWithQuantity;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
@@ -31,7 +30,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -113,30 +114,6 @@ public class ContractDistributeServiceImpl implements ContractDistributeService 
     @Override
     public List<DistributionTimesProjection> getAllStartEndTimesForDistribution(Long distributionId) {
         return contractOperationServiceRepository.findAllOffsetStartAndEndByDistributionId(distributionId);
-    }
-
-    @Override
-    public List<DistributionTimesWithQuantity> getAllStartEndTimesForDistributionWithQuantity(Long contractId, Long serviceId, Long siteId) {
-        Optional<SiteDistribution> siteDistributionOptional = siteDistributionRepository.findBySiteIdAndContractIdAndServiceId(siteId, contractId, serviceId);
-        if (!siteDistributionOptional.isPresent()) {
-            throw new BusinessException(MessageUtil.getMessage("entity.not-found"), HttpStatus.NOT_FOUND);
-        }
-        List<DistributionTimesWithQuantity> result = new ArrayList<>();
-        CustomTimezone customerTimezone = siteDistributionOptional.get().getSite().getCustomer().getTimezone();
-        List<LKCustomerContractOperationService> operationServices = siteDistributionOptional.get().getOperationServices();
-        if (operationServices != null) {
-            for (LKCustomerContractOperationService service : operationServices) {
-                for (int i = 0; i < service.getQuantity(); i++) {
-                    result.add(new DistributionTimesWithQuantity(
-                            DateUtils.withTimeZone(customerTimezone, service.getFromTime()),
-                            DateUtils.withTimeZone(customerTimezone, service.getToTime()),
-                            service.getId() + "_" + i,
-                            service.getId()
-                    ));
-                }
-            }
-        }
-        return result;
     }
 
     private Map<Long, CustomerSite> getCustomerSiteMap(List<SiteDistributionDto> listDto, Customer customer) {
