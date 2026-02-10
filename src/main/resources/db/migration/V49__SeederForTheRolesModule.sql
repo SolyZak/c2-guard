@@ -1,6 +1,33 @@
- --    - Seed permissions + classes + screens
---    - Map permissions to screens
---    - Fail fast if required rows are missing or screen names are ambiguous
+/*  V49__SeederForTheRolesModule.sql (fixed)
+
+    - Seed permissions + classes + screens
+    - Map permissions to screens
+    - Fail fast if required rows are missing or screen names are ambiguous
+
+    Fix added:
+    - Create UNIQUE indexes required by ON CONFLICT clauses
+*/
+
+------------------------------------------------------------
+-- 0) Prerequisites for ON CONFLICT / mapping safety
+------------------------------------------------------------
+
+-- Required for: INSERT INTO public."permission" ... ON CONFLICT (keycloak_role_name)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_permission_keycloak_role_name
+ON public."permission"(keycloak_role_name);
+
+-- Required for: INSERT INTO public.permission_class ... ON CONFLICT (name_en)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_permission_class_name_en
+ON public.permission_class(name_en);
+
+-- Required for: INSERT INTO public.permission_screen ... ON CONFLICT (permission_class_id, name_en)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_permission_screen_classid_name_en
+ON public.permission_screen(permission_class_id, name_en);
+
+-- Recommended (your mapping + validation assumes name_en is globally unique)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_permission_screen_name_en
+ON public.permission_screen(name_en);
+
 
 ------------------------------------------------------------
 -- 1) Seed permissions (idempotent)
@@ -96,6 +123,7 @@ ON CONFLICT (name_en) DO NOTHING;
 -- 3) Validate required permission_class exist (fail fast)
 ------------------------------------------------------------
 DO
+
 $$
 DECLARE missing text;
 BEGIN
@@ -120,6 +148,7 @@ BEGIN
   END IF;
 END
 $$
+
 ;
 
 
@@ -173,6 +202,7 @@ ON CONFLICT (permission_class_id, name_en) DO NOTHING;
 -- 5) Validate required screens exist + are not ambiguous (fail fast)
 ------------------------------------------------------------
 DO
+
 $$
 DECLARE missing text;
 DECLARE ambiguous text;
@@ -268,6 +298,7 @@ BEGIN
   END IF;
 END
 $$
+
 ;
 
 
@@ -275,6 +306,7 @@ $$
 -- 6) Validate required permissions exist (fail fast)
 ------------------------------------------------------------
 DO
+
 $$
 DECLARE missing text;
 BEGIN
@@ -357,6 +389,7 @@ BEGIN
   END IF;
 END
 $$
+
 ;
 
 
@@ -454,6 +487,7 @@ WHERE p.keycloak_role_name = m.permission_key;
 -- 8) Validate mapping applied correctly (fail fast)
 ------------------------------------------------------------
 DO
+
 $$
 DECLARE bad text;
 BEGIN
@@ -536,4 +570,5 @@ BEGIN
   END IF;
 END
 $$
+
 ;
