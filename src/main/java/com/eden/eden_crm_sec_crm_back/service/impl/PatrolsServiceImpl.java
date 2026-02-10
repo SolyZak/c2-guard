@@ -13,7 +13,7 @@ import com.eden.eden_crm_sec_crm_back.models.*;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
-import com.eden.eden_crm_sec_crm_back.repository.PatrolRepository;
+import com.eden.eden_crm_sec_crm_back.patrols.repositories.PatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.PatrolsService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;

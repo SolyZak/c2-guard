@@ -2,18 +2,17 @@ package com.eden.eden_crm_sec_crm_back.patrols.dtos.response;
 
 import lombok.Builder;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Builder
 public record PatrolTaskDetailsResponse(
     Long id,
     String name,
-    LocalDate startDate,
-    LocalDate endDate,
+    OffsetDateTime startDateTime,
+    OffsetDateTime endDateTime,
     String status,
     Long siteId,
     String siteName,
-    Long locationId,
     Long serviceId,
     String serviceName,
     Boolean hasEvidence,

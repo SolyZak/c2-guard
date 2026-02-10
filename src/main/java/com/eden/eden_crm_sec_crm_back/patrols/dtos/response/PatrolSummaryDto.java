@@ -2,13 +2,13 @@ package com.eden.eden_crm_sec_crm_back.patrols.dtos.response;
 
 import lombok.Builder;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Builder
 public record PatrolSummaryDto(
     Long id,
     String name,
-    LocalDate startDate,
+    OffsetDateTime startDateTime,
     String frequencyType,
     Long assignedTasksCount,
     Long finishedTasksCount
