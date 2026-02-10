@@ -8,6 +8,7 @@ import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.Patrol;
 import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.models.projections.PatrolReportDetailsAggregation;
+import com.eden.eden_crm_sec_crm_back.patrols.repositories.PatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.models.projections.PatrolPremiseAggregation;
 import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
@@ -120,6 +121,9 @@ public class PatrolReportServiceImpl implements PatrolReportService {
                         .serviceId(taskDetail.getServiceId())
                         .serviceName(taskDetail.getServiceName())
                         .locationId(taskDetail.getLocationId())
+                        .commentCheck(taskDetail.getCommentCheck())
+                        .comment(taskDetail.getComment())
+
                         .build()
                 );
         });

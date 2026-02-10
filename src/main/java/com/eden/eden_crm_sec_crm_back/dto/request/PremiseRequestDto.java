@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class PremiseRequestDto {
     @NotNull(message = "{validation.premise.name.required}")
@@ -13,5 +15,8 @@ public class PremiseRequestDto {
     @NotNull(message = "{validation.premise.code.required}")
     @Size(max = 300, message = "{validation.premise.code.max.length}")
     private String code;
+
+    private BigDecimal longitude;
+    private BigDecimal latitude;
 
 }

@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface LocationRepository extends JpaRepository<Location,Long> {
     @Query("""
@@ -26,14 +25,17 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     JOIN Premise p on p.id = l.premise.id 
     WHERE l.customer.id = :customerId 
     AND (lower(p.name) like lower(concat('%', :search, '%')) 
+         OR CAST(p.id AS string) like concat('%', :search, '%')
          OR lower(l.name) like lower(concat('%', :search, '%')) 
          OR lower(l.accessType) like lower(concat('%', :search, '%')) 
          OR :search is null)
+    ORDER BY l.id DESC
 """)
     Page<LocationProjection> searchByPremiseNameAndLocationNameAndAccessType(
             @Param("search") String search,
             @Param("customerId") Long customerId,
-            Pageable pageable);
+            Pageable pageable
+    );
 
     @Query(value = """
             select l.name from location l INNER JOIN patrol_detail lpd on l.id = lpd.location_id where lpd.id = :detailsId 
@@ -47,16 +49,6 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     WHERE l.customer.id = :customerId
 """)
     List<LocationProjection> listAllLoggedInCustomerLocations(@Param("customerId") Long customerId);
-
-    @Query("""
-    SELECT l.id as id, l.name as name, l.accessType as accessType,
-           l.longitude as longitude, l.latitude as latitude, l.tolerance as tolerance 
-    FROM Location l 
-    WHERE l.customer.id = :customerId and id in :locationIds
-""")
-    List<LocationProjection> listAllLoggedInCustomerLocationsByIds(
-            @Param("customerId") Long customerId,
-            @Param("locationIds") Set<Long> locationIds);
 
     @Query("""
     SELECT l.id as id, l.premise as premise, l.name as name, l.accessType as accessType,

@@ -19,8 +19,8 @@ public class ServicePlatformResponse {
     public static ServicePlatformResponse of(final ServicePlatform servicePlatform) {
         return ServicePlatformResponse.builder()
                 .id(servicePlatform.getId())
-                .name(servicePlatform.getName().name())
-                .code(ServicePlatformEnum.fromCode(servicePlatform.getCode()))
+                .name(servicePlatform.getName())
+                .code(ServicePlatformEnum.fromCode(servicePlatform.getCode().getCode()))
                 .build();
     }
 }

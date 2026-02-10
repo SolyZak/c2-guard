@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.PremiseRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.request.PremiseUpdateRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PremiseResponseDto;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.exception.ValidationException;
@@ -27,14 +28,19 @@ public class PremiseServiceImpl {
     private final Utils utils;
 
     public PremiseResponseDto addPremise(PremiseRequestDto requestDto) {
-        Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+        Customer customer = customerRepository.findById(customerId).orElseThrow(UserNotProvided::new);
+
         Premise premise = premiseMapper.toEntity(requestDto);
-        Optional<Premise> premiseExists = premiseRepository.findByCodeOrName(premise.getCode(), premise.getName());
+
+        Optional<Premise> premiseExists =
+                premiseRepository.findDuplicateByCustomerAndCodeOrName(customerId, premise.getCode(), premise.getName());
+
         if (premiseExists.isPresent()) {
             throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
         }
-        premise.setCustomer(customer);
 
+        premise.setCustomer(customer);
         premiseRepository.save(premise);
 
         return premiseMapper.fromEntity(premise);
@@ -43,5 +49,42 @@ public class PremiseServiceImpl {
     public List<PremiseResponseDto> getPremises() {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
         return premiseRepository.getCustomerPremises(customer.getId()).stream().map(premiseMapper::fromEntity).toList();
+    }
+
+    public PremiseResponseDto getPremiseById(Long premiseId) {
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+
+        Premise premise = premiseRepository
+                .findByIdAndCustomer_Id(premiseId, customerId)
+                .orElseThrow(() -> new ValidationException("message", "Premise not found"));
+
+        return premiseMapper.fromEntity(premise);
+    }
+
+    public PremiseResponseDto updatePremisePartial(Long premiseId, PremiseUpdateRequestDto requestDto) {
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+
+        Premise premise = premiseRepository
+                .findByIdAndCustomer_Id(premiseId, customerId)
+                .orElseThrow(() -> new ValidationException("message", "Premise not found"));
+
+        if (requestDto.getCode() != null) {
+            premiseRepository.findByCustomerIdAndCodeAndIdNot(customerId, requestDto.getCode(), premiseId)
+                    .ifPresent(p -> {
+                        throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
+                    });
+        }
+
+        if (requestDto.getName() != null) {
+            premiseRepository.findByCustomerIdAndNameAndIdNot(customerId, requestDto.getName(), premiseId)
+                    .ifPresent(p -> {
+                        throw new ValidationException("message", MessageUtil.getMessage("validation.premise.duplicate"));
+                    });
+        }
+
+        premiseMapper.updateEntityFromDto(requestDto, premise);
+        premiseRepository.save(premise);
+
+        return premiseMapper.fromEntity(premise);
     }
 }

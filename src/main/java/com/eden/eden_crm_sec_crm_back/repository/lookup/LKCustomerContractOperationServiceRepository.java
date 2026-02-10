@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface LKCustomerContractOperationServiceRepository extends JpaRepository<LKCustomerContractOperationService, Long> {
@@ -41,5 +42,29 @@ public interface LKCustomerContractOperationServiceRepository extends JpaReposit
             """)
     List<DistributionTimesProjection> findAllOffsetStartAndEndByDistributionId(
             @Param("distributionId") Long distributionId
+    );
+
+    Optional<LKCustomerContractOperationService> findByIdAndSiteDistribution_Id(Long id, Long siteDistributionId);
+
+    @Query("""
+        SELECT
+            s.id as id,
+            s.fromTime as startTime,
+            s.toTime as endTime
+        FROM LKCustomerContractOperationService s
+        JOIN s.siteDistribution sd
+        LEFT JOIN s.patrolTaskDistributions ptd WITH ptd.patrolDetail.patrol.id = :patrolId
+        WHERE sd.customerContract.id = :contractId
+          AND sd.lkCustomerContractService.id = :serviceId
+          AND sd.site.id = :siteId
+        GROUP BY s.id, s.fromTime, s.toTime
+        HAVING COUNT(DISTINCT ptd.patrolDetail.id) < :patrolDetailCount
+    """)
+    List<DistributionTimesProjection> findAvailableServiceTimesProjection(
+        @Param("contractId") Long contractId,
+        @Param("serviceId") Long serviceId,
+        @Param("siteId") Long siteId,
+        @Param("patrolId") Long patrolId,
+        @Param("patrolDetailCount") long patrolDetailCount
     );
 }

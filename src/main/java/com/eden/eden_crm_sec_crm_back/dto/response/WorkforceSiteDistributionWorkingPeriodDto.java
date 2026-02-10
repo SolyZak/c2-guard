@@ -12,6 +12,8 @@ import java.time.LocalTime;
 public class WorkforceSiteDistributionWorkingPeriodDto {
     private Long id;
     private String patrolPeriodId;
+    private Long serviceTimeId;
+    private Integer slotNumber;
     private LocalTime fromTime;
     private LocalTime toTime;
     private Boolean isWorking;

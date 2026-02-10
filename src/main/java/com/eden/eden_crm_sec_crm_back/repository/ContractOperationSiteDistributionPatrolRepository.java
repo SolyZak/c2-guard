@@ -16,9 +16,6 @@ import java.util.Set;
 @Repository
 public interface ContractOperationSiteDistributionPatrolRepository extends JpaRepository<ContractOperationSiteDistributionPatrol, Long>, JpaSpecificationExecutor<ContractOperationSiteDistributionPatrol> {
 
-    @Query("SELECT p FROM ContractOperationSiteDistributionPatrol p WHERE p.customerContract.id = :contractId")
-    List<ContractOperationSiteDistributionPatrol> findAllByCustomerContractId(@Param("contractId") Long contractId);
-
     @Query("""    
          SELECT
             COALESCE(s.premise.id, l.premise.id) AS premiseId,
@@ -60,6 +57,8 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
             cosdp.status AS status,
             tc.evidence AS hasEvidence, 
             te.image AS evidenceImage, 
+            te.comment AS comment,
+            te.commentCheck AS commentCheck,
             MIN(cosdp.startDate) AS taskStartDate, 
             MAX(cosdp.endDate) AS taskEndDate
         FROM ContractOperationSiteDistributionPatrol cosdp
@@ -73,22 +72,7 @@ public interface ContractOperationSiteDistributionPatrolRepository extends JpaRe
         LEFT JOIN TaskCheckPatrolExecution te ON te.id = tc.id
         WHERE p.id = :premiseId
           AND patrol.id = :patrolId
-        GROUP BY locationId, siteId, serviceId, taskId, serviceName, siteName, taskName, status, hasEvidence, evidenceImage
+        GROUP BY locationId, siteId, serviceId, taskId, serviceName, siteName, taskName, status, hasEvidence, evidenceImage, te.comment, te.commentCheck
     """)
     List<PatrolReportDetailsAggregation> findPatrolDetails(@Param("premiseId") Long premiseId, @Param("patrolId") Long patrolId);
-
-    @Query(value = """
-        SELECT EXISTS (
-            SELECT 1 
-            FROM contract_operation_distribution_site_patrol 
-            WHERE id = :id 
-              AND task_id = :taskId 
-              AND location_id = :locationId
-        )
-    """, nativeQuery = true)
-    boolean existsByIdAndTaskIdAndLocationId(
-            @Param("id") Long id,
-            @Param("taskId") Long taskId,
-            @Param("locationId") Long locationId
-    );
 }

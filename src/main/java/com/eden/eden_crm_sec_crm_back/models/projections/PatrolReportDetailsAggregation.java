@@ -16,4 +16,7 @@ public interface PatrolReportDetailsAggregation {
 
     Boolean getHasEvidence();
     String getEvidenceImage();
+
+    String getComment();
+    Boolean getCommentCheck();
 }

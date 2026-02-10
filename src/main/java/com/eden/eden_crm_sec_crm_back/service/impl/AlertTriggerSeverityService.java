@@ -18,14 +18,14 @@ public class AlertTriggerSeverityService {
     @Transactional
     public List<AlertTriggerSeverity> findByTriggerIdAndServicePlatformId(final Long triggerId,
                                                                           final Long servicePlatformId) {
-        return alertTriggerSeverityRepository.findByTriggerIdAndServicePlatformId(triggerId, servicePlatformId);
+        return alertTriggerSeverityRepository.findByAlertTrigger_TriggerIdAndAlertTrigger_ServicePlatform_Id(triggerId, servicePlatformId);
     }
 
     @Transactional
     public List<AlertTriggerSeverity> findByTriggerIdAndServicePlatformIdAndCustomerId(final Long triggerId,
                                                                                        final Long servicePlatformId,
                                                                                        final Long customerId) {
-        return alertTriggerSeverityRepository.findByTriggerIdAndServicePlatformIdAndCustomerId(
+        return alertTriggerSeverityRepository.findByAlertTrigger_TriggerIdAndAlertTrigger_ServicePlatform_IdAndCustomerId(
                 triggerId, servicePlatformId, customerId);
     }
 }

@@ -6,8 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 
 @Entity
@@ -60,4 +63,11 @@ public class ContractOperationSiteDistributionPatrol {
     private String patrolFrequencyType;
     private String status;
     private String uniqueId;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    private OffsetDateTime updatedAt;
 }

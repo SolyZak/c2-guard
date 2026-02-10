@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/location")
@@ -39,10 +38,13 @@ public class LocationController {
     }
 
     @GetMapping
-    ApiResponse<PaginateResponse<PremiseLocationDto>> listLocations(@RequestParam(defaultValue = "0", name = "page") Integer page,
-                                                                                                   @RequestParam(defaultValue = "10", name = "size") Integer size,
-                                                                                                   @RequestParam(required = false, name = "search") String search) {
-        return ApiResponse.ok(locationService.getLocationsPaginated(search, page, size));
+    ApiResponse<PaginateResponse<PremiseLocationDto>> listLocations(
+            @RequestParam(defaultValue = "0", name = "page") Integer page,
+            @RequestParam(defaultValue = "10", name = "size") Integer size,
+            @RequestParam(required = false, name = "search") String search,
+            @RequestParam(defaultValue = "true", name = "paginated") boolean paginated
+    ) {
+        return ApiResponse.ok(locationService.getLocations(search, page, size, paginated));
     }
 
     @GetMapping("/all")
@@ -65,11 +67,8 @@ public class LocationController {
     }
 
     @PostMapping("/validate-qr")
-    public ResponseEntity<ValidateQrResponse> validateQr(
-            @Valid @RequestBody ValidateQrRequest req) {
-
-        ValidateQrResponse resp = locationService.validateQr(req);   // <-- pass DTO
-
+    public ResponseEntity<ValidateQrResponse> validateQr(@Valid @RequestBody ValidateQrRequest req) {
+        ValidateQrResponse resp = locationService.validateQr(req);
         return resp.isSuccess()
                 ? ResponseEntity.ok(resp)
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
