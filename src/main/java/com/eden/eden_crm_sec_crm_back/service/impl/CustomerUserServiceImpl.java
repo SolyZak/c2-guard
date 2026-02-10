@@ -17,6 +17,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerUserRepository;
 import com.eden.eden_crm_sec_crm_back.service.AsyncEmailService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
+import com.eden.eden_crm_sec_crm_back.service.rbac.CustomerUserRoleService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
@@ -35,6 +36,7 @@ public class CustomerUserServiceImpl implements CustomerUserService {
     private final KeycloakClient keycloakClient;
     private final Utils utils;
     private final AsyncEmailService asyncEmailService;
+    private final CustomerUserRoleService customerUserRoleService;
 
     @Value("${customer-portal.url}")
     private String customerPortalUrl;
@@ -54,6 +56,7 @@ public class CustomerUserServiceImpl implements CustomerUserService {
                 entity.getId(), UserType.USER_CUSTOMER, entity.getEmail(), entity.getName(),
                 "", dto.getPassword(), entity.getEmail(), true
         ));
+        customerUserRoleService.assignRole(entity.getId(), dto.getRoleId());
 
         sendEmailToEnabledCustomer(entity.getName(), entity.getEmail(), dto.getPassword());
 
