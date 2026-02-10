@@ -8,10 +8,11 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface TaskDistributionMapper {
     @Mapping(target = "executionSlotId", source = "id")
     TodayTaskExecutionSlotEntryResponse toExecutionSlotResponse(TodayTaskSlotProjection projection);
