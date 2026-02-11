@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.identity.impl;
 
+import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.*;
@@ -27,7 +28,12 @@ public class KeycloakRoleAdminService {
     }
 
     public boolean realmRoleExists(String roleName) {
-        return rr().roles().list().stream().anyMatch(r -> r.getName().equalsIgnoreCase(roleName));
+        try {
+            rr().roles().get(roleName).toRepresentation();
+            return true;
+        } catch (NotFoundException e) {
+            return false;
+        }
     }
 
     public void createRealmRole(String roleName, String description) {

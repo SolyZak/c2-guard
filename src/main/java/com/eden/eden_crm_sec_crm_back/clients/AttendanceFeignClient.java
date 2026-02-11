@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.clients;
 
 import com.eden.eden_crm_sec_crm_back.dto.ContractIdsRequest;
 import com.eden.eden_crm_sec_crm_back.dto.TriggerResponse;
+import com.eden.eden_crm_sec_crm_back.dto.external.CheckInData;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,4 +22,7 @@ public interface AttendanceFeignClient {
 
     @PostMapping(value = "/v1/customer/reporting/attendances/contract-ids")
     Set<Long> getContractIdsForCheckedInWorkforcesToday(@RequestBody ContractIdsRequest contractIdsRequest);
+
+    @GetMapping(value = "/external/workforce/check-in-data")
+    CheckInData checkInData();
 }
