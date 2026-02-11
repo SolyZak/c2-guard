@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
-import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
+import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
+import com.eden.eden_crm_sec_crm_back.dto.external.CheckInData;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
@@ -38,17 +39,17 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 public class DistributedTaskServiceImpl implements DistributedTaskService {
-    private final WorkforceService workforceService;
     private final CustomerRepository customerRepository;
     private final TaskExecutionSlotRepository taskExecutionSlotRepository;
     private final TaskPatrolExecutionRepository taskPatrolExecutionRepository;
     private final TaskDistributionMapper taskDistributionMapper;
+    private final AttendanceFeignClient attendanceClient;
 
     @Override
     @Transactional
     public TodayTasksResponse getTodayTasks(TodayTasksRequest todayTasksRequest) {
-        WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
-        Customer customer = getCustomer(workforceFullDataDto.securityCompany().id());
+        CheckInData checkInData = attendanceClient.checkInData();
+        Customer customer = getCustomer(checkInData.getCustomerId());
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime todayMidnight = now.toLocalDate().atStartOfDay().atOffset(now.getOffset());
         OffsetDateTime tomorrowMidnight = todayMidnight.plusDays(1);
@@ -61,7 +62,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             todayTasksRequest.serviceId(),
             todayTasksRequest.serviceTimeId(),
             todayTasksRequest.slotNumber(),
-            workforceFullDataDto.workforce().id()
+            checkInData.getWorkforceId()
         );
 
         List<TodayTaskEntryResponse> tasks = new ArrayList<>();
@@ -81,8 +82,8 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     @Override
     @Transactional
     public void executeTask(ExecuteDistributedTaskRequest executeDistributedTaskRequest) {
-        WorkforceFullDataDto workforceFullDataDto = workforceService.getLoggedInWorkforce();
-        Customer customer = getCustomer(workforceFullDataDto.securityCompany().id());
+        CheckInData checkInData = attendanceClient.checkInData();
+        Customer customer = getCustomer(checkInData.getCustomerId());
         TaskExecutionSlot taskExecutionSlot = getTaskExecutionSlot(executeDistributedTaskRequest.executionSlotId());
         Task task = taskExecutionSlot.getTaskDistribution().getTask();
         checkTaskExecutionConstraints(executeDistributedTaskRequest, taskExecutionSlot, task);
@@ -90,7 +91,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         taskPatrolExecution = taskPatrolExecutionRepository.save(taskPatrolExecution);
         taskExecutionSlot.setStatus(TaskDistributionStatus.FINISHED);
         taskExecutionSlot.setTaskExecution(taskPatrolExecution);
-        taskExecutionSlot.setExecutedByWorkforceId(workforceFullDataDto.workforce().id());
+        taskExecutionSlot.setExecutedByWorkforceId(checkInData.getWorkforceId());
     }
 
     private static void checkTaskExecutionConstraints(
