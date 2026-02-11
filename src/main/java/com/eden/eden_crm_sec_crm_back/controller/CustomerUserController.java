@@ -56,4 +56,10 @@ public class CustomerUserController {
     ApiResponse<CustomerUserInfoResponse> getLoggedInCustomerUser() {
         return ApiResponse.ok(customerUserService.getLoggedInUserInfo());
     }
+
+    @PutMapping("/{id}/role")
+    public Map<String, String> assign(@PathVariable Long id, @RequestBody AssignCustomerUserRoleRequest req) {
+        String roleName = CustomerUserRoleService.assignRole(id, req.roleId());
+        return Map.of("roleName", roleName);
+    }
 }
