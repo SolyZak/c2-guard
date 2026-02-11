@@ -20,15 +20,21 @@ public class RoleEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "role_seq")
     private Integer id;
 
-    @Column(name = "name", nullable = false, unique = true, length = 300)
+    @Column(name = "customer_id", nullable = false)
+    private Long customerId;
+
+    @Column(name = "name", nullable = false, length = 300)
     private String name;
+
+    @Column(name = "keycloak_role_name", nullable = false, length = 400)
+    private String keycloakRoleName;
 
     @Column(name = "description", length = 500)
     private String description;
 
     @ManyToMany
     @JoinTable(
-            name = "role_permissions",                    // <-- matches your migration
+            name = "role_permissions",
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
