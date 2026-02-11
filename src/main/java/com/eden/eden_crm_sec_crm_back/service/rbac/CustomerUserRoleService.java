@@ -22,17 +22,28 @@ public class CustomerUserRoleService {
         CustomerUser user = customerUserRepo.findById(customerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Customer user not found: " + customerUserId));
 
-        RoleEntity newRole = roleRepo.findById(roleId)
+        RoleEntity newRole = roleRepo.findActiveById(roleId)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleId));
 
+        Long userCustomerId = user.getCustomer().getId();
+        if (!userCustomerId.equals(newRole.getCustomerId())) {
+            throw new IllegalArgumentException("Cannot assign a role from another tenant");
+        }
+
         if (user.getRole() != null) {
-            keycloakRoleAdmin.removeRealmRoleFromUserByUsername(user.getEmail(), user.getRole().getName());
+            keycloakRoleAdmin.removeRealmRoleFromUserByUsername(
+                    user.getEmail(),
+                    user.getRole().getKeycloakRoleName()
+            );
         }
 
         user.setRole(newRole);
         customerUserRepo.save(user);
 
-        keycloakRoleAdmin.assignRealmRoleToUserByUsername(user.getEmail(), newRole.getName());
+        keycloakRoleAdmin.assignRealmRoleToUserByUsername(
+                user.getEmail(),
+                newRole.getKeycloakRoleName()
+        );
 
         return newRole.getName();
     }

@@ -6,6 +6,8 @@ import com.eden.eden_crm_sec_crm_back.models.PermissionEntity;
 import com.eden.eden_crm_sec_crm_back.models.RoleEntity;
 import com.eden.eden_crm_sec_crm_back.repository.PermissionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.RoleRepository;
+import com.eden.eden_crm_sec_crm_back.utils.TenantRoleKeycloakName;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,62 +23,88 @@ public class RoleService {
     private final RoleRepository roleRepo;
     private final PermissionRepository permissionRepo;
     private final KeycloakRoleAdminService keycloakRoleAdmin;
+    private final Utils utils;
+
+    private Long currentCustomerId() {
+        return utils.getLoggedInUser().getCustomerId();
+    }
 
     @Transactional
     public RoleEntity create(String name, String description, List<Long> permissionIds) {
-        roleRepo.findByNameIgnoreCase(name).ifPresent(r -> {
-            throw new IllegalArgumentException("Role already exists: " + name);
-        });
-        if (keycloakRoleAdmin.realmRoleExists(name)) {
-            throw new IllegalArgumentException("Role already exists in Keycloak: " + name);
+        Long customerId = currentCustomerId();
+
+        String displayName = name == null ? null : name.trim();
+        if (displayName == null || displayName.isBlank()) {
+            throw new IllegalArgumentException("Role name is required");
+        }
+
+        if (roleRepo.existsByCustomerIdAndNameIgnoreCaseAndDeletedFalse(customerId, displayName)) {
+            throw new IllegalArgumentException("Role already exists: " + displayName);
         }
 
         List<PermissionEntity> perms = permissionRepo.findAllById(permissionIds);
 
-        keycloakRoleAdmin.createRealmRole(name, description);
-        keycloakRoleAdmin.replaceRoleComposites(name, perms.stream().map(PermissionEntity::getKeycloakRoleName).toList());
+        // retry a few times in the extremely unlikely event of a collision
+        final int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            String keycloakRoleName = TenantRoleKeycloakName.build(customerId, displayName);
 
-        RoleEntity role = new RoleEntity();
-        role.setName(name);
-        role.setDescription(description);
-        role.setPermissions(perms);
-        return roleRepo.save(role);
+            try {
+                keycloakRoleAdmin.createRealmRole(keycloakRoleName, description);
+                keycloakRoleAdmin.replaceRoleComposites(
+                        keycloakRoleName,
+                        perms.stream().map(PermissionEntity::getKeycloakRoleName).toList()
+                );
+
+                RoleEntity role = new RoleEntity();
+                role.setCustomerId(customerId);
+                role.setName(displayName);
+                role.setKeycloakRoleName(keycloakRoleName);
+                role.setDescription(description);
+                role.setPermissions(perms);
+
+                return roleRepo.save(role);
+
+            } catch (jakarta.ws.rs.WebApplicationException ex) {
+                // Keycloak conflict on role create -> retry
+                if (ex.getResponse() != null && ex.getResponse().getStatus() == 409 && attempt < maxAttempts) {
+                    continue;
+                }
+                throw ex;
+            }
+        }
+
+        throw new IllegalStateException("Failed to create role after retries");
     }
 
     @Transactional
     public RoleEntity update(Integer id, String newName, String description, List<Long> permissionIds) {
-        RoleEntity role = roleRepo.findById(id)
+        Long customerId = currentCustomerId();
+
+        RoleEntity role = roleRepo.findActiveById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + id));
 
-        boolean hasNewName = newName != null && !newName.isBlank();
-        String oldName = role.getName();
-        String effectiveNewName = hasNewName ? newName.trim() : oldName;
+        if (!role.getCustomerId().equals(customerId)) {
+            throw new IllegalArgumentException("Cannot update role outside your tenant");
+        }
 
-        // if name changed -> validate uniqueness in DB + Keycloak
-        boolean nameChanged = !oldName.equalsIgnoreCase(effectiveNewName);
+        String effectiveNewName = (newName != null && !newName.isBlank())
+                ? newName.trim()
+                : role.getName();
+
+        boolean nameChanged = !role.getName().equalsIgnoreCase(effectiveNewName);
         if (nameChanged) {
-            roleRepo.findByNameIgnoreCase(effectiveNewName).ifPresent(existing -> {
-                if (!existing.getId().equals(id)) {
-                    throw new IllegalArgumentException("Role already exists: " + effectiveNewName);
-                }
-            });
-
-            if (keycloakRoleAdmin.realmRoleExists(effectiveNewName)) {
-                throw new IllegalArgumentException("Role already exists in Keycloak: " + effectiveNewName);
+            if (roleRepo.existsByCustomerIdAndNameIgnoreCaseAndDeletedFalse(customerId, effectiveNewName)) {
+                throw new IllegalArgumentException("Role already exists: " + effectiveNewName);
             }
         }
 
         List<PermissionEntity> perms = permissionRepo.findAllById(permissionIds);
 
-        if (nameChanged) {
-            keycloakRoleAdmin.updateRealmRole(oldName, effectiveNewName, description);
-        } else {
-            keycloakRoleAdmin.updateRealmRoleDescription(oldName, description);
-        }
+        keycloakRoleAdmin.updateRealmRoleDescription(role.getKeycloakRoleName(), description);
 
-        // composites should be applied to the FINAL name
         keycloakRoleAdmin.replaceRoleComposites(
-                effectiveNewName,
+                role.getKeycloakRoleName(),
                 perms.stream().map(PermissionEntity::getKeycloakRoleName).toList()
         );
 
@@ -89,17 +117,25 @@ public class RoleService {
 
     @Transactional
     public void delete(Integer id) {
-        RoleEntity role = roleRepo.findById(id)
+        Long customerId = currentCustomerId();
+
+        RoleEntity role = roleRepo.findActiveById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + id));
 
-        keycloakRoleAdmin.deleteRealmRole(role.getName());
+        if (!role.getCustomerId().equals(customerId)) {
+            throw new IllegalArgumentException("Cannot delete role outside your tenant");
+        }
+
+        keycloakRoleAdmin.deleteRealmRole(role.getKeycloakRoleName());
 
         role.setDeleted(true);
         roleRepo.save(role);
     }
 
     public Page<RoleSummaryDto> getAllSummaries(String q, Pageable pageable) {
-        return roleRepo.searchSummaries(q, pageable)
+        Long customerId = currentCustomerId();
+
+        return roleRepo.searchSummaries(customerId, q, pageable)
                 .map(p -> new RoleSummaryDto(p.getId(), p.getName(), p.getDescription()));
     }
 }
