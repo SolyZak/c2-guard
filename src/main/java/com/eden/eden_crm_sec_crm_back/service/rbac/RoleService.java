@@ -4,6 +4,7 @@ import com.eden.eden_crm_sec_crm_back.dto.rbac.RoleSummaryDto;
 import com.eden.eden_crm_sec_crm_back.identity.impl.KeycloakRoleAdminService;
 import com.eden.eden_crm_sec_crm_back.models.PermissionEntity;
 import com.eden.eden_crm_sec_crm_back.models.RoleEntity;
+import com.eden.eden_crm_sec_crm_back.repository.CustomerUserRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PermissionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.RoleRepository;
 import com.eden.eden_crm_sec_crm_back.utils.TenantRoleKeycloakName;
@@ -22,6 +23,7 @@ public class RoleService {
 
     private final RoleRepository roleRepo;
     private final PermissionRepository permissionRepo;
+    private final CustomerUserRepository customerUserRepository;
     private final KeycloakRoleAdminService keycloakRoleAdmin;
     private final Utils utils;
 
@@ -124,6 +126,11 @@ public class RoleService {
 
         if (!role.getCustomerId().equals(customerId)) {
             throw new IllegalArgumentException("Cannot delete role outside your tenant");
+        }
+
+        boolean isUsed = customerUserRepository.existsActiveUserUsingRole(role.getId(), customerId);
+        if (isUsed) {
+            throw new IllegalStateException("Cannot delete role because it is assigned to one or more users");
         }
 
         keycloakRoleAdmin.deleteRealmRole(role.getKeycloakRoleName());

@@ -37,5 +37,17 @@ where u.customer.id = :customerId
             @Param("search") String search,
             Pageable pageable
     );
+    @Query("""
+        select (count(u) > 0)
+        from CustomerUser u
+        where u.role.id = :roleId
+          and u.customer.id = :customerId
+          and u.active = true
+          and (u.deleted = false or u.deleted is null)
+    """)
+    boolean existsActiveUserUsingRole(
+            @Param("roleId") Integer roleId,
+            @Param("customerId") Long customerId
+    );
 
 }
