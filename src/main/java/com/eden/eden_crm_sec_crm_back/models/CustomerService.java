@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Entity
@@ -32,4 +34,8 @@ public class CustomerService extends BaseEntity<Long> {
     @JoinColumn(name = "customer_id")
     @JsonBackReference
     private Customer customer;
+
+    @Column(name = "created_at", updatable = false, nullable = false)
+    @CreationTimestamp
+    private OffsetDateTime createdAt;
 }
