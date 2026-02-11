@@ -14,5 +14,4 @@ public interface CustomerUserMapper {
     @Mapping(target = "roleId", source = "role.id")
     @Mapping(target = "roleName", source = "role.name")
     CustomerUserData toResponse(CustomerUser entity);
-
 }

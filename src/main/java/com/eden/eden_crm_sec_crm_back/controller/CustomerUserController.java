@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-
 @RestController
 @RequestMapping(path = "/customer/users")
 @RequiredArgsConstructor
@@ -56,11 +55,5 @@ public class CustomerUserController {
     @GetMapping("/info")
     ApiResponse<CustomerUserInfoResponse> getLoggedInCustomerUser() {
         return ApiResponse.ok(customerUserService.getLoggedInUserInfo());
-    }
-
-    @PutMapping("/{id}/role")
-    public Map<String, String> assign(@PathVariable Long id, @RequestBody AssignCustomerUserRoleRequest req) {
-        String roleName = CustomerUserRoleService.assignRole(id, req.roleId());
-        return Map.of("roleName", roleName);
     }
 }
