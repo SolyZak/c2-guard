@@ -14,6 +14,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.ImmediateTaskDis
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.PatrolTaskDistribution;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskDistribution;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskExecutionSlot;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskExecutionSlotRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,7 +55,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
         TaskExecutionSlot executionSlot = repository.findById(executionSlotId)
                 .orElseThrow(() -> new BusinessException("Execution slot not found", HttpStatus.NOT_FOUND));
 
-        if (executionSlot.getStatus() != TaskDistributionStatus.FINISHED) {
+        if (executionSlot.getStatus() == TaskDistributionStatus.CURRENT) {
             executionSlot.setStatus(TaskDistributionStatus.MISSED);
             repository.saveAndFlush(executionSlot);
             sendAlertEvent(executionSlot);
@@ -72,11 +73,18 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
         final TaskDistribution taskDistribution = executionSlot.getTaskDistribution();
         final Task task = taskDistribution.getTask();
         final LocationPoints locationPoints = getLocation(taskDistribution);
+        Long siteId = 0L;
+        if (
+            taskDistribution.getDistributionType() == DistributionType.PATROL
+            && taskDistribution.getPatrolTaskDistribution() != null
+        ) {
+            siteId = taskDistribution.getPatrolTaskDistribution().getServiceTime().getSiteDistribution().getSite().getId();
+        }
 
         TriggerEventDto triggerEventDto = TriggerEventDto.builder()
                 .triggerId(trigger.getId())
                 .triggerName(trigger.getCode())
-                .operationSiteId(0L)
+                .operationSiteId(siteId)
                 .customerId(executionSlot.getCustomer().getId())
                 .longitude(locationPoints.longitude().doubleValue())
                 .latitude(locationPoints.latitude().doubleValue())
