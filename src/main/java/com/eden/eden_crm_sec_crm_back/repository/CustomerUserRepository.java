@@ -42,7 +42,6 @@ where u.customer.id = :customerId
         from CustomerUser u
         where u.role.id = :roleId
           and u.customer.id = :customerId
-          and u.active = true
           and (u.deleted = false or u.deleted is null)
     """)
     boolean existsActiveUserUsingRole(
