@@ -17,6 +17,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskExecutionSlo
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskExecutionSlotRepository;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github._0xorigin.flexscheduler.base.factories.tasks.base.ScheduledTaskFactory;
@@ -29,6 +30,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
@@ -81,6 +85,11 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
             siteId = taskDistribution.getPatrolTaskDistribution().getServiceTime().getSiteDistribution().getSite().getId();
         }
 
+        ZoneId zoneId = DateUtils.getTimeWithTimezone(executionSlot.getCustomer().getTimezone());
+        ZonedDateTime zonedStartTime = executionSlot.getStartDateTime().atZoneSameInstant(zoneId);
+        ZonedDateTime zonedEndTime = executionSlot.getEndDateTime().atZoneSameInstant(zoneId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+
         TriggerEventDto triggerEventDto = TriggerEventDto.builder()
                 .triggerId(trigger.getId())
                 .triggerName(trigger.getCode())
@@ -94,7 +103,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
                 .workforceId(0L)
                 .serviceTriggerEventId(0L)
                 .description(
-                    task.getName() + " | " + executionSlot.getStartDateTime() + " - " + executionSlot.getEndDateTime()
+                    task.getName() + " | " + zonedStartTime.format(formatter) + " - " + zonedEndTime.format(formatter)
                 )
                 .build();
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
