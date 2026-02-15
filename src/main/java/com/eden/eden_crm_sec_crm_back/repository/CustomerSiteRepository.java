@@ -9,11 +9,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long>, JpaSpecificationExecutor<CustomerSite> {
 
     List<CustomerSite> findByCustomerId(Long customerId);
@@ -75,52 +77,21 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             Pageable pageable
     );
 
-    @Query(value = """
-            SELECT DISTINCT cs.id                                            AS id,
-                   CONCAT(cs.name, ' - ',
-                          COALESCE(pr.name, ''),
-                          ' - ',
-                          pr.id)                                             AS name
-            FROM   contract_operation_site_distribution               sd
-                   JOIN customer_site                               cs  ON sd.operation_site_id   = cs.id
-                   LEFT JOIN premise                                 pr  ON cs.premise_id         = pr.id
-            WHERE  sd.customer_contract_id  = :contractId                    -- belongs to contract
-              AND  cs.customer_id          = :customerId                     -- belongs to current customer
-            """,
-            nativeQuery = true)
-    List<GeneralDropdownProjection> findOperationSitesForDropdown(@Param("contractId") Long contractId,
-                                                                  @Param("customerId")  Long customerId);
-
-    @Query(value = """
-    ---------------------------------------------------------------------------
-    --  Purpose
-    --  -------
-    --  Return the list of operation-sites that
-    --      • belong to the supplied customer-contract  (:contractId)
-    --      • belong to the current customer             (:customerId)
-    --
-    --  The projection we return is:
-    --      id   -> site id              (hidden value used by the UI)
-    --      name -> "<site name> - <premise name>"   (text shown to user)
-    ---------------------------------------------------------------------------
-    SELECT DISTINCT
-           cs.id                                             AS id,   -- dropdown value
-           CONCAT( cs.name, ' - ',
-                   COALESCE(pr.name, '') )                   AS name -- dropdown label (NO premise-id)
-    FROM   contract_operation_site_distribution sd           -- link: contract ➜ site
-           JOIN customer_site cs
-             ON sd.operation_site_id = cs.id                 -- the actual site entity
-           LEFT JOIN premise pr
-             ON cs.premise_id = pr.id                        -- optional premise for a site
-    ---------------------------------------------------------------------------
-    --  Filters
-    ---------------------------------------------------------------------------
-    WHERE  sd.customer_contract_id = :contractId             -- site belongs to contract
-      AND sd.customer_contract_service_id = :serviceId
-      AND  cs.customer_id          = :customerId             -- site belongs to customer
-    """,
-            nativeQuery = true)
-    List<GeneralDropdownProjection> findOperationSitesForDropdownWithDistrbutedContracts(
+    @Query("""
+            SELECT cs.id as id,
+                   CONCAT(cs.name, ' - ', COALESCE(p.name, '')) as name
+            FROM CustomerSite cs
+            JOIN cs.premise p
+            WHERE cs.customer.id = :customerId
+              AND NOT EXISTS (
+                    SELECT sd.id
+                    FROM SiteDistribution sd
+                    WHERE sd.customerContract.id = :contractId
+                    AND sd.lkCustomerContractService.id = :serviceId
+                    AND sd.site.id = cs.id
+              )
+            """)
+    List<GeneralDropdownProjection> findOperationSitesForDropdownWithDistributedContracts(
             @Param("contractId") Long contractId,
             @Param("serviceId") Long serviceId,
             @Param("customerId") Long customerId
