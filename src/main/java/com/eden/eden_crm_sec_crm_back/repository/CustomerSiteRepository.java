@@ -1,7 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.repository;
 
 import com.eden.eden_crm_sec_crm_back.dto.external.OperationSiteData;
-import com.eden.eden_crm_sec_crm_back.dto.response.CustomerSiteResponseDto;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
 import org.springframework.data.domain.Page;
@@ -75,15 +74,8 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             @Param("search") String search, @Param("customerId") Long customerId,
             Pageable pageable
     );
-//    @Query("""
-//       select cs.id                                             as id,
-//              concat(cs.name, ' - ', coalesce(p.name, ''))      as name
-//       from   CustomerSite cs
-//       left  join cs.premise p
-//       where  cs.customer.id = :customerId
-//       """)
-//    List<GeneralDropdownProjection> findCustomerSitesForDropdown(@Param("customerId") Long customerId);
-@Query(value = """
+
+    @Query(value = """
             SELECT DISTINCT cs.id                                            AS id,
                    CONCAT(cs.name, ' - ',
                           COALESCE(pr.name, ''),
@@ -95,9 +87,9 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             WHERE  sd.customer_contract_id  = :contractId                    -- belongs to contract
               AND  cs.customer_id          = :customerId                     -- belongs to current customer
             """,
-        nativeQuery = true)
-List<GeneralDropdownProjection> findOperationSitesForDropdown(@Param("contractId") Long contractId,
-                                                              @Param("customerId")  Long customerId);
+            nativeQuery = true)
+    List<GeneralDropdownProjection> findOperationSitesForDropdown(@Param("contractId") Long contractId,
+                                                                  @Param("customerId")  Long customerId);
 
     @Query(value = """
     ---------------------------------------------------------------------------
