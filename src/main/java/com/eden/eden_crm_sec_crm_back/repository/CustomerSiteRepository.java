@@ -94,10 +94,6 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
                    LEFT JOIN premise                                 pr  ON cs.premise_id         = pr.id
             WHERE  sd.customer_contract_id  = :contractId                    -- belongs to contract
               AND  cs.customer_id          = :customerId                     -- belongs to current customer
-              AND  EXISTS ( SELECT 1
-                           FROM   contract_operation_distribution_site_patrol  sp
-                           WHERE  sp.site_id              = cs.id
-                             AND  sp.customer_contract_id = :contractId )     -- has patrol
             """,
         nativeQuery = true)
 List<GeneralDropdownProjection> findOperationSitesForDropdown(@Param("contractId") Long contractId,
