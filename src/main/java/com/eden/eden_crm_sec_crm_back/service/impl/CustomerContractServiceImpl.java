@@ -170,6 +170,22 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     }
 
     @Override
+    public List<GeneralDropdown> availableOperationSitesListForPatrolDistribution(Long contractId, Long serviceId) {
+        customerContractRepository
+                .findByIdAndCustomerId(contractId, getLoggedInCustomerId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("contract")}),
+                        HttpStatus.NOT_FOUND));
+
+        return customerSiteRepository
+                .findOperationSitesForDropdownForPatrolDistribution(contractId, serviceId, getLoggedInCustomerId())
+                .stream()
+                .map(customerSiteMapper::toDropdown)
+                .toList();
+    }
+
+    @Override
     public List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId) {
         customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId()).orElseThrow(
                 () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)

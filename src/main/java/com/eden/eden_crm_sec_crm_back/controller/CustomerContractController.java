@@ -68,11 +68,19 @@ public class CustomerContractController {
     }
 
     @GetMapping("/{id}/service/{serviceId}/operation-sites")
-    public ApiResponse<List<GeneralDropdown>> availableOperationSitesListHavingPatrols(
+    public ApiResponse<List<GeneralDropdown>> availableOperationSitesListDistributedContracts(
             @PathVariable("id") Long contractId,
             @PathVariable("serviceId") Long serviceId
     ) {
         return ApiResponse.ok(customerContractService.availableOperationSitesListWithDistributedContracts(contractId, serviceId));
+    }
+
+    @GetMapping("/{id}/service/{serviceId}/operation-sites-distribution")
+    public ApiResponse<List<GeneralDropdown>> availableOperationSitesListHavingPatrols(
+            @PathVariable("id") Long contractId,
+            @PathVariable("serviceId") Long serviceId
+    ) {
+        return ApiResponse.ok(customerContractService.availableOperationSitesListForPatrolDistribution(contractId, serviceId));
     }
 
     @Operation(summary = "Distribute A Contract Service & Operation Site API")
