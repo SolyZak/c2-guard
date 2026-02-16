@@ -12,8 +12,11 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface CustomerSiteMapper {
+
     CustomerSite toEntity(CustomerSiteRequestDto dto);
 
+    @Mapping(target = "premiseId", source = "premise.id")
+    @Mapping(target = "premiseName", source = "premise.name")
     CustomerSiteResponseDto fromEntity(CustomerSite entity);
 
     void updateEntityFromDto(UpdateCustomerSiteRequestDto dto, @MappingTarget CustomerSite entity);
