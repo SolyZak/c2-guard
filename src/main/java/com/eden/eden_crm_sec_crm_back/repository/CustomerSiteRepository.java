@@ -97,4 +97,23 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             @Param("customerId") Long customerId
     );
 
+    @Query("""
+            SELECT cs.id as id,
+                   CONCAT(cs.name, ' - ', COALESCE(p.name, '')) as name
+            FROM CustomerSite cs
+            JOIN cs.premise p
+            WHERE cs.customer.id = :customerId
+              AND EXISTS (
+                    SELECT sd.id
+                    FROM SiteDistribution sd
+                    WHERE sd.customerContract.id = :contractId
+                    AND sd.lkCustomerContractService.id = :serviceId
+                    AND sd.site.id = cs.id
+              )
+            """)
+    List<GeneralDropdownProjection> findOperationSitesForDropdownForPatrolDistribution(
+            @Param("contractId") Long contractId,
+            @Param("serviceId") Long serviceId,
+            @Param("customerId") Long customerId
+    );
 }
