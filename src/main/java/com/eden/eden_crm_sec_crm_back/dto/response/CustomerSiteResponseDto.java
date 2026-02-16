@@ -5,5 +5,7 @@ public record CustomerSiteResponseDto(
         String name,
         Double latitude,
         Double longitude,
-        Double tolerance
+        Double tolerance,
+        Long premiseId,
+        String premiseName
 ) {}
