@@ -27,9 +27,20 @@ public class PatrolDetail {
     @JoinColumn(name = "location_id", nullable = false)
     private Location location;
 
+    // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────────
+    // nullable = true: new patrol details created via taskDefinitionId path leave this null.
+    // CLEANUP: drop @ManyToOne task field entirely after Phase E migration.
     @ManyToOne
-    @JoinColumn(name = "task_id", nullable = false)
+    @JoinColumn(name = "task_id", nullable = true)
     Task task;
+    // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────────
+
+    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
+    // Plain Long — no @ManyToOne to task_management JPA entities (cross-module isolation).
+    // CLEANUP: remove nullable = true after Phase E (make column NOT NULL).
+    @Column(name = "task_definition_id", nullable = true)
+    private Long taskDefinitionId;
+    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     @OneToMany(mappedBy = "patrolDetail")
     List<PatrolAssignment> patrolAssignments;
