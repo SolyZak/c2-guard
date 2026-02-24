@@ -8,6 +8,10 @@ import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
 import com.eden.eden_crm_sec_crm_back.enums.TriggerCode;
 import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
+// ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
+// ACL interface from task_management module — used to look up task name for new-path distributions.
+// CLEANUP: this import stays permanently after Phase E.
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
 import com.eden.eden_crm_sec_crm_back.service.impl.CrmTriggerLogService;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.ImmediateTaskDistribution;
@@ -44,6 +48,11 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
     private final CrmTriggerLogService crmTriggerLogService;
     private final C2AlertEventService c2AlertEventService;
     private final TriggerRepository triggerRepository;
+    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
+    // ACL port — fetches task name for new-path distributions.
+    // CLEANUP: this field stays permanently after Phase E.
+    private final TaskPresenter taskPresenter;
+    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
     @Builder
     private record LocationPoints(BigDecimal longitude, BigDecimal latitude) {}
 
@@ -75,8 +84,25 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
         final Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_MISSED.getId())
                 .orElseThrow(() -> new RuntimeException("Trigger not found"));
         final TaskDistribution taskDistribution = executionSlot.getTaskDistribution();
-        final Task task = taskDistribution.getTask();
         final LocationPoints locationPoints = getLocation(taskDistribution);
+
+        // ─── [TASK-MIGRATION] dual-mode ────────────────────────────────────────────────
+        // NEW path: fetch task name from task_management ACL.
+        // COEXISTENCE path: read name from the legacy Task entity.
+        // CLEANUP: remove COEXISTENCE branch and guard after Phase E.
+        final String taskName;
+        if (taskDistribution.getTaskDefinitionId() != null) {
+            // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
+            taskName = taskPresenter.getTaskDefinition(taskDistribution.getTaskDefinitionId()).getName();
+            // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
+        } else {
+            // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────
+            // CLEANUP: delete this branch after Phase E.
+            final Task task = taskDistribution.getTask();
+            taskName = task.getName();
+            // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────
+        }
+        // ─── [TASK-MIGRATION] END dual-mode ───────────────────────────────────────────
         Long siteId = 0L;
         if (
             taskDistribution.getDistributionType() == DistributionType.PATROL
@@ -103,7 +129,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
                 .workforceId(0L)
                 .serviceTriggerEventId(0L)
                 .description(
-                    task.getName() + " | " + zonedStartTime.format(formatter) + " - " + zonedEndTime.format(formatter)
+                    taskName + " | " + zonedStartTime.format(formatter) + " - " + zonedEndTime.format(formatter)
                 )
                 .build();
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);

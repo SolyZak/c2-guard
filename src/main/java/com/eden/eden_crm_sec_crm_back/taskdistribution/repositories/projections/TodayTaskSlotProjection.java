@@ -9,6 +9,11 @@ import java.time.OffsetDateTime;
 public interface TodayTaskSlotProjection {
     Long getId();
     Long getTaskId();
+    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
+    // Points to task_definition (task_management module) for new-path distributions.
+    // CLEANUP: rename this to getTaskId() after Phase E and remove the old getTaskId().
+    Long getTaskDefinitionId();
+    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
     Long getPatrolId();
     Long getPremiseId();
     Long getLocationId();

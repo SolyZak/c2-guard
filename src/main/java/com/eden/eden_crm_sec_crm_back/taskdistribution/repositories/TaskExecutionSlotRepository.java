@@ -17,6 +17,7 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
         SELECT
             tes.id AS id,
             t.id AS taskId,
+            td.taskDefinitionId AS taskDefinitionId,
             p.id AS patrolId,
             CASE
                 WHEN td.distributionType = 'PATROL' THEN pp.id
@@ -68,7 +69,7 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
             TaskExecutionSlot tes
             JOIN tes.taskAssignment ta
             JOIN tes.taskDistribution td
-            JOIN td.task t
+            LEFT JOIN td.task t
             LEFT JOIN td.patrolTaskDistribution ptd
             LEFT JOIN td.immediateTaskDistribution itd
             LEFT JOIN ptd.patrolDetail pd
