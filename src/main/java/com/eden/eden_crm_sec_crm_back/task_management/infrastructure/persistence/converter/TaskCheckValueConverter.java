@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistenc
 
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.TaskCheckValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
@@ -27,7 +28,8 @@ import java.io.IOException;
 @Converter
 public class TaskCheckValueConverter implements AttributeConverter<TaskCheckValue, String> {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
     public String convertToDatabaseColumn(TaskCheckValue attribute) {
