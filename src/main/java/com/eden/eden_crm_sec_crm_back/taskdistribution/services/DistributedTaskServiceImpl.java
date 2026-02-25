@@ -254,7 +254,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         if (dto instanceof TaskCheckTextDTO t)    return new TextCheckValue(t.getNotes());
         if (dto instanceof TaskCheckNumberDTO n)  return new NumberCheckValue(n.getUnit(), n.getOperator(), n.getValue());
         if (dto instanceof TaskCheckDecimalDTO d) return new DecimalCheckValue(d.getUnit(), d.getOperator(), d.getValue());
-        if (dto instanceof TaskCheckListDTO l)    return new ListCheckValue(l.getListItems());
+        if (dto instanceof TaskCheckListDTO l)    return new ListCheckValue(l.getListItems(), null);
         throw new BusinessException(
             "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
     }

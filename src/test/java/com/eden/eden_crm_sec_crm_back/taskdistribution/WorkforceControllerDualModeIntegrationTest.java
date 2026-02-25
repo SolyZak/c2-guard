@@ -154,7 +154,7 @@ class WorkforceControllerDualModeIntegrationTest {
 
                 TaskCheckDefinitionPayload.builder()
                     .id(4L).name("List check").checkType("LIST")
-                    .checkSettings(new ListCheckValue(List.of("Pass", "Fail")))
+                    .checkSettings(new ListCheckValue(List.of("Pass", "Fail"), null))
                     .hasEvidence(true).hasComment(true).build()
             ))
             .build();
