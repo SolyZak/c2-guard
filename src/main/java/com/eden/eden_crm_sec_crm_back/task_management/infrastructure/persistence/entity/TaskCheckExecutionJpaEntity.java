@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistenc
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.TaskCheckValue;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.converter.TaskCheckValueConverter;
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnTransformer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,6 +37,7 @@ public class TaskCheckExecutionJpaEntity {
 
     @Column(name = "check_values", nullable = false, columnDefinition = "jsonb")
     @Convert(converter = TaskCheckValueConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
     private TaskCheckValue checkValues;
 
     @Column(name = "evidence_image_path")
