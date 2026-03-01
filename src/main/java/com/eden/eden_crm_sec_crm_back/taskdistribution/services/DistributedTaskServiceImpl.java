@@ -109,7 +109,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             if (response.taskName() == null && response.taskDefinitionId() != null) {
                 String taskName = taskPresenter.getTaskDefinition(response.taskDefinitionId()).getName();
                 response = TodayTaskEntryResponse.builder()
-                    .taskId(response.taskId())
+                    .taskId(response.taskDefinitionId())
                     .taskDefinitionId(response.taskDefinitionId())
                     .patrolId(response.patrolId())
                     .premiseId(response.premiseId())
