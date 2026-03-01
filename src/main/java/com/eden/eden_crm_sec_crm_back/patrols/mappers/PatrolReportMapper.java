@@ -10,6 +10,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,6 +61,11 @@ public interface PatrolReportMapper {
                     );
                 })
                 .toList();
+    }
+
+    default OffsetDateTime toOffsetDateTime(Instant instant) {
+        if (instant == null) return null;
+        return instant.atOffset(ZoneOffset.UTC);
     }
 
     @Mapping(target = "id", source = "taskId")

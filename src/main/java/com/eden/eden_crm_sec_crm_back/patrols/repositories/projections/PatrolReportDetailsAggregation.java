@@ -1,14 +1,14 @@
 package com.eden.eden_crm_sec_crm_back.patrols.repositories.projections;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 public interface PatrolReportDetailsAggregation {
     Long getLocationId();
     String getLocationName();
     Long getTaskId();
     String getTaskName();
-    OffsetDateTime getTaskStartDateTime();
-    OffsetDateTime getTaskEndDateTime();
+    Instant getTaskStartDateTime();
+    Instant getTaskEndDateTime();
     String getStatus();
     Long getSiteId();
     String getSiteName();
