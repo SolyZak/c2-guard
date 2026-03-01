@@ -9,5 +9,6 @@ public class PatrolResponseDetail {
     Long id;
     List<String> locations;
     List<String> tasks;
+    List<String> taskDefinitions;
 
 }
