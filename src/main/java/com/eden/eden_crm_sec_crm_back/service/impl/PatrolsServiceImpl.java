@@ -18,6 +18,7 @@ import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.PatrolRepository;
+import com.eden.eden_crm_sec_crm_back.repository.PatrolDetailRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.PatrolsService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
@@ -39,6 +40,7 @@ public class PatrolsServiceImpl implements PatrolsService {
     private final PatrolRepository patrolRepository;
     private final LocationRepository locationRepository;
     private final TaskRepository taskRepository;
+    private final PatrolDetailRepository patrolDetailRepository;
     private final CustomerRepository customerRepository;
     private final Utils utils;
     // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
@@ -156,6 +158,7 @@ public class PatrolsServiceImpl implements PatrolsService {
                         PatrolResponseDetail detail = new PatrolResponseDetail();
                         detail.setLocations(locationRepository.getLocationNamesByDetailId(id));
                         detail.setTasks(taskRepository.getTaskNamesByDetailId(id));
+                        detail.setTaskDefinitions(patrolDetailRepository.getTaskDefinitionNamesByDetailId(id));
                         dto.getDetails().add(detail);
                     }
                     patrolResponseDtos.add(dto);
