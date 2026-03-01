@@ -12,6 +12,7 @@ import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.PatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
+import com.eden.eden_crm_sec_crm_back.repository.PatrolDetailRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.impl.PatrolsServiceImpl;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
@@ -48,6 +49,7 @@ class PatrolsServiceDualModeIntegrationTest {
     @Mock private PatrolRepository patrolRepository;
     @Mock private LocationRepository locationRepository;
     @Mock private TaskRepository taskRepository;
+    @Mock private PatrolDetailRepository patrolDetailRepository;
     @Mock private CustomerRepository customerRepository;
     @Mock private Utils utils;
     // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
@@ -65,7 +67,7 @@ class PatrolsServiceDualModeIntegrationTest {
     void setUp() {
         service = new PatrolsServiceImpl(
             patrolRepository, locationRepository, taskRepository,
-            customerRepository, utils, taskPresenter
+            patrolDetailRepository, customerRepository, utils, taskPresenter
         );
 
         UserData loggedInUser = UserData.builder().id("99").customerId(CUSTOMER_ID).build();

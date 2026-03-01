@@ -5,5 +5,6 @@ import lombok.Builder;
 @Builder
 public record DistributableTaskResponse(
     Long patrolDetailId,
-    String taskName
+    String taskName,
+    Long taskDefinitionId
 ) {}
