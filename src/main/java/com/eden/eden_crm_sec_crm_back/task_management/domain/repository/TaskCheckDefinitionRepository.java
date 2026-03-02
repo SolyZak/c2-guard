@@ -12,4 +12,7 @@ public interface TaskCheckDefinitionRepository {
     Optional<TaskCheckDefinition> findById(Long id);
 
     List<TaskCheckDefinition> findAllByTaskDefinitionId(Long taskDefinitionId);
+
+    <T> List<T> findAllChecksByPremiseAndCustomer(Long premiseId, Long customerId, Class<T> projectionType);
+
 }

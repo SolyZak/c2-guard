@@ -3,8 +3,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskCheckDefinitionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskDefinitionRequest;
-import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionResponse;
-import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionSummaryResponse;
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.*;
 import com.eden.eden_crm_sec_crm_back.task_management.application.mapper.TaskMapper;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckDefinition;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskDefinition;
@@ -13,6 +12,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskDefi
 import com.eden.eden_crm_sec_crm_back.task_management.domain.service.TaskDefinitionDomainService;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.CheckType;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.Severity;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository.LocationTaskCheckProjection;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +73,7 @@ public class TaskDefinitionService {
 
     public long countTaskDefinitions() {
         Long customerId = utils.getLoggedInUser().getCustomerId();
+
         return taskDefinitionRepository.countByCustomerId(customerId);
     }
 
@@ -84,5 +87,58 @@ public class TaskDefinitionService {
         TaskDefinition task = taskDefinitionRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("task-not-found", HttpStatus.NOT_FOUND));
         return taskMapper.toTaskDefinitionResponse(task);
+    }
+
+    public List<LocationTaskDefinitionsResponse> getTaskChecksByPremise(Long premiseId) {
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+        // customerId = 7L;
+        List<LocationTaskCheckProjection> rows =
+                taskCheckDefinitionRepository.findAllChecksByPremiseAndCustomer(
+                        premiseId, customerId, LocationTaskCheckProjection.class);
+
+        return rows.stream()
+                .collect(Collectors.groupingBy(
+                        LocationTaskCheckProjection::getLocationId,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ))
+                .entrySet().stream()
+                .map(locationEntry -> {
+                    List<LocationTaskCheckProjection> locationRows = locationEntry.getValue();
+                    LocationTaskCheckProjection firstRow = locationRows.get(0);
+
+                    List<TaskDefinitionWithChecksResponse> taskDefinitions = locationRows.stream()
+                            .collect(Collectors.groupingBy(
+                                    LocationTaskCheckProjection::getTaskDefinitionId,
+                                    LinkedHashMap::new,
+                                    Collectors.toList()
+                            ))
+                            .entrySet().stream()
+                            .map(tdEntry -> {
+                                List<LocationTaskCheckProjection> tdRows = tdEntry.getValue();
+                                LocationTaskCheckProjection firstTd = tdRows.get(0);
+
+                                List<TaskCheckDefinitionDetailResponse> checks = tdRows.stream()
+                                        .map(row -> new TaskCheckDefinitionDetailResponse(
+                                                row.getCheckId(),
+                                                row.getCheckName()
+                                        ))
+                                        .toList();
+
+                                return new TaskDefinitionWithChecksResponse(
+                                        firstTd.getTaskDefinitionId(),
+                                        firstTd.getTaskDefinitionName(),
+                                        checks
+                                );
+                            })
+                            .toList();
+
+                    return new LocationTaskDefinitionsResponse(
+                            firstRow.getLocationId(),
+                            firstRow.getLocationName(),
+                            taskDefinitions
+                    );
+                })
+                .toList();
     }
 }
