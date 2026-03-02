@@ -69,7 +69,8 @@ public abstract class TaskPersistenceMapper {
                 entity.getCustomerId(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-                entity.getDeletedAt());
+                entity.getDeletedAt(),
+                entity.getImageUrl());
     }
 
     public TaskExecution toDomain(TaskExecutionJpaEntity entity) {

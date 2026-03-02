@@ -4,12 +4,15 @@ import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskDefinitionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.LocationTaskDefinitionsResponse;
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckImageResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionSummaryResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.service.TaskDefinitionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -50,5 +53,12 @@ public class TaskDefinitionController {
     public ApiResponse<List<LocationTaskDefinitionsResponse>> getTaskChecksByPremise(
             @PathVariable Long premiseId) {
         return ApiResponse.ok(taskDefinitionService.getTaskChecksByPremise(premiseId));
+    }
+
+    @PostMapping(value = "/checks/{taskCheckDefinitionId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<TaskCheckImageResponse> uploadTaskCheckImage(
+            @PathVariable Long taskCheckDefinitionId,
+            @RequestParam("image") MultipartFile image) {
+        return ApiResponse.ok(taskDefinitionService.uploadTaskCheckImage(taskCheckDefinitionId, image));
     }
 }

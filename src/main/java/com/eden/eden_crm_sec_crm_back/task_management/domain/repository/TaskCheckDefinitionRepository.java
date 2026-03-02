@@ -15,4 +15,6 @@ public interface TaskCheckDefinitionRepository {
 
     <T> List<T> findAllChecksByPremiseAndCustomer(Long premiseId, Long customerId, Class<T> projectionType);
 
+    void updateImageUrl(Long id, String imageUrl);
+
 }

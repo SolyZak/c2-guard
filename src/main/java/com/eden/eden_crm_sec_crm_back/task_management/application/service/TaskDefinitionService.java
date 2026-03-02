@@ -1,5 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
+import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
+import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskCheckDefinitionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskDefinitionRequest;
@@ -13,26 +15,34 @@ import com.eden.eden_crm_sec_crm_back.task_management.domain.service.TaskDefinit
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.CheckType;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.Severity;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository.LocationTaskCheckProjection;
+import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskDefinitionService {
+
+    private static final String TASK_CHECK_IMAGE_PATH = "task-management/checks/";
 
     private final TaskDefinitionRepository taskDefinitionRepository;
     private final TaskCheckDefinitionRepository taskCheckDefinitionRepository;
     private final TaskDefinitionDomainService taskDefinitionDomainService;
     private final TaskMapper taskMapper;
     private final Utils utils;
+    private final DocumentsFeignClient documentsFeignClient;
+    private final OracleStorageUtil oracleStorageUtil;
 
     @Transactional
     public void createTaskDefinition(CreateTaskDefinitionRequest request) {
@@ -73,7 +83,6 @@ public class TaskDefinitionService {
 
     public long countTaskDefinitions() {
         Long customerId = utils.getLoggedInUser().getCustomerId();
-
         return taskDefinitionRepository.countByCustomerId(customerId);
     }
 
@@ -91,10 +100,12 @@ public class TaskDefinitionService {
 
     public List<LocationTaskDefinitionsResponse> getTaskChecksByPremise(Long premiseId) {
         Long customerId = utils.getLoggedInUser().getCustomerId();
-        // customerId = 7L;
+
         List<LocationTaskCheckProjection> rows =
                 taskCheckDefinitionRepository.findAllChecksByPremiseAndCustomer(
                         premiseId, customerId, LocationTaskCheckProjection.class);
+
+        String storageBaseUrl = oracleStorageUtil.getStorageUrl();
 
         return rows.stream()
                 .collect(Collectors.groupingBy(
@@ -121,7 +132,10 @@ public class TaskDefinitionService {
                                 List<TaskCheckDefinitionDetailResponse> checks = tdRows.stream()
                                         .map(row -> new TaskCheckDefinitionDetailResponse(
                                                 row.getCheckId(),
-                                                row.getCheckName()
+                                                row.getCheckName(),
+                                                row.getImageUrl() != null
+                                                        ? storageBaseUrl + row.getImageUrl()
+                                                        : null
                                         ))
                                         .toList();
 
@@ -140,5 +154,47 @@ public class TaskDefinitionService {
                     );
                 })
                 .toList();
+    }
+
+    @Transactional
+    public TaskCheckImageResponse uploadTaskCheckImage(Long taskCheckDefinitionId, MultipartFile image) {
+        Long customerId = utils.getLoggedInUser().getCustomerId();
+
+        TaskCheckDefinition check = taskCheckDefinitionRepository.findById(taskCheckDefinitionId)
+                .orElseThrow(() -> new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND));
+
+        if (!check.getCustomerId().equals(customerId)) {
+            throw new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND);
+        }
+
+        String imagePath = generateImagePath(taskCheckDefinitionId, image);
+
+        try {
+            documentsFeignClient.uploadImage(
+                    UploadImageRequest.builder()
+                            .image(image)
+                            .path(imagePath)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error uploading task check image for id {}: {}", taskCheckDefinitionId, e.getMessage());
+            throw new BusinessException("task-check-image-upload-failed", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        taskCheckDefinitionRepository.updateImageUrl(taskCheckDefinitionId, imagePath);
+
+        String fullUrl = oracleStorageUtil.getStorageUrl() + imagePath;
+        return new TaskCheckImageResponse(taskCheckDefinitionId, fullUrl);
+    }
+
+    private String generateImagePath(Long taskCheckDefinitionId, MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        }
+        String uniqueFilename = String.format("check_%d_%d%s",
+                taskCheckDefinitionId, System.currentTimeMillis(), fileExtension);
+        return TASK_CHECK_IMAGE_PATH + taskCheckDefinitionId + "/" + uniqueFilename;
     }
 }
