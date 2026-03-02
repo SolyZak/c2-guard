@@ -149,8 +149,17 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         // New path: slot belongs to a distribution that uses task_management.
         // Creates a TaskExecution + TaskCheckExecution via the ACL presenter.
         // CLEANUP: after Phase E, remove the COEXISTENCE block and keep only this path.
-        Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTask().getId();
-        if (taskDefinitionId != null) {
+        Task task = taskExecutionSlot.getTaskDistribution().getTask();
+
+        if (task == null) {
+            // New-path distribution: task is null, use task_definition_id instead
+            Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTaskDefinitionId();
+            if (taskDefinitionId == null) {
+                throw new BusinessException(
+                        "No task or task definition found for this distribution",
+                        HttpStatus.BAD_REQUEST
+                );
+            }
             executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId);
             return;
         }
@@ -160,7 +169,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         // Old path: slot belongs to a distribution that uses legacy Task entity.
         // Creates TaskPatrolExecution in the old model.
         // CLEANUP: delete this entire block after Phase E.
-        Task task = taskExecutionSlot.getTaskDistribution().getTask();
         checkTaskExecutionConstraints(request, taskExecutionSlot, task);
         TaskPatrolExecution taskPatrolExecution = createTaskPatrolExecution(request, task, customer);
         taskPatrolExecution = taskPatrolExecutionRepository.save(taskPatrolExecution);
