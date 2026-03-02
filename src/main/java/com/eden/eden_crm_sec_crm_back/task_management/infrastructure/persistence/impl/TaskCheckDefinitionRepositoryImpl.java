@@ -33,4 +33,9 @@ public class TaskCheckDefinitionRepositoryImpl implements TaskCheckDefinitionRep
         return jpaRepository.findAllByTaskDefinitionIdAndDeletedAtIsNull(taskDefinitionId)
                 .stream().map(mapper::toDomain).collect(Collectors.toList());
     }
+
+    @Override
+    public <T> List<T> findAllChecksByPremiseAndCustomer(Long premiseId, Long customerId, Class<T> projectionType) {
+        return jpaRepository.findAllChecksByPremiseAndCustomer(premiseId, customerId, projectionType);
+    }
 }

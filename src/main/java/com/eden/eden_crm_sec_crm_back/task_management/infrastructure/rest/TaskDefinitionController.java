@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.rest;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskDefinitionRequest;
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.LocationTaskDefinitionsResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionSummaryResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.service.TaskDefinitionService;
@@ -43,5 +44,11 @@ public class TaskDefinitionController {
     @GetMapping("/{id}")
     public ApiResponse<TaskDefinitionResponse> getTaskDefinition(@PathVariable Long id) {
         return ApiResponse.ok(taskDefinitionService.getTaskDefinition(id));
+    }
+
+    @GetMapping("/premise/{premiseId}/checks")
+    public ApiResponse<List<LocationTaskDefinitionsResponse>> getTaskChecksByPremise(
+            @PathVariable Long premiseId) {
+        return ApiResponse.ok(taskDefinitionService.getTaskChecksByPremise(premiseId));
     }
 }
