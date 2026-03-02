@@ -83,6 +83,7 @@ public class TaskDefinitionService {
 
     public long countTaskDefinitions() {
         Long customerId = utils.getLoggedInUser().getCustomerId();
+
         return taskDefinitionRepository.countByCustomerId(customerId);
     }
 
