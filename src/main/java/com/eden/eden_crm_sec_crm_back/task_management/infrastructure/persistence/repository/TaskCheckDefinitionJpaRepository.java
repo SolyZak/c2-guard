@@ -15,7 +15,7 @@ public interface TaskCheckDefinitionJpaRepository extends JpaRepository<TaskChec
 
     @Query(nativeQuery = true, value = """
             SELECT
-                l.id            AS locationId,
+                l.id            AS lodcationId,
                 l.name          AS locationName,
                 td.id           AS taskDefinitionId,
                 td.name         AS taskDefinitionName,
@@ -43,7 +43,7 @@ public interface TaskCheckDefinitionJpaRepository extends JpaRepository<TaskChec
             Class<T> projectionType
     );
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE TaskCheckDefinitionJpaEntity c SET c.imageUrl = :imageUrl WHERE c.id = :id")
     void updateImageUrl(@Param("id") Long id, @Param("imageUrl") String imageUrl);
 
