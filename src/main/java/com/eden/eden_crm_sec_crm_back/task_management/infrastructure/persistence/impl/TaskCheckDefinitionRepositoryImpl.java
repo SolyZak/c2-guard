@@ -38,4 +38,9 @@ public class TaskCheckDefinitionRepositoryImpl implements TaskCheckDefinitionRep
     public <T> List<T> findAllChecksByPremiseAndCustomer(Long premiseId, Long customerId, Class<T> projectionType) {
         return jpaRepository.findAllChecksByPremiseAndCustomer(premiseId, customerId, projectionType);
     }
+
+    @Override
+    public void updateImageUrl(Long id, String imageUrl) {
+        jpaRepository.updateImageUrl(id, imageUrl);
+    }
 }

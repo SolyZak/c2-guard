@@ -25,6 +25,9 @@ public class TaskCheckDefinition {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
+    @Setter
+    private String imageUrl;
+
     private TaskCheckDefinition() {
     }
 
@@ -44,11 +47,13 @@ public class TaskCheckDefinition {
         return check;
     }
 
-    public static TaskCheckDefinition reconstitute(Long id, Long taskDefinitionId, String name, Severity severity,
+    public static TaskCheckDefinition reconstitute(
+            Long id, Long taskDefinitionId, String name, Severity severity,
             CheckType checkType, TaskCheckValue checkSettings,
             boolean hasEvidence, boolean hasComment, Long customerId,
             LocalDateTime createdAt, LocalDateTime updatedAt,
-            LocalDateTime deletedAt) {
+            LocalDateTime deletedAt, String imageUrl)
+    {
         TaskCheckDefinition check = new TaskCheckDefinition();
         check.id = id;
         check.taskDefinitionId = taskDefinitionId;
@@ -62,6 +67,7 @@ public class TaskCheckDefinition {
         check.createdAt = createdAt;
         check.updatedAt = updatedAt;
         check.deletedAt = deletedAt;
+        check.imageUrl = imageUrl;
         return check;
     }
 

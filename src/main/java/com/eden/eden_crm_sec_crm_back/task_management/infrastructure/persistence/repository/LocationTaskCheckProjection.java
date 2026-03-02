@@ -7,4 +7,6 @@ public interface LocationTaskCheckProjection {
     String getTaskDefinitionName();
     Long getCheckId();
     String getCheckName();
+    String getImageUrl();
+
 }
