@@ -182,7 +182,20 @@ public class TaskDefinitionService {
             throw new BusinessException("task-check-image-upload-failed", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        taskCheckDefinitionRepository.updateImageUrl(taskCheckDefinitionId, imagePath);
+        try {
+            taskCheckDefinitionRepository.updateImageUrl(taskCheckDefinitionId, imagePath);
+        } catch (Exception e) {
+            log.error("Error saving image URL in DB for check id {}: {}", taskCheckDefinitionId, e.getMessage());
+            throw new BusinessException("task-check-image-save-failed", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        TaskCheckDefinition updated = taskCheckDefinitionRepository.findById(taskCheckDefinitionId)
+                .orElseThrow(() -> new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND));
+
+        if (updated.getImageUrl() == null || updated.getImageUrl().isBlank()) {
+            log.error("Image URL not persisted in DB for check id {}", taskCheckDefinitionId);
+            throw new BusinessException("task-check-image-save-failed", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
         String fullUrl = oracleStorageUtil.getStorageUrl() + imagePath;
         return new TaskCheckImageResponse(taskCheckDefinitionId, fullUrl);
@@ -195,7 +208,7 @@ public class TaskDefinitionService {
             fileExtension = originalFilename.substring(originalFilename.lastIndexOf('.'));
         }
         String uniqueFilename = String.format("check_%d_%d%s",
-                taskCheckDefinitionId, System.currentTimeMillis(), fileExtension);
+                taskCheckDefinitionId   , System.currentTimeMillis(), fileExtension);
         return TASK_CHECK_IMAGE_PATH + taskCheckDefinitionId + "/" + uniqueFilename;
     }
 }
