@@ -149,7 +149,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         // New path: slot belongs to a distribution that uses task_management.
         // Creates a TaskExecution + TaskCheckExecution via the ACL presenter.
         // CLEANUP: after Phase E, remove the COEXISTENCE block and keep only this path.
-        Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTaskDefinitionId();
+        Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTask().getId();
         if (taskDefinitionId != null) {
             executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId);
             return;
