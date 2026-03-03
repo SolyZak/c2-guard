@@ -9,6 +9,9 @@ public enum CheckType {
     LIST;
 
     public static CheckType fromString(String value) {
+        if (value == null) {
+            throw new TaskDomainException("checkType cannot be null");
+        }
         try {
             return valueOf(value.toUpperCase());
         } catch (IllegalArgumentException e) {
