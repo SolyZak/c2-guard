@@ -1,12 +1,15 @@
 package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.Impl;
 
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskCheckComparisonRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskExecutionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.SubmitTaskCheckExecutionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.service.TaskExecutionService;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.mapper.TaskExternalMapper;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.CreateTaskCheckComparisonPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.CreateTaskExecutionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.SubmitTaskCheckExecutionPayload;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckComparisonPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckExecutionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskExecutionPayload;
 import lombok.RequiredArgsConstructor;
@@ -40,5 +43,15 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
         request.setCustomerId(payload.getCustomerId());
         return taskExternalMapper.toPayload(
                 taskExecutionService.submitTaskCheckExecution(request));
+    }
+
+    @Override
+    public TaskCheckComparisonPayload createTaskCheckComparison(CreateTaskCheckComparisonPayload payload) {
+        CreateTaskCheckComparisonRequest request = new CreateTaskCheckComparisonRequest();
+        request.setTaskCheckDefinitionId(payload.getTaskCheckDefinitionId());
+        request.setTaskCheckExecutionId(payload.getTaskCheckExecutionId());
+        request.setCustomerId(payload.getCustomerId());
+        return taskExternalMapper.toPayload(
+                taskExecutionService.createTaskCheckComparison(request));
     }
 }

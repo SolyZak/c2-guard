@@ -97,6 +97,7 @@ public abstract class TaskPersistenceMapper {
                 entity.getTaskCheckExecutionId(),
                 entity.getMatching(),
                 entity.getRatio(),
+                entity.getCustomerId(),
                 entity.getCreatedDate());
     }
 }

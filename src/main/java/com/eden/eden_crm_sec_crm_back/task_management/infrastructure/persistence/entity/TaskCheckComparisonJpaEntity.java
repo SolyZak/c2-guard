@@ -35,6 +35,9 @@ public class TaskCheckComparisonJpaEntity {
     @Column(name = "ratio")
     private Double ratio;
 
+    @Column(name = "customer_id", nullable = false)
+    private Long customerId;
+
     @Column(name = "created_date", nullable = false, updatable = false)
     private LocalDateTime createdDate;
 }

@@ -26,6 +26,8 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.pa
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckDefinitionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskDefinitionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskExecutionPayload;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.CreateTaskCheckComparisonPayload;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckExecutionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.DecimalCheckValue;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.ListCheckValue;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.NumberCheckValue;
@@ -183,17 +185,17 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     // Validates check types, creates TaskExecution, and submits each TaskCheckExecution.
     // CLEANUP: rename to the main execution method after Phase E.
     private void executeNewPathTask(
-        ExecuteDistributedTaskRequest request,
-        CheckInData checkInData,
-        Customer customer,
-        TaskExecutionSlot taskExecutionSlot,
-        Long taskDefinitionId
+            ExecuteDistributedTaskRequest request,
+            CheckInData checkInData,
+            Customer customer,
+            TaskExecutionSlot taskExecutionSlot,
+            Long taskDefinitionId
     ) {
         OffsetDateTime now = OffsetDateTime.now();
         if (
-            taskExecutionSlot.getStatus() != TaskDistributionStatus.CURRENT
-                || now.isBefore(taskExecutionSlot.getStartDateTime())
-                || now.isAfter(taskExecutionSlot.getEndDateTime())
+                taskExecutionSlot.getStatus() != TaskDistributionStatus.CURRENT
+                        || now.isBefore(taskExecutionSlot.getStartDateTime())
+                        || now.isAfter(taskExecutionSlot.getEndDateTime())
         )
             throw new BusinessException(MessageUtil.getMessage("task.execute.error"), HttpStatus.BAD_REQUEST);
 
@@ -203,7 +205,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         if (checkDefs.size() != request.checks().size())
             throw new BusinessException("Task check size not matched", HttpStatus.BAD_REQUEST);
 
-        // Validate that submitted check types match the definition in order
         IntStream.range(0, checkDefs.size()).forEach(i -> {
             String defined   = checkDefs.get(i).getCheckType();
             String submitted = getCheckTypeFromDto(request.checks().get(i));
@@ -211,28 +212,35 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                 throw new BusinessException("Task check type not matched at index " + i, HttpStatus.BAD_REQUEST);
         });
 
-        // Create the task execution record in task_management
         TaskExecutionPayload taskExecution = taskExecutionPresenter.createTaskExecution(
-            CreateTaskExecutionPayload.builder()
-                .workforceId(checkInData.getWorkforceId())
-                .customerId(customer.getId())
-                .build()
+                CreateTaskExecutionPayload.builder()
+                        .workforceId(checkInData.getWorkforceId())
+                        .customerId(customer.getId())
+                        .build()
         );
 
-        // Submit each check execution
         IntStream.range(0, request.checks().size()).forEach(i -> {
             TaskCheckDTO checkDto = request.checks().get(i);
             TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
-            taskExecutionPresenter.submitTaskCheckExecution(
-                SubmitTaskCheckExecutionPayload.builder()
-                    .taskCheckDefinitionId(checkDef.getId())
-                    .taskExecutionId(taskExecution.getId())
-                    .checkType(checkDef.getCheckType())
-                    .checkValues(toCheckValue(checkDto))
-                    .evidenceImagePath(checkDto.getImageBase64())
-                    .comment(checkDto.getComment())
-                    .customerId(customer.getId())
-                    .build()
+
+            TaskCheckExecutionPayload checkExecution = taskExecutionPresenter.submitTaskCheckExecution(
+                    SubmitTaskCheckExecutionPayload.builder()
+                            .taskCheckDefinitionId(checkDef.getId())
+                            .taskExecutionId(taskExecution.getId())
+                            .checkType(checkDef.getCheckType())
+                            .checkValues(toCheckValue(checkDto))
+                            .evidenceImagePath(checkDto.getImageBase64())
+                            .comment(checkDto.getComment())
+                            .customerId(customer.getId())
+                            .build()
+            );
+
+            taskExecutionPresenter.createTaskCheckComparison(
+                    CreateTaskCheckComparisonPayload.builder()
+                            .taskCheckDefinitionId(checkDef.getId())
+                            .taskCheckExecutionId(checkExecution.getId())
+                            .customerId(customer.getId())
+                            .build()
             );
         });
 
