@@ -12,7 +12,9 @@ import lombok.Getter;
  */
 @Getter
 public enum TriggerCode {
-    PATROL_TASK_MISSED(1L);
+    PATROL_TASK_MISSED(1L),
+    // Fired when a submitted check value violates its defined rule (list alertValue, number/decimal threshold)
+    PATROL_TASK_DEVIATION(2L);   // DB code: PATROL_TASK_Deviation
 
     private final Long id;
 

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AlertTriggerRepository extends JpaRepository<AlertTrigger, Long>, JpaSpecificationExecutor<AlertTrigger> {
@@ -25,4 +26,6 @@ public interface AlertTriggerRepository extends JpaRepository<AlertTrigger, Long
         LEFT JOIN AlertTriggerSeverity ats ON at.id = ats.alertTrigger.id AND ats.customerId = :customerId
         """)
     List<AlertTriggerWithSeverityProjection> findAllWithSeverityByCustomerId(@Param("customerId") Long customerId);
+
+    Optional<AlertTrigger> findByTriggerIdAndServicePlatformId(Long triggerId, Long servicePlatformId);
 }

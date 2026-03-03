@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.dto;
 
+import com.eden.eden_crm_sec_crm_back.enums.Severity;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -34,4 +35,7 @@ public class TriggerEventDto {
     private String description;
     @NonNull
     private String servicePlatformName;
+    // Severity from task/check definition. When set, C2AlertEventService uses it directly
+    // instead of looking up AlertTriggerSeverity table.
+    private Severity overrideSeverity;
 }
