@@ -2,8 +2,10 @@ package com.eden.eden_crm_sec_crm_back.task_management.application.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class CreateTaskExecutionRequest {
 
     @NotNull
