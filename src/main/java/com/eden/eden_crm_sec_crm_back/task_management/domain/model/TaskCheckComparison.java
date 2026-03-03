@@ -43,4 +43,8 @@ public class TaskCheckComparison {
         comparison.createdDate = createdDate;
         return comparison;
     }
+
+    public void updateMatching(Boolean matching) {
+        this.matching = matching;
+    }
 }

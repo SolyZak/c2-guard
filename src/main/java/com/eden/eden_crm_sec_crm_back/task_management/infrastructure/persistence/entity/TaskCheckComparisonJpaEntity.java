@@ -29,7 +29,7 @@ public class TaskCheckComparisonJpaEntity {
     @Column(name = "task_check_execution_id", nullable = false)
     private Long taskCheckExecutionId;
 
-    @Column(name = "matching", nullable = false)
+    @Column(name = "matching")
     private Boolean matching;
 
     @Column(name = "ratio")
