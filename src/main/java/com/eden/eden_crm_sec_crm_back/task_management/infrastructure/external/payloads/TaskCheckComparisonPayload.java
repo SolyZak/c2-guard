@@ -1,0 +1,18 @@
+package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class TaskCheckComparisonPayload {
+    private Long id;
+    private Long taskCheckDefinitionId;
+    private Long taskCheckExecutionId;
+    private Boolean matching;
+    private Double ratio;
+    private Long customerId;
+    private LocalDateTime createdDate;
+}

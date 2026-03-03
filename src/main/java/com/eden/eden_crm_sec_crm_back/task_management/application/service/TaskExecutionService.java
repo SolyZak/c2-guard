@@ -1,12 +1,16 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskCheckComparisonRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskExecutionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.SubmitTaskCheckExecutionRequest;
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckComparisonResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckExecutionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskExecutionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.mapper.TaskMapper;
+import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckComparison;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckExecution;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskExecution;
+import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskCheckComparisonRepository;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskCheckExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.service.TaskExecutionDomainService;
@@ -21,6 +25,7 @@ public class TaskExecutionService {
 
     private final TaskExecutionRepository taskExecutionRepository;
     private final TaskCheckExecutionRepository taskCheckExecutionRepository;
+    private final TaskCheckComparisonRepository taskCheckComparisonRepository;
     private final TaskExecutionDomainService taskExecutionDomainService;
     private final TaskMapper taskMapper;
 
@@ -44,5 +49,17 @@ public class TaskExecutionService {
                 request.getCustomerId());
         checkExecution = taskCheckExecutionRepository.save(checkExecution);
         return taskMapper.toTaskCheckExecutionResponse(checkExecution);
+    }
+
+    @Transactional
+    public TaskCheckComparisonResponse createTaskCheckComparison(CreateTaskCheckComparisonRequest request) {
+        TaskCheckComparison comparison = TaskCheckComparison.create(
+                request.getTaskCheckDefinitionId(),
+                request.getTaskCheckExecutionId(),
+                null,
+                null,
+                request.getCustomerId());
+        comparison = taskCheckComparisonRepository.save(comparison);
+        return taskMapper.toTaskCheckComparisonResponse(comparison);
     }
 }

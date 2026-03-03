@@ -1,10 +1,12 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.mapper;
 
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckComparisonResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckDefinitionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckExecutionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskDefinitionSummaryResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskExecutionResponse;
+import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckComparison;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckDefinition;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckExecution;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskDefinition;
@@ -32,6 +34,8 @@ public interface TaskMapper {
 
     @Mapping(target = "checkType", source = "checkType")
     TaskCheckExecutionResponse toTaskCheckExecutionResponse(TaskCheckExecution checkExecution);
+
+    TaskCheckComparisonResponse toTaskCheckComparisonResponse(TaskCheckComparison comparison);
 
     List<TaskDefinitionResponse> toTaskDefinitionResponseList(List<TaskDefinition> tasks);
 

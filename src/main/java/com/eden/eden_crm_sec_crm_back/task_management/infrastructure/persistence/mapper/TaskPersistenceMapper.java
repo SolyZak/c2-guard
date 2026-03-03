@@ -1,15 +1,9 @@
 package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.mapper;
 
-import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckDefinition;
-import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckExecution;
-import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskDefinition;
-import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskExecution;
+import com.eden.eden_crm_sec_crm_back.task_management.domain.model.*;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.CheckType;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.Severity;
-import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity.TaskCheckDefinitionJpaEntity;
-import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity.TaskCheckExecutionJpaEntity;
-import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity.TaskDefinitionJpaEntity;
-import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity.TaskExecutionJpaEntity;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -33,6 +27,8 @@ public abstract class TaskPersistenceMapper {
 
     @Mapping(target = "checkType", source = "checkType")
     public abstract TaskCheckExecutionJpaEntity toJpaEntity(TaskCheckExecution domain);
+
+    public abstract TaskCheckComparisonJpaEntity toJpaEntity(TaskCheckComparison domain);
 
     // ---- toDomain (manual — domain uses private constructors + static
     // reconstitute factories) ----
@@ -92,5 +88,16 @@ public abstract class TaskPersistenceMapper {
                 entity.getComment(),
                 entity.getCustomerId(),
                 entity.getCreatedAt());
+    }
+
+    public TaskCheckComparison toDomain(TaskCheckComparisonJpaEntity entity) {
+        return TaskCheckComparison.reconstitute(
+                entity.getId(),
+                entity.getTaskCheckDefinitionId(),
+                entity.getTaskCheckExecutionId(),
+                entity.getMatching(),
+                entity.getRatio(),
+                entity.getCustomerId(),
+                entity.getCreatedDate());
     }
 }
