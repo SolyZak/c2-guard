@@ -1,7 +1,13 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
 import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
+import com.eden.eden_crm_sec_crm_back.dto.TriggerEventDto;
 import com.eden.eden_crm_sec_crm_back.dto.external.CheckInData;
+import com.eden.eden_crm_sec_crm_back.entity.CrmTriggerLog;
+import com.eden.eden_crm_sec_crm_back.entity.Trigger;
+import com.eden.eden_crm_sec_crm_back.enums.Severity;
+import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
+import com.eden.eden_crm_sec_crm_back.enums.TriggerCode;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDTO;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDecimalDTO;
 import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckListDTO;
@@ -15,7 +21,10 @@ import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskCheckPatrolExe
 import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecution;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
+import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
+import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
+import com.eden.eden_crm_sec_crm_back.service.impl.CrmTriggerLogService;
 // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
 // ACL interfaces from task_management module.
 // CLEANUP: TaskPresenter and TaskExecutionPresenter stay permanently after Phase E.
@@ -39,18 +48,24 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.TodayTasksRe
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.TodayTaskEntryResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.TodayTaskExecutionSlotEntryResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.TodayTasksResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.ImmediateTaskDistribution;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.PatrolTaskDistribution;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskDistribution;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskExecutionSlot;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.mappers.TaskDistributionMapper;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskExecutionSlotRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.TodayTaskSlotProjection;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.DistributedTaskService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -73,6 +88,15 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     private final TaskPresenter taskPresenter;
     private final TaskExecutionPresenter taskExecutionPresenter;
     // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
+    // ─── [TASK-MIGRATION] NEW: check violation alerts ─────────────────────────────
+    // CLEANUP: stays permanently after Phase E.
+    private final TriggerRepository triggerRepository;
+    private final CrmTriggerLogService crmTriggerLogService;
+    private final C2AlertEventService c2AlertEventService;
+    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
+
+    @Builder
+    private record LocationPoints(BigDecimal longitude, BigDecimal latitude, Long siteId) {}
 
     @Override
     @Transactional
@@ -247,6 +271,9 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         taskExecutionSlot.setNewTaskExecutionId(taskExecution.getId());
         taskExecutionSlot.setStatus(TaskDistributionStatus.FINISHED);
         taskExecutionSlot.setExecutedByWorkforceId(checkInData.getWorkforceId());
+
+        // After execution is recorded, evaluate each check for violations and fire alerts if needed
+        evaluateAndFireCheckAlerts(checkDefs, request.checks(), taskDefinition.getName(), customer, taskExecutionSlot);
     }
 
     /**
@@ -273,6 +300,114 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         if (dto instanceof TaskCheckListDTO l)    return new ListCheckValue(l.getListItems(), null);
         throw new BusinessException(
             "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
+    }
+
+    // ─── [TASK-MIGRATION] NEW: check violation alerts ─────────────────────────────
+    // Fires PATROL_TASK_Deviation for each submitted check that violates its defined rule.
+    // Only checks with a severity level will trigger an alert.
+    // CLEANUP: stays permanently after Phase E.
+    private void evaluateAndFireCheckAlerts(
+        List<TaskCheckDefinitionPayload> checkDefs,
+        List<TaskCheckDTO> submittedChecks,
+        String taskName,
+        Customer customer,
+        TaskExecutionSlot taskExecutionSlot
+    ) {
+        OffsetDateTime now = OffsetDateTime.now();
+        Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_DEVIATION.getId())
+            .orElseThrow(() -> new RuntimeException("Trigger PATROL_TASK_Deviation not found"));
+
+        for (int i = 0; i < checkDefs.size(); i++) {
+            TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
+            // Checks without a configured severity are excluded from alerting
+            if (checkDef.getSeverity() == null) continue;
+
+            TaskCheckValue checkSettings = checkDef.getCheckSettings();
+            if (!isCheckViolated(checkSettings, submittedChecks.get(i))) continue;
+
+            // LIST check: use check name as description; NUMBER/DECIMAL: use task name
+            String description = (checkSettings instanceof ListCheckValue)
+                ? checkDef.getName()
+                : taskName;
+
+            Severity severity = Severity.valueOf(checkDef.getSeverity());
+            LocationPoints loc = getLocationPoints(taskExecutionSlot.getTaskDistribution());
+
+            TriggerEventDto dto = TriggerEventDto.builder()
+                .triggerId(trigger.getId())
+                .triggerName(trigger.getCode())
+                .operationSiteId(loc.siteId())
+                .customerId(customer.getId())
+                .longitude(loc.longitude().doubleValue())
+                .latitude(loc.latitude().doubleValue())
+                .eventTime(now.toOffsetTime())
+                .eventDate(now.toLocalDate())
+                .servicePlatformName(ServicePlatformEnum.CRM.name())
+                .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
+                .serviceTriggerEventId(0L)
+                .description(description)
+                .build();
+
+            CrmTriggerLog log = crmTriggerLogService.addNewCrmTriggerLog(dto);
+            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(log, severity);
+        }
+    }
+
+    // Returns true if the submitted value violates the check definition's rule.
+    // TEXT checks are excluded — no alert criteria defined for them.
+    private boolean isCheckViolated(TaskCheckValue checkSettings, TaskCheckDTO dto) {
+        if (checkSettings instanceof ListCheckValue lv) {
+            if (lv.getAlertValue() == null) return false;
+            List<String> submitted = ((TaskCheckListDTO) dto).getListItems();
+            return submitted != null && submitted.contains(lv.getAlertValue());
+        }
+        if (checkSettings instanceof NumberCheckValue nv) {
+            Integer actual = ((TaskCheckNumberDTO) dto).getValue();
+            return actual != null && !evaluateOperator(nv.getOperator(), actual.doubleValue(), nv.getValue().doubleValue());
+        }
+        if (checkSettings instanceof DecimalCheckValue dv) {
+            Double actual = ((TaskCheckDecimalDTO) dto).getValue();
+            return actual != null && !evaluateOperator(dv.getOperator(), actual, dv.getValue());
+        }
+        return false;
+    }
+
+    // Returns true when the actual value satisfies the operator against the threshold.
+    // A false result means the check is violated and an alert should fire.
+    private boolean evaluateOperator(String operator, double actual, double threshold) {
+        return switch (operator) {
+            case "gte" -> actual >= threshold;
+            case "lte" -> actual <= threshold;
+            case "gt"  -> actual >  threshold;
+            case "lt"  -> actual <  threshold;
+            case "eq"  -> actual == threshold;
+            case "ne"  -> actual != threshold;
+            default    -> true; // unknown operator → treat as not violated
+        };
+    }
+
+    private LocationPoints getLocationPoints(TaskDistribution taskDistribution) {
+        if (taskDistribution.getDistributionType() == DistributionType.PATROL) {
+            PatrolTaskDistribution ptd = taskDistribution.getPatrolTaskDistribution();
+            return LocationPoints.builder()
+                .longitude(ptd.getLocation().getLongitude())
+                .latitude(ptd.getLocation().getLatitude())
+                .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
+                .build();
+        }
+        ImmediateTaskDistribution itd = taskDistribution.getImmediateTaskDistribution();
+        if (itd != null && itd.getLocation() != null) {
+            return LocationPoints.builder()
+                .longitude(itd.getLocation().getLongitude())
+                .latitude(itd.getLocation().getLatitude())
+                .siteId(0L)
+                .build();
+        }
+        return LocationPoints.builder()
+            .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
+            .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
+            .siteId(0L)
+            .build();
     }
     // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
