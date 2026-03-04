@@ -6,6 +6,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.pa
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckComparisonPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckExecutionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskExecutionPayload;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface TaskExecutionPresenter {
 
@@ -14,4 +15,6 @@ public interface TaskExecutionPresenter {
     TaskCheckExecutionPayload submitTaskCheckExecution(SubmitTaskCheckExecutionPayload payload);
 
     TaskCheckComparisonPayload createTaskCheckComparison(CreateTaskCheckComparisonPayload payload);
+
+    String uploadCheckExecutionImage(Long checkDefId, MultipartFile image);
 }

@@ -1,6 +1,8 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
+import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
 import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
+import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.UpdateTaskCheckComparisonMatchingRequest;
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,6 +38,7 @@ public class TaskCheckComparisonService {
     private final OrgUnitClient orgUnitClient;
     private final TaskMapper taskMapper;
     private final Utils utils;
+    private final DocumentsFeignClient documentsFeignClient;
 
     @Transactional(readOnly = true)
     public List<TaskCheckComparisonReportResponse> getComparisonReport(LocalDate from, LocalDate to) {
@@ -125,5 +129,19 @@ public class TaskCheckComparisonService {
             return value;
         }
         return storageBaseUrl + value;
+    }
+
+    public String uploadExecutionImage(Long checkDefId, MultipartFile image) {
+        String filename = image.getOriginalFilename();
+        String ext = (filename != null && filename.contains("."))
+                ? filename.substring(filename.lastIndexOf('.') + 1) : "jpg";
+        String path = "task-execution-images/" + checkDefId + "/exec_" + checkDefId + "_" + System.currentTimeMillis() + "." + ext;
+        try {
+            documentsFeignClient.uploadImage(UploadImageRequest.builder().image(image).path(path).build());
+        } catch (Exception e) {
+            log.error("Failed to upload check execution image for checkDefId {}: {}", checkDefId, e.getMessage());
+            throw new BusinessException("Failed to upload check image", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return path;
     }
 }
