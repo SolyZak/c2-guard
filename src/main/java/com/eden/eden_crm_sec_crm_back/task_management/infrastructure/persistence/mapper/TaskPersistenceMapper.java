@@ -30,6 +30,7 @@ public abstract class TaskPersistenceMapper {
 
     public abstract TaskCheckComparisonJpaEntity toJpaEntity(TaskCheckComparison domain);
 
+
     public TaskLocationChecksImageJpaEntity toJpaEntity(TaskLocationChecksImage domain) {
         if (domain == null) return null;
         return TaskLocationChecksImageJpaEntity.builder()
@@ -46,7 +47,6 @@ public abstract class TaskPersistenceMapper {
                 .modifiedDate(domain.getModifiedDate())
                 .build();
     }
-
     // ---- toDomain (manual — domain uses private constructors + static
     // reconstitute factories) ----
 
@@ -134,3 +134,5 @@ public abstract class TaskPersistenceMapper {
                 .build();
     }
 }
+
+

@@ -1,5 +1,4 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.mapper;
-
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskLocationChecksImageRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckComparisonResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckDefinitionResponse;
@@ -43,6 +42,7 @@ public interface TaskMapper {
     List<TaskDefinitionResponse> toTaskDefinitionResponseList(List<TaskDefinition> tasks);
 
     List<TaskDefinitionSummaryResponse> toTaskDefinitionSummaryResponseList(List<TaskDefinition> tasks);
+
 
     // ---- TaskLocationChecksImage ----
 

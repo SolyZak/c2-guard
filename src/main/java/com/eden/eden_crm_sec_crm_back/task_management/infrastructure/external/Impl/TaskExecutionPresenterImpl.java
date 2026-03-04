@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.I
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskCheckComparisonRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskExecutionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.SubmitTaskCheckExecutionRequest;
+import com.eden.eden_crm_sec_crm_back.task_management.application.service.TaskCheckComparisonService;
 import com.eden.eden_crm_sec_crm_back.task_management.application.service.TaskExecutionService;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.mapper.TaskExternalMapper;
@@ -14,6 +15,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.pa
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskExecutionPayload;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
 
     private final TaskExecutionService taskExecutionService;
     private final TaskExternalMapper taskExternalMapper;
+    private final TaskCheckComparisonService taskCheckComparisonService;
 
     @Override
     public TaskExecutionPayload createTaskExecution(CreateTaskExecutionPayload payload) {
@@ -53,5 +56,9 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
         request.setCustomerId(payload.getCustomerId());
         return taskExternalMapper.toPayload(
                 taskExecutionService.createTaskCheckComparison(request));
+    }
+    @Override
+    public String uploadCheckExecutionImage(Long checkDefId, MultipartFile image) {
+        return taskCheckComparisonService.uploadExecutionImage(checkDefId, image);
     }
 }

@@ -64,6 +64,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -166,7 +167,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
 
     @Override
     @Transactional
-    public void executeTask(ExecuteDistributedTaskRequest request) {
+    public void executeTask(ExecuteDistributedTaskRequest request, MultipartFile image) {
         CheckInData checkInData = attendanceClient.checkInData();
         Customer customer = getCustomer(checkInData.getCustomerId());
         TaskExecutionSlot taskExecutionSlot = getTaskExecutionSlot(request.executionSlotId());
@@ -186,7 +187,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                         HttpStatus.BAD_REQUEST
                 );
             }
-            executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId);
+            executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId, image);
             return;
         }
         // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
@@ -213,7 +214,8 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             CheckInData checkInData,
             Customer customer,
             TaskExecutionSlot taskExecutionSlot,
-            Long taskDefinitionId
+            Long taskDefinitionId,
+            MultipartFile image
     ) {
         OffsetDateTime now = OffsetDateTime.now();
         if (
@@ -243,9 +245,17 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                         .build()
         );
 
+        boolean[] imageUploaded = {false};
+
         IntStream.range(0, request.checks().size()).forEach(i -> {
             TaskCheckDTO checkDto = request.checks().get(i);
             TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
+            String imagePath = null;
+            if (image != null && !image.isEmpty() && Boolean.TRUE.equals(checkDto.getEvidence()) && !imageUploaded[0]) {
+                imagePath = taskExecutionPresenter.uploadCheckExecutionImage(checkDef.getId(), image);
+                imageUploaded[0] = true;
+            }
+
 
             TaskCheckExecutionPayload checkExecution = taskExecutionPresenter.submitTaskCheckExecution(
                     SubmitTaskCheckExecutionPayload.builder()
@@ -253,7 +263,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                             .taskExecutionId(taskExecution.getId())
                             .checkType(checkDef.getCheckType())
                             .checkValues(toCheckValue(checkDto))
-                            .evidenceImagePath(checkDto.getImageBase64())
+                            .evidenceImagePath(imagePath)
                             .comment(checkDto.getComment())
                             .customerId(customer.getId())
                             .build()
