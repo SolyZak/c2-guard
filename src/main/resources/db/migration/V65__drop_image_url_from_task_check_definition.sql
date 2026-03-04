@@ -1,0 +1,1 @@
+ALTER TABLE task_check_definition DROP COLUMN IF EXISTS image_url;

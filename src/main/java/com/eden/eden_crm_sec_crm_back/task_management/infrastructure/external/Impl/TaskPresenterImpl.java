@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.Impl;
 
 import com.eden.eden_crm_sec_crm_back.task_management.application.service.TaskDefinitionService;
+import com.eden.eden_crm_sec_crm_back.task_management.application.service.TaskLocationChecksImageService;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.mapper.TaskExternalMapper;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskDefinitionPayload;
@@ -15,6 +16,7 @@ import java.util.List;
 public class TaskPresenterImpl implements TaskPresenter {
 
     private final TaskDefinitionService taskDefinitionService;
+    private final TaskLocationChecksImageService taskLocationChecksImageService;
     private final TaskExternalMapper taskExternalMapper;
 
     @Override
@@ -32,5 +34,10 @@ public class TaskPresenterImpl implements TaskPresenter {
     public List<TaskDefinitionSummaryPayload> listAllTaskDefinitions() {
         return taskExternalMapper.toTaskDefinitionSummaryPayloadList(
                 taskDefinitionService.listAllTaskDefinitions());
+    }
+
+    @Override
+    public void initLocationCheckImages(Long taskDefinitionId, Long locationId, Long customerId) {
+        taskLocationChecksImageService.initLocationCheckImages(taskDefinitionId, locationId, customerId);
     }
 }

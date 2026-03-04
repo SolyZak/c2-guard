@@ -60,11 +60,19 @@ public class PatrolsServiceImpl implements PatrolsService {
             FREQ_BY_RATE.add(s.getRate());
         }
     }
+
     @Override
     public void addPatrol(AddPatrolRequest request) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Long customerId = customer.getId();
         List<PatrolDetail> patrolDetails = new ArrayList<>();
         Patrol patrol = new Patrol();
+
+        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
+        // Collect unique taskDefinitionId + locationId pairs for image init after patrol save.
+        Set<String> locationCheckImagePairs = new LinkedHashSet<>();
+        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
+
         for (AddPatrolDetailRequest detailRequest : request.getDetails()) {
             PatrolDetail patrolDetail = new PatrolDetail();
             List<Location> locations = locationRepository.findAllById(detailRequest.getLocations());
@@ -77,7 +85,7 @@ public class PatrolsServiceImpl implements PatrolsService {
             // COEXISTENCE path: client sends tasks (legacy Task entity IDs).
             // CLEANUP: remove COEXISTENCE branch and keep only NEW path after Phase E.
             boolean useNewPath = detailRequest.getTaskDefinitionIds() != null
-                && !detailRequest.getTaskDefinitionIds().isEmpty();
+                    && !detailRequest.getTaskDefinitionIds().isEmpty();
 
             if (useNewPath) {
                 // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────
@@ -92,6 +100,11 @@ public class PatrolsServiceImpl implements PatrolsService {
                         patrolDetail.setPatrol(patrol);
                         patrolDetails.add(patrolDetail);
                         patrolDetail = new PatrolDetail();
+
+                        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────
+                        // Track unique pair for image init after save
+                        locationCheckImagePairs.add(taskDefId + ":" + location.getId());
+                        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────
                     }
                 }
                 // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────
@@ -137,6 +150,19 @@ public class PatrolsServiceImpl implements PatrolsService {
             );
         patrol.setCustomer(customer);
         patrolRepository.save(patrol);
+
+        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
+        // After patrol is saved, initialize task_location_checks_image rows
+        // for each unique taskDefinitionId + locationId pair.
+        // Rows that already exist (same locationId + taskCheckDefinitionId) are
+        // skipped inside the service — safe for duplicate patrol creations.
+        for (String pair : locationCheckImagePairs) {
+            String[] parts = pair.split(":");
+            Long taskDefId = Long.parseLong(parts[0]);
+            Long locationId = Long.parseLong(parts[1]);
+            taskPresenter.initLocationCheckImages(taskDefId, locationId, customerId);
+        }
+        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
     }
 
     @Override
@@ -147,21 +173,21 @@ public class PatrolsServiceImpl implements PatrolsService {
         List<PatrolResponseDto> patrolResponseDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (Patrol p : resultPage.getContent()) {
-                    PatrolResponseDto dto = new PatrolResponseDto();
-                    dto.setId(p.getId());
-                    dto.setFrequency(p.getFrequency());
-                    dto.setFrequencyRate(p.getFrequencyRate());
-                    dto.setName(p.getName());
-                    List<Long> detailsIds = p.getPatrolDetails().stream()
-                            .map(d -> d.getId()).collect(Collectors.toList());
-                    for(Long id : detailsIds) {
-                        PatrolResponseDetail detail = new PatrolResponseDetail();
-                        detail.setLocations(locationRepository.getLocationNamesByDetailId(id));
-                        detail.setTasks(taskRepository.getTaskNamesByDetailId(id));
-                        detail.setTaskDefinitions(patrolDetailRepository.getTaskDefinitionNamesByDetailId(id));
-                        dto.getDetails().add(detail);
-                    }
-                    patrolResponseDtos.add(dto);
+                PatrolResponseDto dto = new PatrolResponseDto();
+                dto.setId(p.getId());
+                dto.setFrequency(p.getFrequency());
+                dto.setFrequencyRate(p.getFrequencyRate());
+                dto.setName(p.getName());
+                List<Long> detailsIds = p.getPatrolDetails().stream()
+                        .map(d -> d.getId()).collect(Collectors.toList());
+                for(Long id : detailsIds) {
+                    PatrolResponseDetail detail = new PatrolResponseDetail();
+                    detail.setLocations(locationRepository.getLocationNamesByDetailId(id));
+                    detail.setTasks(taskRepository.getTaskNamesByDetailId(id));
+                    detail.setTaskDefinitions(patrolDetailRepository.getTaskDefinitionNamesByDetailId(id));
+                    dto.getDetails().add(detail);
+                }
+                patrolResponseDtos.add(dto);
             }
         }
 
@@ -195,6 +221,7 @@ public class PatrolsServiceImpl implements PatrolsService {
             return false;
         }
     }
+
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
     }

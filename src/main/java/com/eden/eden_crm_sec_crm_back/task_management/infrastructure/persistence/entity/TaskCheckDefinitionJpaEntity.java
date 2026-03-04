@@ -60,7 +60,4 @@ public class TaskCheckDefinitionJpaEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
-    @Column(name = "image_url")
-    private String imageUrl;
 }

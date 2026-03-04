@@ -12,4 +12,11 @@ public interface TaskPresenter {
     List<TaskDefinitionPayload> listTaskDefinitions(int page, int size);
 
     List<TaskDefinitionSummaryPayload> listAllTaskDefinitions();
+
+    /**
+     * Creates task_location_checks_image rows for every check definition
+     * belonging to the given task definition, for the given location.
+     * Skips if rows already exist for a location + check definition combination.
+     */
+    void initLocationCheckImages(Long taskDefinitionId, Long locationId, Long customerId);
 }

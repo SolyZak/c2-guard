@@ -1,7 +1,5 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
-import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
-import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskCheckDefinitionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskDefinitionRequest;
@@ -22,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,14 +31,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TaskDefinitionService {
 
-    private static final String TASK_CHECK_IMAGE_PATH = "task-management/checks/";
-
     private final TaskDefinitionRepository taskDefinitionRepository;
     private final TaskCheckDefinitionRepository taskCheckDefinitionRepository;
     private final TaskDefinitionDomainService taskDefinitionDomainService;
     private final TaskMapper taskMapper;
     private final Utils utils;
-    private final DocumentsFeignClient documentsFeignClient;
     private final OracleStorageUtil oracleStorageUtil;
 
     @Transactional
@@ -83,7 +77,6 @@ public class TaskDefinitionService {
 
     public long countTaskDefinitions() {
         Long customerId = utils.getLoggedInUser().getCustomerId();
-
         return taskDefinitionRepository.countByCustomerId(customerId);
     }
 
@@ -155,60 +148,5 @@ public class TaskDefinitionService {
                     );
                 })
                 .toList();
-    }
-
-    @Transactional
-    public TaskCheckImageResponse uploadTaskCheckImage(Long taskCheckDefinitionId, MultipartFile image) {
-        Long customerId = utils.getLoggedInUser().getCustomerId();
-
-        TaskCheckDefinition check = taskCheckDefinitionRepository.findById(taskCheckDefinitionId)
-                .orElseThrow(() -> new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND));
-
-        if (!check.getCustomerId().equals(customerId)) {
-            throw new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND);
-        }
-
-        String imagePath = generateImagePath(taskCheckDefinitionId, image);
-
-        try {
-            documentsFeignClient.uploadImage(
-                    UploadImageRequest.builder()
-                            .image(image)
-                            .path(imagePath)
-                            .build()
-            );
-        } catch (Exception e) {
-            log.error("Error uploading task check image for id {}: {}", taskCheckDefinitionId, e.getMessage());
-            throw new BusinessException("task-check-image-upload-failed", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        try {
-            taskCheckDefinitionRepository.updateImageUrl(taskCheckDefinitionId, imagePath);
-        } catch (Exception e) {
-            log.error("Error saving image URL in DB for check id {}: {}", taskCheckDefinitionId, e.getMessage());
-            throw new BusinessException("task-check-image-save-failed", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        TaskCheckDefinition updated = taskCheckDefinitionRepository.findById(taskCheckDefinitionId)
-                .orElseThrow(() -> new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND));
-
-        if (updated.getImageUrl() == null || updated.getImageUrl().isBlank()) {
-            log.error("Image URL not persisted in DB for check id {}", taskCheckDefinitionId);
-            throw new BusinessException("task-check-image-save-failed", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        String fullUrl = oracleStorageUtil.getStorageUrl() + imagePath;
-        return new TaskCheckImageResponse(taskCheckDefinitionId, fullUrl);
-    }
-
-    private String generateImagePath(Long taskCheckDefinitionId, MultipartFile file) {
-        String originalFilename = file.getOriginalFilename();
-        String fileExtension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            fileExtension = originalFilename.substring(originalFilename.lastIndexOf('.'));
-        }
-        String uniqueFilename = String.format("check_%d_%d%s",
-                taskCheckDefinitionId   , System.currentTimeMillis(), fileExtension);
-        return TASK_CHECK_IMAGE_PATH + taskCheckDefinitionId + "/" + uniqueFilename;
     }
 }
