@@ -57,7 +57,6 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
         return taskExternalMapper.toPayload(
                 taskExecutionService.createTaskCheckComparison(request));
     }
-
     @Override
     public String uploadCheckExecutionImage(Long checkDefId, MultipartFile image) {
         return taskCheckComparisonService.uploadExecutionImage(checkDefId, image);

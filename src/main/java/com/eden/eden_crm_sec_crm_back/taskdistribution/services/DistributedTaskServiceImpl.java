@@ -246,15 +246,16 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         );
 
         boolean[] imageUploaded = {false};
+
         IntStream.range(0, request.checks().size()).forEach(i -> {
             TaskCheckDTO checkDto = request.checks().get(i);
             TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
-
             String imagePath = null;
             if (image != null && !image.isEmpty() && Boolean.TRUE.equals(checkDto.getEvidence()) && !imageUploaded[0]) {
                 imagePath = taskExecutionPresenter.uploadCheckExecutionImage(checkDef.getId(), image);
                 imageUploaded[0] = true;
             }
+
 
             TaskCheckExecutionPayload checkExecution = taskExecutionPresenter.submitTaskCheckExecution(
                     SubmitTaskCheckExecutionPayload.builder()

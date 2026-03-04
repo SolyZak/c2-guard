@@ -17,4 +17,5 @@ public interface TaskExecutionPresenter {
     TaskCheckComparisonPayload createTaskCheckComparison(CreateTaskCheckComparisonPayload payload);
 
     String uploadCheckExecutionImage(Long checkDefId, MultipartFile image);
+
 }

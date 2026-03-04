@@ -30,6 +30,23 @@ public abstract class TaskPersistenceMapper {
 
     public abstract TaskCheckComparisonJpaEntity toJpaEntity(TaskCheckComparison domain);
 
+
+    public TaskLocationChecksImageJpaEntity toJpaEntity(TaskLocationChecksImage domain) {
+        if (domain == null) return null;
+        return TaskLocationChecksImageJpaEntity.builder()
+                .id(domain.getId())
+                .taskDefinitionId(domain.getTaskDefinitionId())
+                .locationId(domain.getLocationId())
+                .taskCheckDefinitionId(domain.getTaskCheckDefinitionId())
+                .customerId(domain.getCustomerId())
+                .refImage(domain.getRefImage())
+                .deleted(domain.isDeleted())
+                .createdBy(domain.getCreatedBy())
+                .modifiedBy(domain.getModifiedBy())
+                .createdDate(domain.getCreatedDate())
+                .modifiedDate(domain.getModifiedDate())
+                .build();
+    }
     // ---- toDomain (manual — domain uses private constructors + static
     // reconstitute factories) ----
 
@@ -65,8 +82,7 @@ public abstract class TaskPersistenceMapper {
                 entity.getCustomerId(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-                entity.getDeletedAt(),
-                entity.getImageUrl());
+                entity.getDeletedAt());
     }
 
     public TaskExecution toDomain(TaskExecutionJpaEntity entity) {
@@ -100,4 +116,23 @@ public abstract class TaskPersistenceMapper {
                 entity.getCustomerId(),
                 entity.getCreatedDate());
     }
+
+    public TaskLocationChecksImage toDomain(TaskLocationChecksImageJpaEntity entity) {
+        if (entity == null) return null;
+        return TaskLocationChecksImage.builder()
+                .id(entity.getId())
+                .taskDefinitionId(entity.getTaskDefinitionId())
+                .locationId(entity.getLocationId())
+                .taskCheckDefinitionId(entity.getTaskCheckDefinitionId())
+                .customerId(entity.getCustomerId())
+                .refImage(entity.getRefImage())
+                .deleted(entity.isDeleted())
+                .createdBy(entity.getCreatedBy())
+                .modifiedBy(entity.getModifiedBy())
+                .createdDate(entity.getCreatedDate())
+                .modifiedDate(entity.getModifiedDate())
+                .build();
+    }
 }
+
+
