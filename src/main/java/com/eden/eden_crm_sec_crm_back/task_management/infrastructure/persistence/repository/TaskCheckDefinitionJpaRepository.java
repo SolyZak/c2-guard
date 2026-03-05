@@ -22,12 +22,8 @@ public interface TaskCheckDefinitionJpaRepository extends JpaRepository<TaskChec
         tcd.name        AS checkName,
         tlci.ref_image  AS imageUrl
     FROM location l
-             INNER JOIN patrol_detail pd
-                        ON pd.location_id = l.id
-                        AND pd.task_definition_id IS NOT NULL
              INNER JOIN task_definition td
-                        ON td.id = pd.task_definition_id
-                            AND td.customer_id = :customerId
+                        ON td.customer_id = :customerId
                             AND td.deleted_at IS NULL
              INNER JOIN task_check_definition tcd
                         ON tcd.task_definition_id = td.id
@@ -39,6 +35,11 @@ public interface TaskCheckDefinitionJpaRepository extends JpaRepository<TaskChec
                             AND tlci.deleted = false
     WHERE l.premise_id  = :premiseId
       AND l.customer_id = :customerId
+      AND EXISTS (
+          SELECT 1 FROM patrol_detail pd
+          WHERE pd.location_id = l.id
+            AND pd.task_definition_id = td.id
+      )
     ORDER BY l.id, td.id, tcd.id
     """)
     <T> List<T> findAllChecksByPremiseAndCustomer(
