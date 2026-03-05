@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -28,8 +29,8 @@ public class TaskDistributionWorkforceController {
     @PostMapping(value = "/execute", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<Map<String, Object>> executeTask(
             @Valid @RequestPart("request") ExecuteDistributedTaskRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        distributedTaskService.executeTask(request, image);
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        distributedTaskService.executeTask(request, images);
         return ApiResponse.created(Map.of());
     }
 }
