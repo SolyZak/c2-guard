@@ -167,7 +167,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
 
     @Override
     @Transactional
-    public void executeTask(ExecuteDistributedTaskRequest request, MultipartFile image) {
+    public void executeTask(ExecuteDistributedTaskRequest request, List<MultipartFile> images) {
         CheckInData checkInData = attendanceClient.checkInData();
         Customer customer = getCustomer(checkInData.getCustomerId());
         TaskExecutionSlot taskExecutionSlot = getTaskExecutionSlot(request.executionSlotId());
@@ -187,7 +187,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                         HttpStatus.BAD_REQUEST
                 );
             }
-            executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId, image);
+            executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId, images);
             return;
         }
         // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
@@ -215,7 +215,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             Customer customer,
             TaskExecutionSlot taskExecutionSlot,
             Long taskDefinitionId,
-            MultipartFile image
+            List<MultipartFile> images
     ) {
         OffsetDateTime now = OffsetDateTime.now();
         if (
@@ -245,16 +245,15 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                         .build()
         );
 
-        boolean[] imageUploaded = {false};
-
         IntStream.range(0, request.checks().size()).forEach(i -> {
             TaskCheckDTO checkDto = request.checks().get(i);
             TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
-            String imagePath = null;
-            if (image != null && !image.isEmpty() && Boolean.TRUE.equals(checkDto.getEvidence()) && !imageUploaded[0]) {
-                imagePath = taskExecutionPresenter.uploadCheckExecutionImage(checkDef.getId(), image);
-                imageUploaded[0] = true;
-            }
+
+            // images[i] is the image for checks[i]; null/empty/out-of-bounds → no upload
+            MultipartFile file = (images != null && i < images.size()) ? images.get(i) : null;
+            String imagePath = (file != null && !file.isEmpty())
+                    ? taskExecutionPresenter.uploadCheckExecutionImage(checkDef.getId(), file)
+                    : null;
 
 
             TaskCheckExecutionPayload checkExecution = taskExecutionPresenter.submitTaskCheckExecution(

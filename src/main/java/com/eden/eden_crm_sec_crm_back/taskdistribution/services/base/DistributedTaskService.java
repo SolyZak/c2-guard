@@ -5,7 +5,9 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.TodayTasksRe
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.TodayTasksResponse;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface DistributedTaskService {
     TodayTasksResponse getTodayTasks(TodayTasksRequest todayTasksRequest);
-    void executeTask(ExecuteDistributedTaskRequest request, MultipartFile image);
+    void executeTask(ExecuteDistributedTaskRequest request, List<MultipartFile> images);
 }
