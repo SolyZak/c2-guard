@@ -359,7 +359,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                 .build();
 
             CrmTriggerLog log = crmTriggerLogService.addNewCrmTriggerLog(dto);
-            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(log, severity);
+            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(log, severity, 6L);
         }
     }
 
