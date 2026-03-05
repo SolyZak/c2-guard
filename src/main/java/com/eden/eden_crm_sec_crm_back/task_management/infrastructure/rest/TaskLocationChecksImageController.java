@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/task-location-checks-images")
+@RequestMapping("/task-location-checks-images")
 @RequiredArgsConstructor
 public class TaskLocationChecksImageController {
 
