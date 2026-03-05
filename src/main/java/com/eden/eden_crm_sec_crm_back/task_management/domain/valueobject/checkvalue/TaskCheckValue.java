@@ -3,6 +3,8 @@ package com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkv
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.util.Map;
+
 /**
  * Abstract base for polymorphic check-value payloads stored as JSONB.
  * Jackson uses the "type" field in the JSON to select the correct subclass at runtime.
@@ -24,6 +26,21 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = ListCheckValue.class, name = "LIST")
 })
 public abstract class TaskCheckValue {
+
+    private static final Map<String, String> OPERATOR_ALIASES = Map.of(
+            "less",                  "lt",
+            "greater",               "gt",
+            "less_than_or_equal",    "lte",
+            "lte_equal",             "lte",
+            "greater_than_or_equal", "gte",
+            "equal",                 "eq",
+            "not_equal",             "ne"
+    );
+
+    protected static String normalizeOperator(String op) {
+        if (op == null) return null;
+        return OPERATOR_ALIASES.getOrDefault(op, op);
+    }
 
     /**
      * Strategy method — each subtype validates its own fields.
