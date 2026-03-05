@@ -44,6 +44,24 @@ public class C2AlertEventService {
             .orElseThrow(() -> new RuntimeException(
                 "AlertTrigger not found for trigger " + crmTriggerLog.getTriggerId()
             ));
+        C2AlertEventDto(crmTriggerLog, severity, alertTrigger);
+    }
+
+    // Use when the AlertTrigger row must be looked up by its primary key directly.
+    public void sendNewC2AlertEventWithOverrideSeverity(
+        final CrmTriggerLog crmTriggerLog,
+        final Severity severity,
+        final Long alertTriggerId
+    ) {
+        AlertTrigger alertTrigger = alertTriggerRepository
+            .findById(alertTriggerId)
+            .orElseThrow(() -> new RuntimeException(
+                "AlertTrigger not found with id " + alertTriggerId
+            ));
+        C2AlertEventDto event = C2AlertEventDto(crmTriggerLog, severity, alertTrigger);
+    }
+
+    private C2AlertEventDto C2AlertEventDto(CrmTriggerLog crmTriggerLog, Severity severity, AlertTrigger alertTrigger) {
         C2AlertEventDto event = C2AlertEventDto.builder()
             .crmTriggerLogId(crmTriggerLog.getId())
             .alertId(alertTrigger.getAlertId())
@@ -62,6 +80,7 @@ public class C2AlertEventService {
             .description(crmTriggerLog.getDescription())
             .build();
         c2EventProducer.publishC2Events(event);
+        return event;
     }
 
     private C2AlertEventDto buildC2AlertEvent(
