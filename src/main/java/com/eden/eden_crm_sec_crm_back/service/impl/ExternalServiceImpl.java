@@ -237,4 +237,20 @@ public class ExternalServiceImpl implements ExternalService {
         return count;
     }
 
+    @Override
+    public Map<Long, Long> getPremiseIdsByOperationSiteIds(Long customerId, List<Long> operationSiteIds) {
+        if (operationSiteIds == null || operationSiteIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return customerSiteRepository
+                .findPremiseIdsByOperationSiteIdsAndCustomerId(operationSiteIds, customerId)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],  // operationSiteId
+                        row -> (Long) row[1],  // premiseId
+                        (existing, duplicate) -> existing
+                ));
+    }
+
 }

@@ -116,4 +116,15 @@ public interface CustomerSiteRepository extends JpaRepository<CustomerSite, Long
             @Param("serviceId") Long serviceId,
             @Param("customerId") Long customerId
     );
+
+    @Query("""
+        SELECT cs.id, cs.premise.id FROM CustomerSite cs
+        WHERE cs.id IN :operationSiteIds
+        AND cs.customer.id = :customerId
+        AND cs.premise IS NOT NULL
+        """)
+    List<Object[]> findPremiseIdsByOperationSiteIdsAndCustomerId(
+            @Param("operationSiteIds") List<Long> operationSiteIds,
+            @Param("customerId") Long customerId
+    );
 }
