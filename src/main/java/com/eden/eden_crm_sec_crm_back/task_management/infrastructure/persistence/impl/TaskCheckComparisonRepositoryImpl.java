@@ -6,6 +6,8 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository.TaskCheckComparisonJpaRepository;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository.TaskCheckComparisonReportProjection;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -43,7 +45,14 @@ public class TaskCheckComparisonRepositoryImpl implements TaskCheckComparisonRep
     }
 
     @Override
-    public List<TaskCheckComparisonReportProjection> findComparisonReport(Long customerId, LocalDateTime fromDate, LocalDateTime toDate) {
+    public List<TaskCheckComparisonReportProjection> findComparisonReport(
+            Long customerId, LocalDateTime fromDate, LocalDateTime toDate) {
         return jpaRepository.findComparisonReport(customerId, fromDate, toDate);
+    }
+
+    @Override
+    public Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
+            Long customerId, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
+        return jpaRepository.findComparisonReportPaginated(customerId, fromDate, toDate, pageable);
     }
 }

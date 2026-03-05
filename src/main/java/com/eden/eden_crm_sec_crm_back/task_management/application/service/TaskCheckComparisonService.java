@@ -2,10 +2,10 @@ package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
 import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
-import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.UpdateTaskCheckComparisonMatchingRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckComparisonReportResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckComparisonResponse;
@@ -17,14 +17,17 @@ import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,29 +43,36 @@ public class TaskCheckComparisonService {
     private final OrgUnitClient orgUnitClient;
     private final TaskMapper taskMapper;
     private final Utils utils;
-
     private final DocumentsFeignClient documentsFeignClient;
 
-
     @Transactional(readOnly = true)
-    public List<TaskCheckComparisonReportResponse> getComparisonReport(LocalDate from, LocalDate to) {
+    public PaginateResponse<TaskCheckComparisonReportResponse> getComparisonReport(
+            LocalDate from, LocalDate to, int page, int size, String sortBy, String sortDirection) {
+
         Long customerId = utils.getLoggedInUser().getCustomerId();
 
         LocalDateTime fromDate = from.atStartOfDay();
         LocalDateTime toDate = to.atTime(23, 59, 59);
 
-        List<TaskCheckComparisonReportProjection> rows =
-                taskCheckComparisonRepository.findComparisonReport(customerId, fromDate, toDate);
+        Pageable pageable = PageRequest.of(page, size);
 
-        if (rows.isEmpty()) {
-            return List.of();
+        Page<TaskCheckComparisonReportProjection> resultPage =
+                taskCheckComparisonRepository.findComparisonReportPaginated(customerId, fromDate, toDate, pageable);
+
+        if (resultPage.isEmpty()) {
+            return new PaginateResponse<>(
+                    List.of(),
+                    page,
+                    size,
+                    0L,
+                    0L
+            );
         }
 
         String storageBaseUrl = oracleStorageUtil.getStorageUrl();
+        Map<Long, String> workforceNames = resolveWorkforceNames(resultPage.getContent());
 
-        Map<Long, String> workforceNames = resolveWorkforceNames(rows);
-
-        return rows.stream()
+        List<TaskCheckComparisonReportResponse> content = resultPage.getContent().stream()
                 .map(row -> TaskCheckComparisonReportResponse.builder()
                         .comparisonId(row.getComparisonId())
                         .comparisonDate(row.getComparisonDate())
@@ -81,6 +91,21 @@ public class TaskCheckComparisonService {
                         .locationName(row.getLocationName())
                         .build())
                 .toList();
+
+        // Apply in-memory sorting (native queries don't support Sort via Pageable reliably)
+        Comparator<TaskCheckComparisonReportResponse> comparator = getComparator(sortBy);
+        if (sortDirection.equalsIgnoreCase("DESC")) {
+            comparator = comparator.reversed();
+        }
+        content = content.stream().sorted(comparator).toList();
+
+        return new PaginateResponse<>(
+                content,
+                resultPage.getNumber(),
+                resultPage.getSize(),
+                resultPage.getTotalElements(),
+                (long) resultPage.getTotalPages()
+        );
     }
 
     @Transactional
@@ -98,6 +123,29 @@ public class TaskCheckComparisonService {
         comparison = taskCheckComparisonRepository.save(comparison);
 
         return taskMapper.toTaskCheckComparisonResponse(comparison);
+    }
+
+    private Comparator<TaskCheckComparisonReportResponse> getComparator(String sortBy) {
+        return switch (sortBy.toLowerCase()) {
+            case "comparisonratio" -> Comparator.comparing(
+                    TaskCheckComparisonReportResponse::getComparisonRatio,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "taskdefinitionname" -> Comparator.comparing(
+                    TaskCheckComparisonReportResponse::getTaskDefinitionName,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "checkdefinitionname" -> Comparator.comparing(
+                    TaskCheckComparisonReportResponse::getCheckDefinitionName,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "locationname" -> Comparator.comparing(
+                    TaskCheckComparisonReportResponse::getLocationName,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "matching" -> Comparator.comparing(
+                    TaskCheckComparisonReportResponse::getMatching,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            default -> Comparator.comparing(
+                    TaskCheckComparisonReportResponse::getComparisonDate,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+        };
     }
 
     private Map<Long, String> resolveWorkforceNames(List<TaskCheckComparisonReportProjection> rows) {
@@ -139,7 +187,8 @@ public class TaskCheckComparisonService {
         String filename = image.getOriginalFilename();
         String ext = (filename != null && filename.contains("."))
                 ? filename.substring(filename.lastIndexOf('.') + 1) : "jpg";
-        String path = "task-execution-images/" + checkDefId + "/exec_" + checkDefId + "_" + System.currentTimeMillis() + "." + ext;
+        String path = "task-execution-images/" + checkDefId + "/exec_" + checkDefId + "_"
+                + System.currentTimeMillis() + "." + ext;
         try {
             documentsFeignClient.uploadImage(UploadImageRequest.builder().image(image).path(path).build());
         } catch (Exception e) {
@@ -148,5 +197,4 @@ public class TaskCheckComparisonService {
         }
         return path;
     }
-
 }
