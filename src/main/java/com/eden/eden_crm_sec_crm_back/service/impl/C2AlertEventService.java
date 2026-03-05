@@ -40,10 +40,7 @@ public class C2AlertEventService {
         final Severity severity
     ) {
         AlertTrigger alertTrigger = alertTriggerRepository
-            .findByTriggerIdAndServicePlatformId(
-                crmTriggerLog.getTriggerId(),
-                crmTriggerLog.getServicePlatform().getId()
-            )
+            .findById(6L)
             .orElseThrow(() -> new RuntimeException(
                 "AlertTrigger not found for trigger " + crmTriggerLog.getTriggerId()
             ));
