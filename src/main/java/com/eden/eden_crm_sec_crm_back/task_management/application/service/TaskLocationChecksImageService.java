@@ -29,8 +29,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskLocationChecksImageService {
 
-    private static final String TASK_CHECK_IMAGE_PATH = "task-management/checks/";
-
     private final TaskLocationChecksImageRepository repository;
     private final TaskLocationChecksImageJpaRepository jpaRepository;
     private final TaskCheckDefinitionRepository taskCheckDefinitionRepository;
@@ -56,11 +54,6 @@ public class TaskLocationChecksImageService {
         return mapper.toResponse(saved);
     }
 
-    /**
-     * For a given task definition + location, fetches all check definitions
-     * and creates a task_location_checks_image row for each one.
-     * Skips any combination where a non-deleted row already exists.
-     */
     @Transactional
     public void initLocationCheckImages(Long taskDefinitionId, Long locationId, Long customerId) {
         List<TaskCheckDefinition> checkDefinitions =
@@ -99,7 +92,6 @@ public class TaskLocationChecksImageService {
     public TaskCheckImageResponse uploadTaskCheckImage(Long taskCheckDefinitionId, Long locationId, MultipartFile image) {
         Long customerId = utils.getLoggedInUser().getCustomerId();
 
-        // Validate check definition exists and belongs to customer
         TaskCheckDefinition check = taskCheckDefinitionRepository.findById(taskCheckDefinitionId)
                 .orElseThrow(() -> new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND));
 
@@ -107,12 +99,16 @@ public class TaskLocationChecksImageService {
             throw new BusinessException("task-check-not-found", HttpStatus.NOT_FOUND);
         }
 
-        // Validate that a task_location_checks_image row exists for this combination
         TaskLocationChecksImage locationChecksImage = repository
                 .findByLocationIdAndTaskCheckDefinitionId(locationId, taskCheckDefinitionId)
                 .orElseThrow(() -> new BusinessException("task-location-check-image-not-found", HttpStatus.NOT_FOUND));
 
-        String imagePath = generateImagePath(taskCheckDefinitionId, locationId, image);
+        String imagePath = generateImagePath(
+                locationChecksImage.getId(),
+                taskCheckDefinitionId,
+                locationId,
+                image
+        );
 
         try {
             documentsFeignClient.uploadImage(
@@ -135,7 +131,6 @@ public class TaskLocationChecksImageService {
             throw new BusinessException("task-check-image-save-failed", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        // Verify persistence
         TaskLocationChecksImage updated = repository
                 .findByLocationIdAndTaskCheckDefinitionId(locationId, taskCheckDefinitionId)
                 .orElseThrow(() -> new BusinessException("task-location-check-image-not-found", HttpStatus.NOT_FOUND));
@@ -150,14 +145,21 @@ public class TaskLocationChecksImageService {
         return new TaskCheckImageResponse(taskCheckDefinitionId, locationId, fullUrl);
     }
 
-    private String generateImagePath(Long taskCheckDefinitionId, Long locationId, MultipartFile file) {
+    private String generateImagePath(Long refImageId, Long taskCheckDefinitionId, Long locationId, MultipartFile file) {
+        String fileExtension = extractFileExtension(file);
+        return String.format("%d/taskcheck/%d/tasklocation/%d/image%s",
+                refImageId,
+                taskCheckDefinitionId,
+                locationId,
+                fileExtension
+        );
+    }
+
+    private String extractFileExtension(MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
-        String fileExtension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
-            fileExtension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+            return originalFilename.substring(originalFilename.lastIndexOf('.'));
         }
-        String uniqueFilename = String.format("check_%d_loc_%d_%d%s",
-                taskCheckDefinitionId, locationId, System.currentTimeMillis(), fileExtension);
-        return TASK_CHECK_IMAGE_PATH + taskCheckDefinitionId + "/locations/" + locationId + "/" + uniqueFilename;
+        return "";
     }
 }
