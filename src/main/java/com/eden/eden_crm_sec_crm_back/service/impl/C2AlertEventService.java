@@ -33,19 +33,7 @@ public class C2AlertEventService {
                 .forEach(c2EventProducer::publishC2Events);
     }
 
-    // Use when severity comes directly from the task or check definition,
-    // not from the AlertTriggerSeverity per-customer configuration.
-    public void sendNewC2AlertEventWithOverrideSeverity(
-        final CrmTriggerLog crmTriggerLog,
-        final Severity severity
-    ) {
-        AlertTrigger alertTrigger = alertTriggerRepository
-            .findById(6L)
-            .orElseThrow(() -> new RuntimeException(
-                "AlertTrigger not found for trigger " + crmTriggerLog.getTriggerId()
-            ));
-        C2AlertEventDto(crmTriggerLog, severity, alertTrigger);
-    }
+
 
     // Use when the AlertTrigger row must be looked up by its primary key directly.
     public void sendNewC2AlertEventWithOverrideSeverity(
