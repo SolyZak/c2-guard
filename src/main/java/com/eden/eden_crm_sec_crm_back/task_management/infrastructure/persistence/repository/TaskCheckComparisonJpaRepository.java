@@ -48,7 +48,6 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
-              AND tcc.ratio IS NOT NULL
             ORDER BY tcc.created_date DESC
             """, nativeQuery = true)
     List<TaskCheckComparisonReportProjection> findComparisonReport(
@@ -87,7 +86,6 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
-              AND tcc.ratio IS NOT NULL
             """,
             countQuery = """
             SELECT COUNT(DISTINCT tcc.id)
@@ -106,7 +104,6 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
-              AND tcc.ratio IS NOT NULL
             """,
             nativeQuery = true)
     Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
