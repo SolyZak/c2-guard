@@ -66,6 +66,7 @@ public class C2AlertEventService {
             .workforceId(crmTriggerLog.getWorkforceId())
             .severity(severity)
             .description(crmTriggerLog.getDescription())
+            .locationId(crmTriggerLog.getLocationId())
             .build();
         c2EventProducer.publishC2Events(event);
         return event;
@@ -92,6 +93,7 @@ public class C2AlertEventService {
                 .workforceId(crmTriggerLog.getWorkforceId())
                 .severity(alertTriggerSeverity.getSeverity())
                 .description(crmTriggerLog.getDescription())
+                .locationId(crmTriggerLog.getLocationId())
                 .build();
     }
 }

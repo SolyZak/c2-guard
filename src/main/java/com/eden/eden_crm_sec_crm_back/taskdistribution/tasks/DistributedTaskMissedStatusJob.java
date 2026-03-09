@@ -119,11 +119,19 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
         String description = patrolName.isBlank() ? taskName : patrolName + " - " + taskName;
 
         Long siteId = 0L;
+        Long locationId = null;
         if (
             taskDistribution.getDistributionType() == DistributionType.PATROL
             && taskDistribution.getPatrolTaskDistribution() != null
         ) {
             siteId = taskDistribution.getPatrolTaskDistribution().getServiceTime().getSiteDistribution().getSite().getId();
+            locationId = taskDistribution.getPatrolTaskDistribution().getLocation().getId();
+        } else if (
+            taskDistribution.getDistributionType() == DistributionType.IMMEDIATE
+            && taskDistribution.getImmediateTaskDistribution() != null
+            && taskDistribution.getImmediateTaskDistribution().getLocation() != null
+        ) {
+            locationId = taskDistribution.getImmediateTaskDistribution().getLocation().getId();
         }
 
         TriggerEventDto triggerEventDto = TriggerEventDto.builder()
@@ -139,6 +147,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
                 .workforceId(0L)
                 .serviceTriggerEventId(0L)
                 .description(description)
+                .locationId(locationId)
                 .build();
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
         if (taskSeverity != null) {

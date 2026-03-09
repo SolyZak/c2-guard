@@ -38,4 +38,6 @@ public class TriggerEventDto {
     // Severity from task/check definition. When set, C2AlertEventService uses it directly
     // instead of looking up AlertTriggerSeverity table.
     private Severity overrideSeverity;
+    // Location entity ID — set only for patrol task (missed/deviation) events.
+    private Long locationId;
 }

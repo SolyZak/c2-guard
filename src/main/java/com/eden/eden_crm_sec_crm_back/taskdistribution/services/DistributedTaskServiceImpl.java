@@ -97,7 +97,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     @Builder
-    private record LocationPoints(BigDecimal longitude, BigDecimal latitude, Long siteId) {}
+    private record LocationPoints(BigDecimal longitude, BigDecimal latitude, Long siteId, Long locationId) {}
 
     @Override
     @Transactional
@@ -355,6 +355,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                 .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
                 .serviceTriggerEventId(0L)
                 .description(description)
+                .locationId(loc.locationId())
                 .build();
 
             CrmTriggerLog log = crmTriggerLogService.addNewCrmTriggerLog(dto);
@@ -402,6 +403,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                 .longitude(ptd.getLocation().getLongitude())
                 .latitude(ptd.getLocation().getLatitude())
                 .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
+                .locationId(ptd.getLocation().getId())
                 .build();
         }
         ImmediateTaskDistribution itd = taskDistribution.getImmediateTaskDistribution();
@@ -410,12 +412,14 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                 .longitude(itd.getLocation().getLongitude())
                 .latitude(itd.getLocation().getLatitude())
                 .siteId(0L)
+                .locationId(itd.getLocation().getId())
                 .build();
         }
         return LocationPoints.builder()
             .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
             .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
             .siteId(0L)
+            .locationId(null)
             .build();
     }
     // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────

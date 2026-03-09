@@ -56,4 +56,7 @@ public class CrmTriggerLog {
 
     @Column(name = "description")
     private String description;
+
+    @Column(name = "location_id")
+    private Long locationId;
 }
