@@ -143,7 +143,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
         if (taskSeverity != null) {
             // New-path: severity from task definition — bypass AlertTriggerSeverity table
-            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(crmTriggerLog, taskSeverity);
+            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(crmTriggerLog, taskSeverity , 5L);
         } else {
             c2AlertEventService.sendNewC2AlertEvent(crmTriggerLog);  // old path
         }
