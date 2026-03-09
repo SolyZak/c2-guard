@@ -33,6 +33,7 @@ public class CrmTriggerLogService {
         crmTriggerLog.setEventTime(triggerEventDto.getEventTime());
         crmTriggerLog.setEventDate(triggerEventDto.getEventDate());
         crmTriggerLog.setDescription(triggerEventDto.getDescription());
+        crmTriggerLog.setLocationId(triggerEventDto.getLocationId());
         crmTriggerLog.setServicePlatform(servicePlatformById);
         return crmTriggerLogRepository.save(crmTriggerLog);
     }
