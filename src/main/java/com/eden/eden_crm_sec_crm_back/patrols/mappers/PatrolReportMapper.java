@@ -5,10 +5,8 @@ import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.patrols.dtos.response.*;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.projections.PatrolPremiseAggregation;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.projections.PatrolReportDetailsAggregation;
-import org.mapstruct.Context;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
+import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
+import org.mapstruct.*;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -68,13 +66,19 @@ public interface PatrolReportMapper {
         return instant.atOffset(ZoneOffset.UTC);
     }
 
-    @Mapping(target = "id", source = "taskId")
-    @Mapping(target = "name", source = "taskName")
-    @Mapping(target = "startDateTime", source = "taskStartDateTime")
-    @Mapping(target = "endDateTime", source = "taskEndDateTime")
-    PatrolTaskDetailsResponse toTaskDetailsResponse(PatrolReportDetailsAggregation agg);
+    @Mapping(target = "id", source = "agg.taskId")
+    @Mapping(target = "name", source = "agg.taskName")
+    @Mapping(target = "startDateTime", source = "agg.taskStartDateTime")
+    @Mapping(target = "endDateTime", source = "agg.taskEndDateTime")
+    @Mapping(target = "evidenceImage", expression = "java(resolveEvidenceImageUrl(agg.getEvidenceImage(), storageUtil))")
+    PatrolTaskDetailsResponse toTaskDetailsResponse(PatrolReportDetailsAggregation agg, @Context OracleStorageUtil storageUtil);
 
-    List<PatrolTaskDetailsResponse> toTaskDetailsResponses(List<PatrolReportDetailsAggregation> aggs);
+    default List<PatrolTaskDetailsResponse> toTaskDetailsResponses(List<PatrolReportDetailsAggregation> aggs, @Context OracleStorageUtil storageUtil) {
+        if (aggs == null) return List.of();
+        return aggs.stream()
+                .map(agg -> toTaskDetailsResponse(agg, storageUtil))
+                .toList();
+    }
 
     @Mapping(target = "id", source = "locationId")
     @Mapping(target = "name", source = "locationName")
@@ -87,9 +91,10 @@ public interface PatrolReportMapper {
     PatrolReportDetailsResponse toPatrolReportDetailsResponse(Premise premise, @Context Patrol patrol, @Context List<PatrolLocationDetailsResponse> aggregations);
 
     default PatrolReportDetailsResponse toPatrolReportDetails(
-        Premise premise,
-        Patrol patrol,
-        List<PatrolReportDetailsAggregation> aggregations
+            Premise premise,
+            Patrol patrol,
+            List<PatrolReportDetailsAggregation> aggregations,
+            OracleStorageUtil storageUtil
     ) {
         if (aggregations == null || aggregations.isEmpty())
             return null;
@@ -100,11 +105,24 @@ public interface PatrolReportMapper {
                 .stream()
                 .map(aggs -> {
                     PatrolReportDetailsAggregation first = aggs.getFirst();
-                    List<PatrolTaskDetailsResponse> taskDetailsResponses = toTaskDetailsResponses(aggs);
+                    List<PatrolTaskDetailsResponse> taskDetailsResponses = toTaskDetailsResponses(aggs, storageUtil);
                     return toPatrolLocationDetailsResponse(first, taskDetailsResponses);
                 })
                 .collect(Collectors.collectingAndThen(Collectors.toList(), responses ->
-                    toPatrolReportDetailsResponse(premise, patrol, responses)
+                        toPatrolReportDetailsResponse(premise, patrol, responses)
                 ));
+    }
+
+    /**
+     * Concatenates the Oracle Object Storage base URL with the relative
+     * evidence-image path stored in the database.
+     * Returns null when the path is blank so the response field stays null
+     * instead of containing a dangling base URL.
+     */
+    default String resolveEvidenceImageUrl(String relativeImagePath, OracleStorageUtil storageUtil) {
+        if (relativeImagePath == null || relativeImagePath.isBlank()) {
+            return null;
+        }
+        return storageUtil.getStorageUrl() + relativeImagePath;
     }
 }

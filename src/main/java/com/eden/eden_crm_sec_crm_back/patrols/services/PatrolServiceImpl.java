@@ -14,6 +14,7 @@ import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.projections.PatrolPremiseAggregation;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.projections.PatrolReportDetailsAggregation;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class PatrolServiceImpl implements PatrolService {
     private final PatrolRepository patrolRepository;
     private final PremiseRepository premiseRepository;
     private final PatrolReportMapper patrolReportMapper;
+    private final OracleStorageUtil oracleStorageUtil;
 
     @Override
     @Transactional
@@ -64,10 +66,10 @@ public class PatrolServiceImpl implements PatrolService {
         Optional<Patrol> patrolOpt = patrolRepository.findById(patrolId);
         if (patrolOpt.isEmpty() || premiseOpt.isEmpty())
             throw new BusinessException(MessageUtil.getMessage("validation.security-company.contract-id.not-found"), HttpStatus.BAD_REQUEST);
-        
+
         Patrol patrol = patrolOpt.get();
         Premise premise = premiseOpt.get();
         List<PatrolReportDetailsAggregation> aggs = patrolRepository.findPatrolDetails(premiseId, patrolId);
-        return patrolReportMapper.toPatrolReportDetails(premise, patrol, aggs);
+        return patrolReportMapper.toPatrolReportDetails(premise, patrol, aggs, oracleStorageUtil);  // <-- PASS storageUtil
     }
 }
