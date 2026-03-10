@@ -10,6 +10,7 @@ public class TaskCheckComparison {
     private Long id;
     private Long taskCheckDefinitionId;
     private Long taskCheckExecutionId;
+    private Long taskLocationChecksImageId;
     private Boolean matching;
     private Double ratio;
     private Long customerId;
@@ -19,10 +20,12 @@ public class TaskCheckComparison {
     }
 
     public static TaskCheckComparison create(Long taskCheckDefinitionId, Long taskCheckExecutionId,
-                                             Boolean matching, Double ratio, Long customerId) {
+                                             Boolean matching, Double ratio, Long customerId,
+                                             Long taskLocationChecksImageId) {
         TaskCheckComparison comparison = new TaskCheckComparison();
         comparison.taskCheckDefinitionId = taskCheckDefinitionId;
         comparison.taskCheckExecutionId = taskCheckExecutionId;
+        comparison.taskLocationChecksImageId = taskLocationChecksImageId;
         comparison.matching = matching;
         comparison.ratio = ratio;
         comparison.customerId = customerId;
@@ -32,11 +35,13 @@ public class TaskCheckComparison {
 
     public static TaskCheckComparison reconstitute(Long id, Long taskCheckDefinitionId, Long taskCheckExecutionId,
                                                    Boolean matching, Double ratio, Long customerId,
-                                                   LocalDateTime createdDate) {
+                                                   LocalDateTime createdDate,
+                                                   Long taskLocationChecksImageId) {
         TaskCheckComparison comparison = new TaskCheckComparison();
         comparison.id = id;
         comparison.taskCheckDefinitionId = taskCheckDefinitionId;
         comparison.taskCheckExecutionId = taskCheckExecutionId;
+        comparison.taskLocationChecksImageId = taskLocationChecksImageId;
         comparison.matching = matching;
         comparison.ratio = ratio;
         comparison.customerId = customerId;
@@ -46,5 +51,9 @@ public class TaskCheckComparison {
 
     public void updateMatching(Boolean matching) {
         this.matching = matching;
+    }
+
+    public void updateRatio(Double ratio) {
+        this.ratio = ratio;
     }
 }

@@ -7,4 +7,6 @@ public class CreateTaskCheckComparisonRequest {
     private Long taskCheckDefinitionId;
     private Long taskCheckExecutionId;
     private Long customerId;
+    private Long locationId;
+    private String evidenceImagePath;
 }

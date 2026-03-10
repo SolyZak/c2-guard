@@ -22,12 +22,8 @@ import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecutio
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
-import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
 import com.eden.eden_crm_sec_crm_back.service.impl.CrmTriggerLogService;
-// ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-// ACL interfaces from task_management module.
-// CLEANUP: TaskPresenter and TaskExecutionPresenter stay permanently after Phase E.
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.CreateTaskExecutionPayload;
@@ -42,7 +38,6 @@ import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkva
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.NumberCheckValue;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.TaskCheckValue;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.TextCheckValue;
-// ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.ExecuteDistributedTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.TodayTasksRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.TodayTaskEntryResponse;
@@ -84,13 +79,10 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     private final TaskDistributionMapper taskDistributionMapper;
     private final AttendanceFeignClient attendanceClient;
     // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // ACL ports injected via @RequiredArgsConstructor.
-    // CLEANUP: both fields stay permanently after Phase E.
     private final TaskPresenter taskPresenter;
     private final TaskExecutionPresenter taskExecutionPresenter;
     // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
     // ─── [TASK-MIGRATION] NEW: check violation alerts ─────────────────────────────
-    // CLEANUP: stays permanently after Phase E.
     private final TriggerRepository triggerRepository;
     private final CrmTriggerLogService crmTriggerLogService;
     private final C2AlertEventService c2AlertEventService;
@@ -109,14 +101,14 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         OffsetDateTime tomorrowMidnight = todayMidnight.plusDays(1);
 
         List<TodayTaskSlotProjection> slots = taskExecutionSlotRepository.findTodayTasks(
-            customer.getId(),
-            todayTasksRequest.contractId(),
-            todayMidnight,
-            tomorrowMidnight,
-            todayTasksRequest.serviceId(),
-            todayTasksRequest.serviceTimeId(),
-            todayTasksRequest.slotNumber(),
-            checkInData.getWorkforceId()
+                customer.getId(),
+                todayTasksRequest.contractId(),
+                todayMidnight,
+                tomorrowMidnight,
+                todayTasksRequest.serviceId(),
+                todayTasksRequest.serviceTimeId(),
+                todayTasksRequest.slotNumber(),
+                checkInData.getWorkforceId()
         );
 
         List<TodayTaskEntryResponse> tasks = new ArrayList<>();
@@ -130,33 +122,30 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             TodayTaskEntryResponse response = taskDistributionMapper.toTodayTaskEntryResponse(lastSlot, slotResponses);
 
             // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
-            // For new-path distributions, task is null so taskName comes back null from the LEFT JOIN.
-            // Enrich the name from the task_management ACL before returning the response.
-            // CLEANUP: remove this block after Phase E (task always from task_definition by then).
             if (response.taskName() == null && response.taskDefinitionId() != null) {
                 String taskName = taskPresenter.getTaskDefinition(response.taskDefinitionId()).getName();
                 response = TodayTaskEntryResponse.builder()
-                    .taskId(response.taskDefinitionId())
-                    .taskDefinitionId(response.taskDefinitionId())
-                    .patrolId(response.patrolId())
-                    .premiseId(response.premiseId())
-                    .locationId(response.locationId())
-                    .taskName(taskName)
-                    .patrolName(response.patrolName())
-                    .locationName(response.locationName())
-                    .premiseName(response.premiseName())
-                    .patrolFrequency(response.patrolFrequency())
-                    .patrolFrequencyRate(response.patrolFrequencyRate())
-                    .endDateTime(response.endDateTime())
-                    .accessType(response.accessType())
-                    .latitude(response.latitude())
-                    .longitude(response.longitude())
-                    .taskDistributionId(response.taskDistributionId())
-                    .distributionType(response.distributionType())
-                    .patrolDistributionId(response.patrolDistributionId())
-                    .immediateDistributionId(response.immediateDistributionId())
-                    .executionSlots(response.executionSlots())
-                    .build();
+                        .taskId(response.taskDefinitionId())
+                        .taskDefinitionId(response.taskDefinitionId())
+                        .patrolId(response.patrolId())
+                        .premiseId(response.premiseId())
+                        .locationId(response.locationId())
+                        .taskName(taskName)
+                        .patrolName(response.patrolName())
+                        .locationName(response.locationName())
+                        .premiseName(response.premiseName())
+                        .patrolFrequency(response.patrolFrequency())
+                        .patrolFrequencyRate(response.patrolFrequencyRate())
+                        .endDateTime(response.endDateTime())
+                        .accessType(response.accessType())
+                        .latitude(response.latitude())
+                        .longitude(response.longitude())
+                        .taskDistributionId(response.taskDistributionId())
+                        .distributionType(response.distributionType())
+                        .patrolDistributionId(response.patrolDistributionId())
+                        .immediateDistributionId(response.immediateDistributionId())
+                        .executionSlots(response.executionSlots())
+                        .build();
             }
             // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
 
@@ -173,13 +162,9 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         TaskExecutionSlot taskExecutionSlot = getTaskExecutionSlot(request.executionSlotId());
 
         // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-        // New path: slot belongs to a distribution that uses task_management.
-        // Creates a TaskExecution + TaskCheckExecution via the ACL presenter.
-        // CLEANUP: after Phase E, remove the COEXISTENCE block and keep only this path.
         Task task = taskExecutionSlot.getTaskDistribution().getTask();
 
         if (task == null) {
-            // New-path distribution: task is null, use task_definition_id instead
             Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTaskDefinitionId();
             if (taskDefinitionId == null) {
                 throw new BusinessException(
@@ -193,9 +178,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
         // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────────
-        // Old path: slot belongs to a distribution that uses legacy Task entity.
-        // Creates TaskPatrolExecution in the old model.
-        // CLEANUP: delete this entire block after Phase E.
         checkTaskExecutionConstraints(request, taskExecutionSlot, task);
         TaskPatrolExecution taskPatrolExecution = createTaskPatrolExecution(request, task, customer);
         taskPatrolExecution = taskPatrolExecutionRepository.save(taskPatrolExecution);
@@ -206,9 +188,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     }
 
     // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // Handles execution for new-path distributions (task_management module).
-    // Validates check types, creates TaskExecution, and submits each TaskCheckExecution.
-    // CLEANUP: rename to the main execution method after Phase E.
     private void executeNewPathTask(
             ExecuteDistributedTaskRequest request,
             CheckInData checkInData,
@@ -238,6 +217,10 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                 throw new BusinessException("Task check type not matched at index " + i, HttpStatus.BAD_REQUEST);
         });
 
+        // ── Extract locationId from the distribution ─────────────────────────
+        LocationPoints loc = getLocationPoints(taskExecutionSlot.getTaskDistribution());
+        Long locationId = loc.locationId();
+
         TaskExecutionPayload taskExecution = taskExecutionPresenter.createTaskExecution(
                 CreateTaskExecutionPayload.builder()
                         .workforceId(checkInData.getWorkforceId())
@@ -254,7 +237,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             String imagePath = (file != null && !file.isEmpty())
                     ? taskExecutionPresenter.uploadCheckExecutionImage(checkDef.getId(), file)
                     : null;
-
 
             TaskCheckExecutionPayload checkExecution = taskExecutionPresenter.submitTaskCheckExecution(
                     SubmitTaskCheckExecutionPayload.builder()
@@ -273,6 +255,8 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                             .taskCheckDefinitionId(checkDef.getId())
                             .taskCheckExecutionId(checkExecution.getId())
                             .customerId(customer.getId())
+                            .locationId(locationId)
+                            .evidenceImagePath(imagePath)
                             .build()
             );
         });
@@ -285,50 +269,37 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         evaluateAndFireCheckAlerts(checkDefs, request.checks(), taskDefinition.getName(), customer, taskExecutionSlot);
     }
 
-    /**
-     * Derives the check-type string used by task_management from the polymorphic DTO class.
-     * CLEANUP: remove after Phase E once legacy DTOs are retired.
-     */
     private static String getCheckTypeFromDto(TaskCheckDTO dto) {
         if (dto instanceof TaskCheckTextDTO)    return "TEXT";
         if (dto instanceof TaskCheckNumberDTO)  return "NUMBER";
         if (dto instanceof TaskCheckDecimalDTO) return "DECIMAL";
         if (dto instanceof TaskCheckListDTO)    return "LIST";
         throw new BusinessException(
-            "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
+                "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * Converts a legacy TaskCheckDTO into the TaskCheckValue used by task_management.
-     * CLEANUP: remove after Phase E once legacy DTOs are retired.
-     */
     private static TaskCheckValue toCheckValue(TaskCheckDTO dto) {
         if (dto instanceof TaskCheckTextDTO t)    return new TextCheckValue(t.getNotes());
         if (dto instanceof TaskCheckNumberDTO n)  return new NumberCheckValue(n.getUnit(), n.getOperator(), n.getValue());
         if (dto instanceof TaskCheckDecimalDTO d) return new DecimalCheckValue(d.getUnit(), d.getOperator(), d.getValue());
         if (dto instanceof TaskCheckListDTO l)    return new ListCheckValue(l.getListItems(), null);
         throw new BusinessException(
-            "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
+                "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
     }
 
-    // ─── [TASK-MIGRATION] NEW: check violation alerts ─────────────────────────────
-    // Fires PATROL_TASK_Deviation for each submitted check that violates its defined rule.
-    // Only checks with a severity level will trigger an alert.
-    // CLEANUP: stays permanently after Phase E.
     private void evaluateAndFireCheckAlerts(
-        List<TaskCheckDefinitionPayload> checkDefs,
-        List<TaskCheckDTO> submittedChecks,
-        String taskName,
-        Customer customer,
-        TaskExecutionSlot taskExecutionSlot
+            List<TaskCheckDefinitionPayload> checkDefs,
+            List<TaskCheckDTO> submittedChecks,
+            String taskName,
+            Customer customer,
+            TaskExecutionSlot taskExecutionSlot
     ) {
         OffsetDateTime now = OffsetDateTime.now();
         Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_DEVIATION.getId())
-            .orElseThrow(() -> new RuntimeException("Trigger PATROL_TASK_Deviation not found"));
+                .orElseThrow(() -> new RuntimeException("Trigger PATROL_TASK_Deviation not found"));
 
         for (int i = 0; i < checkDefs.size(); i++) {
             TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
-            // Checks without a configured severity are excluded from alerting
             if (checkDef.getSeverity() == null) continue;
 
             TaskCheckValue checkSettings = checkDef.getCheckSettings();
@@ -340,28 +311,26 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             LocationPoints loc = getLocationPoints(taskExecutionSlot.getTaskDistribution());
 
             TriggerEventDto dto = TriggerEventDto.builder()
-                .triggerId(trigger.getId())
-                .triggerName(trigger.getCode())
-                .operationSiteId(loc.siteId())
-                .customerId(customer.getId())
-                .longitude(loc.longitude().doubleValue())
-                .latitude(loc.latitude().doubleValue())
-                .eventTime(now.toOffsetTime())
-                .eventDate(now.toLocalDate())
-                .servicePlatformName(ServicePlatformEnum.CRM.name())
-                .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
-                .serviceTriggerEventId(0L)
-                .description(description)
-                .locationId(loc.locationId())
-                .build();
+                    .triggerId(trigger.getId())
+                    .triggerName(trigger.getCode())
+                    .operationSiteId(loc.siteId())
+                    .customerId(customer.getId())
+                    .longitude(loc.longitude().doubleValue())
+                    .latitude(loc.latitude().doubleValue())
+                    .eventTime(now.toOffsetTime())
+                    .eventDate(now.toLocalDate())
+                    .servicePlatformName(ServicePlatformEnum.CRM.name())
+                    .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
+                    .serviceTriggerEventId(0L)
+                    .description(description)
+                    .locationId(loc.locationId())
+                    .build();
 
             CrmTriggerLog log = crmTriggerLogService.addNewCrmTriggerLog(dto);
             c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(log, severity, 6L);
         }
     }
 
-    // Returns true if the submitted value violates the check definition's rule.
-    // TEXT checks are excluded — no alert criteria defined for them.
     private boolean isCheckViolated(TaskCheckValue checkSettings, TaskCheckDTO dto) {
         if (checkSettings instanceof ListCheckValue lv) {
             if (lv.getAlertValue() == null) return false;
@@ -379,8 +348,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         return false;
     }
 
-    // Returns true when the actual value satisfies the operator against the threshold.
-    // A false result means the check is violated and an alert should fire.
     private boolean evaluateOperator(String operator, double actual, double threshold) {
         return switch (operator) {
             case "gte" -> actual >= threshold;
@@ -389,7 +356,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             case "lt"  -> actual <  threshold;
             case "eq"  -> actual == threshold;
             case "ne"  -> actual != threshold;
-            default    -> true; // unknown operator → treat as not violated
+            default    -> true;
         };
     }
 
@@ -397,40 +364,40 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         if (taskDistribution.getDistributionType() == DistributionType.PATROL) {
             PatrolTaskDistribution ptd = taskDistribution.getPatrolTaskDistribution();
             return LocationPoints.builder()
-                .longitude(ptd.getLocation().getLongitude())
-                .latitude(ptd.getLocation().getLatitude())
-                .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
-                .locationId(ptd.getLocation().getId())
-                .build();
+                    .longitude(ptd.getLocation().getLongitude())
+                    .latitude(ptd.getLocation().getLatitude())
+                    .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
+                    .locationId(ptd.getLocation().getId())
+                    .build();
         }
         ImmediateTaskDistribution itd = taskDistribution.getImmediateTaskDistribution();
         if (itd != null && itd.getLocation() != null) {
             return LocationPoints.builder()
-                .longitude(itd.getLocation().getLongitude())
-                .latitude(itd.getLocation().getLatitude())
-                .siteId(0L)
-                .locationId(itd.getLocation().getId())
-                .build();
+                    .longitude(itd.getLocation().getLongitude())
+                    .latitude(itd.getLocation().getLatitude())
+                    .siteId(0L)
+                    .locationId(itd.getLocation().getId())
+                    .build();
         }
         return LocationPoints.builder()
-            .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
-            .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
-            .siteId(0L)
-            .locationId(null)
-            .build();
+                .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
+                .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
+                .siteId(0L)
+                .locationId(null)
+                .build();
     }
     // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     private static void checkTaskExecutionConstraints(
-        ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-        TaskExecutionSlot taskExecutionSlot,
-        Task task
+            ExecuteDistributedTaskRequest executeDistributedTaskRequest,
+            TaskExecutionSlot taskExecutionSlot,
+            Task task
     ) {
         OffsetDateTime now = OffsetDateTime.now();
         if (
-            taskExecutionSlot.getStatus() != TaskDistributionStatus.CURRENT
-                || now.isBefore(taskExecutionSlot.getStartDateTime())
-                || now.isAfter(taskExecutionSlot.getEndDateTime())
+                taskExecutionSlot.getStatus() != TaskDistributionStatus.CURRENT
+                        || now.isBefore(taskExecutionSlot.getStartDateTime())
+                        || now.isAfter(taskExecutionSlot.getEndDateTime())
         )
             throw new BusinessException(MessageUtil.getMessage("task.execute.error"), HttpStatus.BAD_REQUEST);
 
@@ -438,19 +405,19 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             throw new BusinessException("Task check size not matched", HttpStatus.BAD_REQUEST);
 
         IntStream.range(0, task.getTaskChecks().size())
-            .forEach(i -> {
-                var expected = executeDistributedTaskRequest.checks().get(i).getClass();
-                var actual = task.getTaskChecks().get(i).mapToResponse().getClass();
+                .forEach(i -> {
+                    var expected = executeDistributedTaskRequest.checks().get(i).getClass();
+                    var actual = task.getTaskChecks().get(i).mapToResponse().getClass();
 
-                if (!actual.equals(expected))
-                    throw new BusinessException("Task check type not matched", HttpStatus.BAD_REQUEST);
-            });
+                    if (!actual.equals(expected))
+                        throw new BusinessException("Task check type not matched", HttpStatus.BAD_REQUEST);
+                });
     }
 
     private static TaskPatrolExecution createTaskPatrolExecution(
-        ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-        Task task,
-        Customer customer
+            ExecuteDistributedTaskRequest executeDistributedTaskRequest,
+            Task task,
+            Customer customer
     ) {
         TaskPatrolExecution taskPatrolExecution = new TaskPatrolExecution();
         taskPatrolExecution.setId(task.getId());
@@ -462,23 +429,23 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     }
 
     private static List<TaskCheckPatrolExecution> createTaskCheckPatrolExecutions(
-        ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-        TaskPatrolExecution taskPatrolExecution
+            ExecuteDistributedTaskRequest executeDistributedTaskRequest,
+            TaskPatrolExecution taskPatrolExecution
     ) {
         List<TaskCheckPatrolExecution> taskChecksPatrolExecution = new ArrayList<>(executeDistributedTaskRequest.checks().size());
         executeDistributedTaskRequest.checks()
-            .forEach(check -> taskChecksPatrolExecution.add(check.mapToExecutionEntity(taskPatrolExecution)));
+                .forEach(check -> taskChecksPatrolExecution.add(check.mapToExecutionEntity(taskPatrolExecution)));
         return taskChecksPatrolExecution;
     }
 
     private TaskExecutionSlot getTaskExecutionSlot(Long executionSlotId) {
         return taskExecutionSlotRepository
-            .findById(executionSlotId)
-            .orElseThrow(() -> new BusinessException("Task execution slot not found", HttpStatus.NOT_FOUND));
+                .findById(executionSlotId)
+                .orElseThrow(() -> new BusinessException("Task execution slot not found", HttpStatus.NOT_FOUND));
     }
 
     private Customer getCustomer(Long customerId) {
         return customerRepository.findById(customerId)
-            .orElseThrow(UserNotProvided::new);
+                .orElseThrow(UserNotProvided::new);
     }
 }
