@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
 import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
+import com.eden.eden_crm_sec_crm_back.clients.dto.MatchingFeedbackRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -44,6 +45,7 @@ public class TaskCheckComparisonService {
     private final TaskMapper taskMapper;
     private final Utils utils;
     private final DocumentsFeignClient documentsFeignClient;
+    private final ImageComparisonService imageComparisonService;
 
     @Transactional(readOnly = true)
     public PaginateResponse<TaskCheckComparisonReportResponse> getComparisonReport(
@@ -92,7 +94,6 @@ public class TaskCheckComparisonService {
                         .build())
                 .toList();
 
-        // Apply in-memory sorting (native queries don't support Sort via Pageable reliably)
         Comparator<TaskCheckComparisonReportResponse> comparator = getComparator(sortBy);
         if (sortDirection.equalsIgnoreCase("DESC")) {
             comparator = comparator.reversed();
@@ -121,6 +122,15 @@ public class TaskCheckComparisonService {
 
         comparison.updateMatching(request.getMatching());
         comparison = taskCheckComparisonRepository.save(comparison);
+
+        // ── Fire async feedback to AI service (non-blocking, failure-safe) ───
+        imageComparisonService.sendMatchingFeedbackAsync(
+                MatchingFeedbackRequest.builder()
+                        .comparisonId(comparison.getId())
+                        .taskCheckExecutionId(comparison.getTaskCheckExecutionId())
+                        .taskLocationChecksImageId(comparison.getTaskLocationChecksImageId())
+                        .matching(comparison.getMatching())
+                        .build());
 
         return taskMapper.toTaskCheckComparisonResponse(comparison);
     }

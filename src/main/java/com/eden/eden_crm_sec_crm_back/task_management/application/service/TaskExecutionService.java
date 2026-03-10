@@ -18,6 +18,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskExec
 import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskLocationChecksImageRepository;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.service.TaskExecutionDomainService;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.CheckType;
+import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class TaskExecutionService {
     private final TaskExecutionDomainService taskExecutionDomainService;
     private final TaskMapper taskMapper;
     private final ImageComparisonService imageComparisonService;
+    private final OracleStorageUtil oracleStorageUtil;
 
     @Transactional
     public TaskExecutionResponse createTaskExecution(CreateTaskExecutionRequest request) {
@@ -63,7 +65,6 @@ public class TaskExecutionService {
     @Transactional
     public TaskCheckComparisonResponse createTaskCheckComparison(CreateTaskCheckComparisonRequest request) {
 
-        // ── Resolve the reference image ──────────────────────────────────────
         Long taskLocationChecksImageId = null;
         String referenceImagePath = null;
 
@@ -79,7 +80,6 @@ public class TaskExecutionService {
             }
         }
 
-        // ── Create and persist the comparison ────────────────────────────────
         TaskCheckComparison comparison = TaskCheckComparison.create(
                 request.getTaskCheckDefinitionId(),
                 request.getTaskCheckExecutionId(),
@@ -90,18 +90,19 @@ public class TaskExecutionService {
 
         comparison = taskCheckComparisonRepository.save(comparison);
 
-        // ── Fire async AI comparison (non-blocking, failure-safe) ────────────
         if (taskLocationChecksImageId != null
                 && referenceImagePath != null
                 && request.getEvidenceImagePath() != null) {
+
+            String storageBaseUrl = oracleStorageUtil.getStorageUrl();
 
             imageComparisonService.compareImagesAsync(
                     ImageComparisonRequest.builder()
                             .comparisonId(comparison.getId())
                             .taskCheckExecutionId(request.getTaskCheckExecutionId())
                             .taskLocationChecksImageId(taskLocationChecksImageId)
-                            .referenceImagePath(referenceImagePath)
-                            .evidenceImagePath(request.getEvidenceImagePath())
+                            .referenceImagePath(storageBaseUrl + referenceImagePath)
+                            .evidenceImagePath(storageBaseUrl + request.getEvidenceImagePath())
                             .customerId(request.getCustomerId())
                             .build());
         }
