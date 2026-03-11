@@ -49,17 +49,22 @@ public class TaskCheckComparisonService {
 
     @Transactional(readOnly = true)
     public PaginateResponse<TaskCheckComparisonReportResponse> getComparisonReport(
-            LocalDate from, LocalDate to, int page, int size, String sortBy, String sortDirection) {
+            LocalDate from, LocalDate to, Long locationId, String taskName,
+            int page, int size, String sortBy, String sortDirection) {
 
         Long customerId = utils.getLoggedInUser().getCustomerId();
 
         LocalDateTime fromDate = from.atStartOfDay();
         LocalDateTime toDate = to.atTime(23, 59, 59);
 
+        // Normalize taskName: treat blank as null for cleaner query logic
+        String normalizedTaskName = (taskName != null && !taskName.isBlank()) ? taskName.trim() : null;
+
         Pageable pageable = PageRequest.of(page, size);
 
         Page<TaskCheckComparisonReportProjection> resultPage =
-                taskCheckComparisonRepository.findComparisonReportPaginated(customerId, fromDate, toDate, pageable);
+                taskCheckComparisonRepository.findComparisonReportPaginated(
+                        customerId, fromDate, toDate, locationId, normalizedTaskName, pageable);
 
         if (resultPage.isEmpty()) {
             return new PaginateResponse<>(
@@ -123,7 +128,6 @@ public class TaskCheckComparisonService {
         comparison.updateMatching(request.getMatching());
         comparison = taskCheckComparisonRepository.save(comparison);
 
-        // ── Fire async feedback to AI service (non-blocking, failure-safe) ───
         imageComparisonService.sendMatchingFeedbackAsync(
                 MatchingFeedbackRequest.builder()
                         .comparisonId(comparison.getId())

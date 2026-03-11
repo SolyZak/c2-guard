@@ -23,5 +23,6 @@ public interface TaskCheckComparisonRepository {
             Long customerId, LocalDateTime fromDate, LocalDateTime toDate);
 
     Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
-            Long customerId, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable);
+            Long customerId, LocalDateTime fromDate, LocalDateTime toDate,
+            Long locationId, String taskName, Pageable pageable);
 }

@@ -86,6 +86,8 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
+              AND (:locationId IS NULL OR l.id = :locationId)
+              AND (:taskName IS NULL OR LOWER(td.name) LIKE LOWER(CONCAT('%', :taskName, '%')))
             """,
             countQuery = """
             SELECT COUNT(DISTINCT tcc.id)
@@ -104,11 +106,15 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
+              AND (:locationId IS NULL OR l.id = :locationId)
+              AND (:taskName IS NULL OR LOWER(td.name) LIKE LOWER(CONCAT('%', :taskName, '%')))
             """,
             nativeQuery = true)
     Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
             @Param("customerId") Long customerId,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
+            @Param("locationId") Long locationId,
+            @Param("taskName") String taskName,
             Pageable pageable);
 }

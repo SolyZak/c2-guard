@@ -52,7 +52,9 @@ public class TaskCheckComparisonRepositoryImpl implements TaskCheckComparisonRep
 
     @Override
     public Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
-            Long customerId, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
-        return jpaRepository.findComparisonReportPaginated(customerId, fromDate, toDate, pageable);
+            Long customerId, LocalDateTime fromDate, LocalDateTime toDate,
+            Long locationId, String taskName, Pageable pageable) {
+        return jpaRepository.findComparisonReportPaginated(
+                customerId, fromDate, toDate, locationId, taskName, pageable);
     }
 }
