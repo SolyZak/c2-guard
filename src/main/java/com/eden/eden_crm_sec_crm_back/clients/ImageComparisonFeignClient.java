@@ -9,8 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-        name = "image-comparison-service",
-        url = "${feign.clients.image-comparison.url}"
+        name = "image-comparison-service"
 )
 public interface ImageComparisonFeignClient {
 
