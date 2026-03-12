@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 )
 public interface ImageComparisonFeignClient {
 
-    @PostMapping("/pcd-ai/compare")
+    @PostMapping("/pcd-ai/compare/")
     ImageComparisonResponse requestComparison(@RequestBody ImageComparisonRequest request);
 
-    @PostMapping("/pcd-ai/feedback")
+    @PostMapping("/pcd-ai/feedback/")
     void sendMatchingFeedback(@RequestBody MatchingFeedbackRequest request);
 
-    @PostMapping("/pcd-ai/baseline")
+    @PostMapping("/pcd-ai/baseline/")
     void notifyReferenceImageUploaded(@RequestBody ReferenceImageUploadedRequest request);
 }
