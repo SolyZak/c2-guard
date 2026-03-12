@@ -15,6 +15,9 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
 
     Optional<TaskCheckComparisonJpaEntity> findByTaskCheckExecutionId(Long taskCheckExecutionId);
 
+    Optional<TaskCheckComparisonJpaEntity> findByTaskCheckExecutionIdAndTaskLocationChecksImageId(
+            Long taskCheckExecutionId, Long taskLocationChecksImageId);
+
     List<TaskCheckComparisonJpaEntity> findAllByTaskCheckDefinitionId(Long taskCheckDefinitionId);
 
     @Query(value = """

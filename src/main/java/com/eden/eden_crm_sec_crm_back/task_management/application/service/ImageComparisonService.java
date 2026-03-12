@@ -32,8 +32,7 @@ public class ImageComparisonService {
     @Transactional
     public void compareImagesAsync(ImageComparisonRequest request) {
         try {
-            log.info("Calling image comparison service for comparisonId={}, checkExecutionId={}, refImageId={}",
-                    request.getComparisonId(),
+            log.info("Calling image comparison service for checkExecutionId={}, refImageId={}",
                     request.getTaskCheckExecutionId(),
                     request.getTaskLocationChecksImageId());
 
@@ -41,27 +40,33 @@ public class ImageComparisonService {
 
             if (response != null && response.getRatio() != null) {
                 Optional<TaskCheckComparison> comparisonOpt =
-                        taskCheckComparisonRepository.findById(request.getComparisonId());
+                        taskCheckComparisonRepository.findByTaskCheckExecutionIdAndTaskLocationChecksImageId(
+                                request.getTaskCheckExecutionId(),
+                                request.getTaskLocationChecksImageId());
 
                 if (comparisonOpt.isPresent()) {
                     TaskCheckComparison comparison = comparisonOpt.get();
                     comparison.updateRatio(response.getRatio());
                     taskCheckComparisonRepository.save(comparison);
-                    log.info("Updated comparison {} with ratio {}",
-                            request.getComparisonId(), response.getRatio());
+                    log.info("Updated comparison for checkExecutionId={}, refImageId={} with ratio {}",
+                            request.getTaskCheckExecutionId(),
+                            request.getTaskLocationChecksImageId(),
+                            response.getRatio());
                 } else {
-                    log.warn("Comparison record {} not found when trying to update ratio",
-                            request.getComparisonId());
+                    log.warn("Comparison record not found for checkExecutionId={}, refImageId={} when trying to update ratio",
+                            request.getTaskCheckExecutionId(),
+                            request.getTaskLocationChecksImageId());
                 }
             } else {
-                log.warn("Image comparison service returned null or empty ratio for comparisonId={}",
-                        request.getComparisonId());
+                log.warn("Image comparison service returned null or empty ratio for checkExecutionId={}, refImageId={}",
+                        request.getTaskCheckExecutionId(),
+                        request.getTaskLocationChecksImageId());
             }
 
         } catch (Exception e) {
-            log.error("Failed to call image comparison service for comparisonId={}, checkExecutionId={}: {}",
-                    request.getComparisonId(),
+            log.error("Failed to call image comparison service for checkExecutionId={}, refImageId={}: {}",
                     request.getTaskCheckExecutionId(),
+                    request.getTaskLocationChecksImageId(),
                     e.getMessage(), e);
         }
     }
@@ -73,20 +78,21 @@ public class ImageComparisonService {
     @Async
     public void sendMatchingFeedbackAsync(MatchingFeedbackRequest request) {
         try {
-            log.info("Sending matching feedback for comparisonId={}, checkExecutionId={}, refImageId={}, matching={}",
-                    request.getComparisonId(),
+            log.info("Sending matching feedback for checkExecutionId={}, refImageId={}, matching={}",
                     request.getTaskCheckExecutionId(),
                     request.getTaskLocationChecksImageId(),
                     request.getMatching());
 
             imageComparisonFeignClient.sendMatchingFeedback(request);
 
-            log.info("Successfully sent matching feedback for comparisonId={}",
-                    request.getComparisonId());
+            log.info("Successfully sent matching feedback for checkExecutionId={}, refImageId={}",
+                    request.getTaskCheckExecutionId(),
+                    request.getTaskLocationChecksImageId());
 
         } catch (Exception e) {
-            log.error("Failed to send matching feedback for comparisonId={}: {}",
-                    request.getComparisonId(),
+            log.error("Failed to send matching feedback for checkExecutionId={}, refImageId={}: {}",
+                    request.getTaskCheckExecutionId(),
+                    request.getTaskLocationChecksImageId(),
                     e.getMessage(), e);
         }
     }

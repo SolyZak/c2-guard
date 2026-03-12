@@ -6,10 +6,8 @@ import lombok.Data;
 @Data
 @Builder
 public class ImageComparisonRequest {
-    private Long comparisonId;
     private Long taskCheckExecutionId;
     private Long taskLocationChecksImageId;
     private String referenceImagePath;
     private String evidenceImagePath;
-    private Long customerId;
 }

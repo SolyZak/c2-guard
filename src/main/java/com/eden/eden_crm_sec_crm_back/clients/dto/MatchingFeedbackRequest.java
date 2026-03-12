@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class MatchingFeedbackRequest {
-    private Long comparisonId;
     private Long taskCheckExecutionId;
     private Long taskLocationChecksImageId;
     private Boolean matching;

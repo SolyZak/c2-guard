@@ -98,12 +98,10 @@ public class TaskExecutionService {
 
             imageComparisonService.compareImagesAsync(
                     ImageComparisonRequest.builder()
-                            .comparisonId(comparison.getId())
                             .taskCheckExecutionId(request.getTaskCheckExecutionId())
                             .taskLocationChecksImageId(taskLocationChecksImageId)
                             .referenceImagePath(storageBaseUrl + referenceImagePath)
                             .evidenceImagePath(storageBaseUrl + request.getEvidenceImagePath())
-                            .customerId(request.getCustomerId())
                             .build());
         }
 

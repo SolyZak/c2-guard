@@ -17,6 +17,9 @@ public interface TaskCheckComparisonRepository {
 
     Optional<TaskCheckComparison> findByTaskCheckExecutionId(Long taskCheckExecutionId);
 
+    Optional<TaskCheckComparison> findByTaskCheckExecutionIdAndTaskLocationChecksImageId(
+            Long taskCheckExecutionId, Long taskLocationChecksImageId);
+
     List<TaskCheckComparison> findAllByTaskCheckDefinitionId(Long taskCheckDefinitionId);
 
     List<TaskCheckComparisonReportProjection> findComparisonReport(

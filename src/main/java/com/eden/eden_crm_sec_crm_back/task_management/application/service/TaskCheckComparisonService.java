@@ -57,7 +57,6 @@ public class TaskCheckComparisonService {
         LocalDateTime fromDate = from.atStartOfDay();
         LocalDateTime toDate = to.atTime(23, 59, 59);
 
-        // Normalize taskName: treat blank as null for cleaner query logic
         String normalizedTaskName = (taskName != null && !taskName.isBlank()) ? taskName.trim() : null;
 
         Pageable pageable = PageRequest.of(page, size);
@@ -130,7 +129,6 @@ public class TaskCheckComparisonService {
 
         imageComparisonService.sendMatchingFeedbackAsync(
                 MatchingFeedbackRequest.builder()
-                        .comparisonId(comparison.getId())
                         .taskCheckExecutionId(comparison.getTaskCheckExecutionId())
                         .taskLocationChecksImageId(comparison.getTaskLocationChecksImageId())
                         .matching(comparison.getMatching())
