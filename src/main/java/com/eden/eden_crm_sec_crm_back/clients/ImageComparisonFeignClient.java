@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-        name = "image-comparison-service"
+        name = "pcd-ai-service"
 )
 public interface ImageComparisonFeignClient {
 
