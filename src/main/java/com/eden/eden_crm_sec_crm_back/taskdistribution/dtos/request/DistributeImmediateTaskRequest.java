@@ -12,18 +12,8 @@ import java.util.Set;
 @Builder
 public record DistributeImmediateTaskRequest(
 
-    // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────────
-    // Legacy field pointing to the old `task` table.
-    // @NotNull removed so clients using the new taskDefinitionId path don't need to send this.
-    // CLEANUP: remove this field entirely after Phase E cleanup migration.
-    Long taskId,
-    // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────────
-
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // New field targeting the task_management module via the ACL (TaskPresenter).
-    // CLEANUP: add @NotNull here once taskId is retired and task_definition_id is NOT NULL in DB.
+    @NotNull
     Long taskDefinitionId,
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     @NotNull
     OffsetDateTime startDateTime,
@@ -45,13 +35,4 @@ public record DistributeImmediateTaskRequest(
     public boolean isLocationProvided() {
         return locationId != null || (locationName != null && latitude != null && longitude != null);
     }
-
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // Cross-field validation: at least one task reference must be provided.
-    // CLEANUP: remove this method and replace with @NotNull on taskDefinitionId once taskId is retired.
-    @AssertTrue(message = "must provide either taskId or taskDefinitionId")
-    public boolean isTaskReferenceProvided() {
-        return taskId != null || taskDefinitionId != null;
-    }
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 }

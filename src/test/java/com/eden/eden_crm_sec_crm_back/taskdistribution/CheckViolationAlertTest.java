@@ -201,8 +201,8 @@ class CheckViolationAlertTest {
     }
 
     @Test
-    void listCheck_descriptionIsCheckName_notTaskName() {
-        // For LIST violations the description is the check definition name, not the task name
+    void listCheck_descriptionIsTaskNameDashCheckName() {
+        // For LIST violations the description is "taskName - checkName"
         ListCheckValue settings = new ListCheckValue(List.of("Pass", "Fail"), "Fail");
         TaskCheckDefinitionPayload checkDef = checkDef("Perimeter Status", "CRITICAL", "LIST", settings);
         when(taskPresenter.getTaskDefinition(42L)).thenReturn(
@@ -215,7 +215,7 @@ class CheckViolationAlertTest {
 
         ArgumentCaptor<TriggerEventDto> captor = ArgumentCaptor.forClass(TriggerEventDto.class);
         verify(crmTriggerLogService).addNewCrmTriggerLog(captor.capture());
-        assertThat(captor.getValue().getDescription()).isEqualTo("Perimeter Status");
+        assertThat(captor.getValue().getDescription()).isEqualTo("Evening Rounds - Perimeter Status");
     }
 
     // ─── NUMBER check ─────────────────────────────────────────────────────────────
@@ -254,8 +254,8 @@ class CheckViolationAlertTest {
     }
 
     @Test
-    void numberCheck_descriptionIsTaskName() {
-        // For NUMBER violations the description is the task name, not the check name
+    void numberCheck_descriptionIsTaskNameDashCheckName() {
+        // For NUMBER violations the description is "taskName - checkName"
         NumberCheckValue settings = new NumberCheckValue("items", "gte", 10);
         TaskCheckDefinitionPayload checkDef = checkDef("Item Count", "HIGH", "NUMBER", settings);
         when(taskPresenter.getTaskDefinition(42L)).thenReturn(
@@ -269,7 +269,7 @@ class CheckViolationAlertTest {
 
         ArgumentCaptor<TriggerEventDto> captor = ArgumentCaptor.forClass(TriggerEventDto.class);
         verify(crmTriggerLogService).addNewCrmTriggerLog(captor.capture());
-        assertThat(captor.getValue().getDescription()).isEqualTo("Stock Audit Task");
+        assertThat(captor.getValue().getDescription()).isEqualTo("Stock Audit Task - Item Count");
     }
 
     // ─── DECIMAL check ────────────────────────────────────────────────────────────

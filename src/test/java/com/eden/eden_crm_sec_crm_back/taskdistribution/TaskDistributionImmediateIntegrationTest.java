@@ -182,20 +182,4 @@ class TaskDistributionImmediateIntegrationTest {
         verifyNoInteractions(taskAssignmentRepository);
     }
 
-    @Test
-    @DisplayName("[REQUEST VALIDATION] neither taskId nor taskDefinitionId provided: isTaskReferenceProvided returns false")
-    void distributeImmediateRequest_withNoTaskReference_failsValidation() {
-        DistributeImmediateTaskRequest request = DistributeImmediateTaskRequest.builder()
-            .taskId(null)
-            .taskDefinitionId(null)
-            .startDateTime(START)
-            .endDateTime(END)
-            .workforceIds(Set.of(WORKFORCE_ID))
-            .locationName("Gate D")
-            .latitude(new java.math.BigDecimal("24.7136"))
-            .longitude(new java.math.BigDecimal("46.6753"))
-            .build();
-
-        assertThat(request.isTaskReferenceProvided()).isFalse();
-    }
 }
