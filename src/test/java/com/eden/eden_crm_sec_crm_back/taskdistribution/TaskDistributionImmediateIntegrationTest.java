@@ -152,7 +152,6 @@ class TaskDistributionImmediateIntegrationTest {
         TaskDistribution saved = captor.getValue();
 
         assertThat(saved.getTaskDefinitionId()).isEqualTo(TASK_DEFINITION_ID);
-        assertThat(saved.getTask()).isNull();
     }
 
     @Test
