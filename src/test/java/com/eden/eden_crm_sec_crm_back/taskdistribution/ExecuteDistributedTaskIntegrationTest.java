@@ -101,7 +101,7 @@ class ExecuteDistributedTaskIntegrationTest {
     }
 
     @Test
-    @DisplayName("[NEW PATH] taskDefinitionId set → TaskExecution created via presenter, slot.newTaskExecutionId stored")
+    @DisplayName("[NEW PATH] taskDefinitionId set → TaskExecution created via presenter, slot.taskExecutionId stored")
     void executeTask_withTaskDefinitionId_usesPresenterAndStoresNewTaskExecutionId() {
         TaskDistribution distribution = TaskDistribution.builder()
             .taskDefinitionId(TASK_DEFINITION_ID)
@@ -163,7 +163,7 @@ class ExecuteDistributedTaskIntegrationTest {
         assertThat(submitted.getCheckType()).isEqualTo("TEXT");
         assertThat(submitted.getCheckValues()).isInstanceOf(TextCheckValue.class);
 
-        assertThat(slot.getNewTaskExecutionId()).isEqualTo(TASK_EXECUTION_ID);
+        assertThat(slot.getTaskExecutionId()).isEqualTo(TASK_EXECUTION_ID);
         assertThat(slot.getStatus()).isEqualTo(TaskDistributionStatus.FINISHED);
         assertThat(slot.getExecutedByWorkforceId()).isEqualTo(WORKFORCE_ID);
     }

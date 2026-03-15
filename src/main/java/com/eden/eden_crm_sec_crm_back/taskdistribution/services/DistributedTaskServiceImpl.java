@@ -226,7 +226,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             );
         });
 
-        taskExecutionSlot.setNewTaskExecutionId(taskExecution.getId());
+        taskExecutionSlot.setTaskExecutionId(taskExecution.getId());
         taskExecutionSlot.setStatus(TaskDistributionStatus.FINISHED);
         taskExecutionSlot.setExecutedByWorkforceId(checkInData.getWorkforceId());
 
