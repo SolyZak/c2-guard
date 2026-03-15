@@ -16,7 +16,6 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.PatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PatrolDetailRepository;
-import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.PatrolsService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -36,7 +35,6 @@ import java.util.stream.Collectors;
 public class PatrolsServiceImpl implements PatrolsService {
     private final PatrolRepository patrolRepository;
     private final LocationRepository locationRepository;
-    private final TaskRepository taskRepository;
     private final PatrolDetailRepository patrolDetailRepository;
     private final CustomerRepository customerRepository;
     private final Utils utils;
@@ -132,7 +130,6 @@ public class PatrolsServiceImpl implements PatrolsService {
                 for(Long id : detailsIds) {
                     PatrolResponseDetail detail = new PatrolResponseDetail();
                     detail.setLocations(locationRepository.getLocationNamesByDetailId(id));
-                    detail.setTasks(taskRepository.getTaskNamesByDetailId(id));
                     detail.setTaskDefinitions(patrolDetailRepository.getTaskDefinitionNamesByDetailId(id));
                     dto.getDetails().add(detail);
                 }

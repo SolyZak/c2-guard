@@ -11,7 +11,6 @@ import com.eden.eden_crm_sec_crm_back.patrols.repositories.PatrolRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PatrolDetailRepository;
-import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
 import com.eden.eden_crm_sec_crm_back.service.impl.PatrolsServiceImpl;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskDefinitionPayload;
@@ -38,7 +37,6 @@ class PatrolsServiceDualModeIntegrationTest {
 
     @Mock private PatrolRepository patrolRepository;
     @Mock private LocationRepository locationRepository;
-    @Mock private TaskRepository taskRepository;
     @Mock private PatrolDetailRepository patrolDetailRepository;
     @Mock private CustomerRepository customerRepository;
     @Mock private Utils utils;
@@ -53,7 +51,7 @@ class PatrolsServiceDualModeIntegrationTest {
     @BeforeEach
     void setUp() {
         service = new PatrolsServiceImpl(
-            patrolRepository, locationRepository, taskRepository,
+            patrolRepository, locationRepository,
             patrolDetailRepository, customerRepository, utils, taskPresenter
         );
 
@@ -96,7 +94,6 @@ class PatrolsServiceDualModeIntegrationTest {
         assertThat(detail.getTaskDefinitionId()).isEqualTo(TASK_DEFINITION_ID);
 
         verify(taskPresenter).getTaskDefinition(TASK_DEFINITION_ID);
-        verifyNoInteractions(taskRepository);
     }
 
     private static AddPatrolRequest buildPatrolRequest(List<AddPatrolDetailRequest> details) {
