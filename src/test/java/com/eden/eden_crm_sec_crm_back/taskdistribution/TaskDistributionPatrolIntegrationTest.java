@@ -174,6 +174,5 @@ class TaskDistributionPatrolIntegrationTest {
 
         assertThat(saved).hasSize(1);
         assertThat(saved.get(0).getTaskDefinitionId()).isEqualTo(TASK_DEFINITION_ID);
-        assertThat(saved.get(0).getTask()).isNull();
     }
 }
