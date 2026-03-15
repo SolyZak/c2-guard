@@ -12,11 +12,7 @@ import com.eden.eden_crm_sec_crm_back.dto.response.TaskCheckDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerSiteService;
-import com.eden.eden_crm_sec_crm_back.service.TaskService;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
-// ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-// ACL interface and payload types from task_management module.
-// CLEANUP: keep all imports permanently after Phase E; remove TaskService fallback.
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckDefinitionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskDefinitionPayload;
@@ -45,16 +41,7 @@ public class WorkforceController {
 
     private final WorkforceService workforceService;
     private final CustomerSiteService customerSiteService;
-    // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────────
-    // Legacy service — still used as fallback for old task IDs.
-    // CLEANUP: remove after Phase E when all tasks are in task_management.
-    private final TaskService taskService;
-    // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────────
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // ACL presenter — tried first for every getTaskById call.
-    // CLEANUP: this field stays permanently after Phase E.
     private final TaskPresenter taskPresenter;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     @Operation(summary = "Get customers dropdown list, that's workforce security company contracted with")
     @GetMapping("/customers/dropdown")
@@ -100,23 +87,8 @@ public class WorkforceController {
 
     @GetMapping("/{taskId}")
     public ApiResponse<TaskCheckDto> getTaskById(@PathVariable("taskId") Long taskId) {
-        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
-        // Try the new task_management module first.
-        // If it succeeds, convert TaskDefinitionPayload → TaskCheckDto and return.
-        // CLEANUP: after Phase E, remove the try-catch; keep only the new-path block.
-        try {
-            TaskDefinitionPayload taskDefinition = taskPresenter.getTaskDefinition(taskId);
-            return ApiResponse.ok(toTaskCheckDto(taskDefinition));
-        } catch (Exception ignored) {
-            // Task not found in new module — fall through to legacy path.
-        }
-        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
-
-        // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────
-        // Fallback: old task table. Reached only when taskPresenter throws.
-        // CLEANUP: delete this block after Phase E.
-        return ApiResponse.ok(taskService.getTaskById(taskId));
-        // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────
+        TaskDefinitionPayload taskDefinition = taskPresenter.getTaskDefinition(taskId);
+        return ApiResponse.ok(toTaskCheckDto(taskDefinition));
     }
 
     @PostMapping("/{id}/location")
@@ -128,10 +100,6 @@ public class WorkforceController {
         return ApiResponse.ok(Map.of("message", "Workforce location updated successfully"));
     }
 
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // Converts the task_management payload into the legacy TaskCheckDto shape that
-    // existing clients expect. Same endpoint, same response contract.
-    // CLEANUP: remove after Phase E when clients are updated to the new payload format.
     private static TaskCheckDto toTaskCheckDto(TaskDefinitionPayload taskDefinition) {
         List<TaskCheckDTO> checks = taskDefinition.getChecks().stream()
             .map(WorkforceController::toTaskCheckDTO)
@@ -190,5 +158,4 @@ public class WorkforceController {
             default -> throw new IllegalStateException("Unknown check type: " + checkDef.getCheckType());
         };
     }
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 }

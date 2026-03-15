@@ -7,11 +7,7 @@ import com.eden.eden_crm_sec_crm_back.entity.Trigger;
 import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
 import com.eden.eden_crm_sec_crm_back.enums.Severity;
 import com.eden.eden_crm_sec_crm_back.enums.TriggerCode;
-import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
-// ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-// ACL interface from task_management module — used to look up task name for new-path distributions.
-// CLEANUP: this import stays permanently after Phase E.
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskDefinitionPayload;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
@@ -46,11 +42,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
     private final CrmTriggerLogService crmTriggerLogService;
     private final C2AlertEventService c2AlertEventService;
     private final TriggerRepository triggerRepository;
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // ACL port — fetches task name for new-path distributions.
-    // CLEANUP: this field stays permanently after Phase E.
     private final TaskPresenter taskPresenter;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
     @Builder
     private record LocationPoints(BigDecimal longitude, BigDecimal latitude) {}
 
@@ -84,27 +76,9 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
         final TaskDistribution taskDistribution = executionSlot.getTaskDistribution();
         final LocationPoints locationPoints = getLocation(taskDistribution);
 
-        // ─── [TASK-MIGRATION] dual-mode ────────────────────────────────────────────────
-        // NEW path: fetch task name and severity from task_management ACL.
-        // COEXISTENCE path: read name from the legacy Task entity; severity from AlertTriggerSeverity.
-        // CLEANUP: remove COEXISTENCE branch and guard after Phase E.
-        final String taskName;
-        final Severity taskSeverity;
-        if (taskDistribution.getTaskDefinitionId() != null) {
-            // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
-            TaskDefinitionPayload taskDef = taskPresenter.getTaskDefinition(taskDistribution.getTaskDefinitionId());
-            taskName     = taskDef.getName();
-            // Convert task_management severity String to legacy CRM Severity enum — values are identical
-            taskSeverity = Severity.valueOf(taskDef.getSeverity());
-            // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
-        } else {
-            // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────
-            // CLEANUP: delete this branch after Phase E.
-            taskName     = taskDistribution.getTask().getName();
-            taskSeverity = null;  // old-path: falls back to AlertTriggerSeverity table
-            // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────
-        }
-        // ─── [TASK-MIGRATION] END dual-mode ───────────────────────────────────────────
+        TaskDefinitionPayload taskDef = taskPresenter.getTaskDefinition(taskDistribution.getTaskDefinitionId());
+        final String taskName = taskDef.getName();
+        final Severity taskSeverity = Severity.valueOf(taskDef.getSeverity());
 
         // Build patrol name — used in description to identify which patrol missed the task
         final String patrolName;
@@ -150,12 +124,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
                 .locationId(locationId)
                 .build();
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
-        if (taskSeverity != null) {
-            // New-path: severity from task definition — bypass AlertTriggerSeverity table
-            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(crmTriggerLog, taskSeverity , 5L);
-        } else {
-            c2AlertEventService.sendNewC2AlertEvent(crmTriggerLog);  // old path
-        }
+        c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(crmTriggerLog, taskSeverity, 5L);
     }
 
     private LocationPoints getLocation(final TaskDistribution taskDistribution) {

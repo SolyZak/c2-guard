@@ -16,11 +16,7 @@ import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckTextDTO;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
-import com.eden.eden_crm_sec_crm_back.models.Task;
-import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskCheckPatrolExecution;
-import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecution;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
-import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
 import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
@@ -80,21 +76,13 @@ import java.util.stream.IntStream;
 public class DistributedTaskServiceImpl implements DistributedTaskService {
     private final CustomerRepository customerRepository;
     private final TaskExecutionSlotRepository taskExecutionSlotRepository;
-    private final TaskPatrolExecutionRepository taskPatrolExecutionRepository;
     private final TaskDistributionMapper taskDistributionMapper;
     private final AttendanceFeignClient attendanceClient;
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // ACL ports injected via @RequiredArgsConstructor.
-    // CLEANUP: both fields stay permanently after Phase E.
     private final TaskPresenter taskPresenter;
     private final TaskExecutionPresenter taskExecutionPresenter;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-    // ─── [TASK-MIGRATION] NEW: check violation alerts ─────────────────────────────
-    // CLEANUP: stays permanently after Phase E.
     private final TriggerRepository triggerRepository;
     private final CrmTriggerLogService crmTriggerLogService;
     private final C2AlertEventService c2AlertEventService;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     @Builder
     private record LocationPoints(BigDecimal longitude, BigDecimal latitude, Long siteId, Long locationId) {}
@@ -129,10 +117,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             List<TodayTaskExecutionSlotEntryResponse> slotResponses = taskDistributionMapper.toExecutionSlotResponseList(slotsList);
             TodayTaskEntryResponse response = taskDistributionMapper.toTodayTaskEntryResponse(lastSlot, slotResponses);
 
-            // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
-            // For new-path distributions, task is null so taskName comes back null from the LEFT JOIN.
-            // Enrich the name from the task_management ACL before returning the response.
-            // CLEANUP: remove this block after Phase E (task always from task_definition by then).
             if (response.taskName() == null && response.taskDefinitionId() != null) {
                 String taskName = taskPresenter.getTaskDefinition(response.taskDefinitionId()).getName();
                 response = TodayTaskEntryResponse.builder()
@@ -158,7 +142,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                     .executionSlots(response.executionSlots())
                     .build();
             }
-            // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
 
             tasks.add(response);
         });
@@ -171,44 +154,10 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         CheckInData checkInData = attendanceClient.checkInData();
         Customer customer = getCustomer(checkInData.getCustomerId());
         TaskExecutionSlot taskExecutionSlot = getTaskExecutionSlot(request.executionSlotId());
-
-        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-        // New path: slot belongs to a distribution that uses task_management.
-        // Creates a TaskExecution + TaskCheckExecution via the ACL presenter.
-        // CLEANUP: after Phase E, remove the COEXISTENCE block and keep only this path.
-        Task task = taskExecutionSlot.getTaskDistribution().getTask();
-
-        if (task == null) {
-            // New-path distribution: task is null, use task_definition_id instead
-            Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTaskDefinitionId();
-            if (taskDefinitionId == null) {
-                throw new BusinessException(
-                        "No task or task definition found for this distribution",
-                        HttpStatus.BAD_REQUEST
-                );
-            }
-            executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId, images);
-            return;
-        }
-        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-
-        // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────────
-        // Old path: slot belongs to a distribution that uses legacy Task entity.
-        // Creates TaskPatrolExecution in the old model.
-        // CLEANUP: delete this entire block after Phase E.
-        checkTaskExecutionConstraints(request, taskExecutionSlot, task);
-        TaskPatrolExecution taskPatrolExecution = createTaskPatrolExecution(request, task, customer);
-        taskPatrolExecution = taskPatrolExecutionRepository.save(taskPatrolExecution);
-        taskExecutionSlot.setStatus(TaskDistributionStatus.FINISHED);
-        taskExecutionSlot.setTaskExecution(taskPatrolExecution);
-        taskExecutionSlot.setExecutedByWorkforceId(checkInData.getWorkforceId());
-        // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────────
+        Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTaskDefinitionId();
+        executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId, images);
     }
 
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // Handles execution for new-path distributions (task_management module).
-    // Validates check types, creates TaskExecution, and submits each TaskCheckExecution.
-    // CLEANUP: rename to the main execution method after Phase E.
     private void executeNewPathTask(
             ExecuteDistributedTaskRequest request,
             CheckInData checkInData,
@@ -285,10 +234,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         evaluateAndFireCheckAlerts(checkDefs, request.checks(), taskDefinition.getName(), customer, taskExecutionSlot);
     }
 
-    /**
-     * Derives the check-type string used by task_management from the polymorphic DTO class.
-     * CLEANUP: remove after Phase E once legacy DTOs are retired.
-     */
     private static String getCheckTypeFromDto(TaskCheckDTO dto) {
         if (dto instanceof TaskCheckTextDTO)    return "TEXT";
         if (dto instanceof TaskCheckNumberDTO)  return "NUMBER";
@@ -298,10 +243,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * Converts a legacy TaskCheckDTO into the TaskCheckValue used by task_management.
-     * CLEANUP: remove after Phase E once legacy DTOs are retired.
-     */
     private static TaskCheckValue toCheckValue(TaskCheckDTO dto) {
         if (dto instanceof TaskCheckTextDTO t)    return new TextCheckValue(t.getNotes());
         if (dto instanceof TaskCheckNumberDTO n)  return new NumberCheckValue(n.getUnit(), n.getOperator(), n.getValue());
@@ -311,10 +252,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
     }
 
-    // ─── [TASK-MIGRATION] NEW: check violation alerts ─────────────────────────────
-    // Fires PATROL_TASK_Deviation for each submitted check that violates its defined rule.
-    // Only checks with a severity level will trigger an alert.
-    // CLEANUP: stays permanently after Phase E.
     private void evaluateAndFireCheckAlerts(
         List<TaskCheckDefinitionPayload> checkDefs,
         List<TaskCheckDTO> submittedChecks,
@@ -418,57 +355,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             .siteId(0L)
             .locationId(null)
             .build();
-    }
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-
-    private static void checkTaskExecutionConstraints(
-        ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-        TaskExecutionSlot taskExecutionSlot,
-        Task task
-    ) {
-        OffsetDateTime now = OffsetDateTime.now();
-        if (
-            taskExecutionSlot.getStatus() != TaskDistributionStatus.CURRENT
-                || now.isBefore(taskExecutionSlot.getStartDateTime())
-                || now.isAfter(taskExecutionSlot.getEndDateTime())
-        )
-            throw new BusinessException(MessageUtil.getMessage("task.execute.error"), HttpStatus.BAD_REQUEST);
-
-        if (task.getTaskChecks().size() != executeDistributedTaskRequest.checks().size())
-            throw new BusinessException("Task check size not matched", HttpStatus.BAD_REQUEST);
-
-        IntStream.range(0, task.getTaskChecks().size())
-            .forEach(i -> {
-                var expected = executeDistributedTaskRequest.checks().get(i).getClass();
-                var actual = task.getTaskChecks().get(i).mapToResponse().getClass();
-
-                if (!actual.equals(expected))
-                    throw new BusinessException("Task check type not matched", HttpStatus.BAD_REQUEST);
-            });
-    }
-
-    private static TaskPatrolExecution createTaskPatrolExecution(
-        ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-        Task task,
-        Customer customer
-    ) {
-        TaskPatrolExecution taskPatrolExecution = new TaskPatrolExecution();
-        taskPatrolExecution.setId(task.getId());
-        taskPatrolExecution.setName(task.getName());
-        List<TaskCheckPatrolExecution> taskChecksPatrolExecution = createTaskCheckPatrolExecutions(executeDistributedTaskRequest, taskPatrolExecution);
-        taskPatrolExecution.setTaskCheckPatrolExecutions(taskChecksPatrolExecution);
-        taskPatrolExecution.setCustomer(customer);
-        return taskPatrolExecution;
-    }
-
-    private static List<TaskCheckPatrolExecution> createTaskCheckPatrolExecutions(
-        ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-        TaskPatrolExecution taskPatrolExecution
-    ) {
-        List<TaskCheckPatrolExecution> taskChecksPatrolExecution = new ArrayList<>(executeDistributedTaskRequest.checks().size());
-        executeDistributedTaskRequest.checks()
-            .forEach(check -> taskChecksPatrolExecution.add(check.mapToExecutionEntity(taskPatrolExecution)));
-        return taskChecksPatrolExecution;
     }
 
     private TaskExecutionSlot getTaskExecutionSlot(Long executionSlotId) {

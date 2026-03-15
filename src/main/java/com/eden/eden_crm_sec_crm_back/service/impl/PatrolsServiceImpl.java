@@ -3,9 +3,6 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.base.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
-// ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-// ACL interface from task_management module.
-// CLEANUP: this import stays permanently after Phase E.
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolKeyValueDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolResponseDetail;
@@ -43,11 +40,7 @@ public class PatrolsServiceImpl implements PatrolsService {
     private final PatrolDetailRepository patrolDetailRepository;
     private final CustomerRepository customerRepository;
     private final Utils utils;
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // ACL port — validates taskDefinitionIds for new-path patrol creation.
-    // CLEANUP: this field stays permanently after Phase E.
     private final TaskPresenter taskPresenter;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     private static final Set<String> FREQ_BY_NAME = new HashSet<>();
     private static final Set<String> FREQ_BY_RATE = new HashSet<>();
@@ -68,10 +61,7 @@ public class PatrolsServiceImpl implements PatrolsService {
         List<PatrolDetail> patrolDetails = new ArrayList<>();
         Patrol patrol = new Patrol();
 
-        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
-        // Collect unique taskDefinitionId + locationId pairs for image init after patrol save.
         Set<String> locationCheckImagePairs = new LinkedHashSet<>();
-        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
 
         for (AddPatrolDetailRequest detailRequest : request.getDetails()) {
             PatrolDetail patrolDetail = new PatrolDetail();
@@ -80,53 +70,18 @@ public class PatrolsServiceImpl implements PatrolsService {
                 throw new BusinessException(MessageUtil.getMessage("validation.patrol.locations.invalid"), HttpStatus.BAD_REQUEST);
             }
 
-            // ─── [TASK-MIGRATION] dual-mode ────────────────────────────────────────────
-            // NEW path: client sends taskDefinitionIds (task_management module).
-            // COEXISTENCE path: client sends tasks (legacy Task entity IDs).
-            // CLEANUP: remove COEXISTENCE branch and keep only NEW path after Phase E.
-            boolean useNewPath = detailRequest.getTaskDefinitionIds() != null
-                    && !detailRequest.getTaskDefinitionIds().isEmpty();
-
-            if (useNewPath) {
-                // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────
-                // Validate each taskDefinitionId exists in task_management (throws if not).
-                // Set patrolDetail.taskDefinitionId; leave task null.
-                List<Long> taskDefIds = detailRequest.getTaskDefinitionIds();
-                taskDefIds.forEach(id -> taskPresenter.getTaskDefinition(id)); // validate existence
-                for (Location location : locations) {
-                    for (Long taskDefId : taskDefIds) {
-                        patrolDetail.setLocation(location);
-                        patrolDetail.setTaskDefinitionId(taskDefId);
-                        patrolDetail.setPatrol(patrol);
-                        patrolDetails.add(patrolDetail);
-                        patrolDetail = new PatrolDetail();
-
-                        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────
-                        // Track unique pair for image init after save
-                        locationCheckImagePairs.add(taskDefId + ":" + location.getId());
-                        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────
-                    }
+            List<Long> taskDefIds = detailRequest.getTaskDefinitionIds();
+            taskDefIds.forEach(id -> taskPresenter.getTaskDefinition(id));
+            for (Location location : locations) {
+                for (Long taskDefId : taskDefIds) {
+                    patrolDetail.setLocation(location);
+                    patrolDetail.setTaskDefinitionId(taskDefId);
+                    patrolDetail.setPatrol(patrol);
+                    patrolDetails.add(patrolDetail);
+                    patrolDetail = new PatrolDetail();
+                    locationCheckImagePairs.add(taskDefId + ":" + location.getId());
                 }
-                // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────
-            } else {
-                // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────
-                // CLEANUP: delete this branch after Phase E.
-                List<Task> tasks = taskRepository.findAllById(detailRequest.getTasks());
-                if (tasks.size() != detailRequest.getTasks().size()) {
-                    throw new BusinessException(MessageUtil.getMessage("validation.patrol.tasks.invalid"), HttpStatus.BAD_REQUEST);
-                }
-                for (Location location : locations) {
-                    for (Task task : tasks) {
-                        patrolDetail.setLocation(location);
-                        patrolDetail.setTask(task);
-                        patrolDetail.setPatrol(patrol);
-                        patrolDetails.add(patrolDetail);
-                        patrolDetail = new PatrolDetail();
-                    }
-                }
-                // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────
             }
-            // ─── [TASK-MIGRATION] END dual-mode ───────────────────────────────────────
         }
         patrol.setName(request.getPatrolName());
         patrol.setPatrolDetails(patrolDetails);
@@ -151,18 +106,12 @@ public class PatrolsServiceImpl implements PatrolsService {
         patrol.setCustomer(customer);
         patrolRepository.save(patrol);
 
-        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
-        // After patrol is saved, initialize task_location_checks_image rows
-        // for each unique taskDefinitionId + locationId pair.
-        // Rows that already exist (same locationId + taskCheckDefinitionId) are
-        // skipped inside the service — safe for duplicate patrol creations.
         for (String pair : locationCheckImagePairs) {
             String[] parts = pair.split(":");
             Long taskDefId = Long.parseLong(parts[0]);
             Long locationId = Long.parseLong(parts[1]);
             taskPresenter.initLocationCheckImages(taskDefId, locationId, customerId);
         }
-        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
     }
 
     @Override
