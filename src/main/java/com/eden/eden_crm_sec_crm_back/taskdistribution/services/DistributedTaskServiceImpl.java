@@ -16,11 +16,7 @@ import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckTextDTO;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
-import com.eden.eden_crm_sec_crm_back.models.Task;
-import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskCheckPatrolExecution;
-import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecution;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
-import com.eden.eden_crm_sec_crm_back.repository.TaskPatrolExecutionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
 import com.eden.eden_crm_sec_crm_back.service.impl.CrmTriggerLogService;
@@ -75,18 +71,13 @@ import java.util.stream.IntStream;
 public class DistributedTaskServiceImpl implements DistributedTaskService {
     private final CustomerRepository customerRepository;
     private final TaskExecutionSlotRepository taskExecutionSlotRepository;
-    private final TaskPatrolExecutionRepository taskPatrolExecutionRepository;
     private final TaskDistributionMapper taskDistributionMapper;
     private final AttendanceFeignClient attendanceClient;
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
     private final TaskPresenter taskPresenter;
     private final TaskExecutionPresenter taskExecutionPresenter;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-    // ─── [TASK-MIGRATION] NEW: check violation alerts ─────────────────────────────
     private final TriggerRepository triggerRepository;
     private final CrmTriggerLogService crmTriggerLogService;
     private final C2AlertEventService c2AlertEventService;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 
     @Builder
     private record LocationPoints(BigDecimal longitude, BigDecimal latitude, Long siteId, Long locationId) {}
@@ -121,7 +112,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             List<TodayTaskExecutionSlotEntryResponse> slotResponses = taskDistributionMapper.toExecutionSlotResponseList(slotsList);
             TodayTaskEntryResponse response = taskDistributionMapper.toTodayTaskEntryResponse(lastSlot, slotResponses);
 
-            // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────
             if (response.taskName() == null && response.taskDefinitionId() != null) {
                 String taskName = taskPresenter.getTaskDefinition(response.taskDefinitionId()).getName();
                 response = TodayTaskEntryResponse.builder()
@@ -147,7 +137,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                         .executionSlots(response.executionSlots())
                         .build();
             }
-            // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────
 
             tasks.add(response);
         });
@@ -160,34 +149,10 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         CheckInData checkInData = attendanceClient.checkInData();
         Customer customer = getCustomer(checkInData.getCustomerId());
         TaskExecutionSlot taskExecutionSlot = getTaskExecutionSlot(request.executionSlotId());
-
-        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-        Task task = taskExecutionSlot.getTaskDistribution().getTask();
-
-        if (task == null) {
-            Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTaskDefinitionId();
-            if (taskDefinitionId == null) {
-                throw new BusinessException(
-                        "No task or task definition found for this distribution",
-                        HttpStatus.BAD_REQUEST
-                );
-            }
-            executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId, images);
-            return;
-        }
-        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-
-        // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────────
-        checkTaskExecutionConstraints(request, taskExecutionSlot, task);
-        TaskPatrolExecution taskPatrolExecution = createTaskPatrolExecution(request, task, customer);
-        taskPatrolExecution = taskPatrolExecutionRepository.save(taskPatrolExecution);
-        taskExecutionSlot.setStatus(TaskDistributionStatus.FINISHED);
-        taskExecutionSlot.setTaskExecution(taskPatrolExecution);
-        taskExecutionSlot.setExecutedByWorkforceId(checkInData.getWorkforceId());
-        // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────────
+        Long taskDefinitionId = taskExecutionSlot.getTaskDistribution().getTaskDefinitionId();
+        executeNewPathTask(request, checkInData, customer, taskExecutionSlot, taskDefinitionId, images);
     }
 
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
     private void executeNewPathTask(
             ExecuteDistributedTaskRequest request,
             CheckInData checkInData,
@@ -311,20 +276,20 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             LocationPoints loc = getLocationPoints(taskExecutionSlot.getTaskDistribution());
 
             TriggerEventDto dto = TriggerEventDto.builder()
-                    .triggerId(trigger.getId())
-                    .triggerName(trigger.getCode())
-                    .operationSiteId(loc.siteId())
-                    .customerId(customer.getId())
-                    .longitude(loc.longitude().doubleValue())
-                    .latitude(loc.latitude().doubleValue())
-                    .eventTime(now.toOffsetTime())
-                    .eventDate(now.toLocalDate())
-                    .servicePlatformName(ServicePlatformEnum.CRM.name())
-                    .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
-                    .serviceTriggerEventId(0L)
-                    .description(description)
-                    .locationId(loc.locationId())
-                    .build();
+                .triggerId(trigger.getId())
+                .triggerName(trigger.getCode())
+                .operationSiteId(loc.siteId())
+                .customerId(customer.getId())
+                .longitude(loc.longitude().doubleValue())
+                .latitude(loc.latitude().doubleValue())
+                .eventTime(now.toOffsetTime())
+                .eventDate(now.toLocalDate())
+                .servicePlatformName(ServicePlatformEnum.CRM.name())
+                .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
+                .serviceTriggerEventId(0L)
+                .description(description)
+                .locationId(loc.locationId())
+                .build();
 
             CrmTriggerLog log = crmTriggerLogService.addNewCrmTriggerLog(dto);
             c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(log, severity, 6L);
@@ -364,78 +329,27 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         if (taskDistribution.getDistributionType() == DistributionType.PATROL) {
             PatrolTaskDistribution ptd = taskDistribution.getPatrolTaskDistribution();
             return LocationPoints.builder()
-                    .longitude(ptd.getLocation().getLongitude())
-                    .latitude(ptd.getLocation().getLatitude())
-                    .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
-                    .locationId(ptd.getLocation().getId())
-                    .build();
+                .longitude(ptd.getLocation().getLongitude())
+                .latitude(ptd.getLocation().getLatitude())
+                .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
+                .locationId(ptd.getLocation().getId())
+                .build();
         }
         ImmediateTaskDistribution itd = taskDistribution.getImmediateTaskDistribution();
         if (itd != null && itd.getLocation() != null) {
             return LocationPoints.builder()
-                    .longitude(itd.getLocation().getLongitude())
-                    .latitude(itd.getLocation().getLatitude())
-                    .siteId(0L)
-                    .locationId(itd.getLocation().getId())
-                    .build();
+                .longitude(itd.getLocation().getLongitude())
+                .latitude(itd.getLocation().getLatitude())
+                .siteId(0L)
+                .locationId(itd.getLocation().getId())
+                .build();
         }
         return LocationPoints.builder()
-                .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
-                .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
-                .siteId(0L)
-                .locationId(null)
-                .build();
-    }
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-
-    private static void checkTaskExecutionConstraints(
-            ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-            TaskExecutionSlot taskExecutionSlot,
-            Task task
-    ) {
-        OffsetDateTime now = OffsetDateTime.now();
-        if (
-                taskExecutionSlot.getStatus() != TaskDistributionStatus.CURRENT
-                        || now.isBefore(taskExecutionSlot.getStartDateTime())
-                        || now.isAfter(taskExecutionSlot.getEndDateTime())
-        )
-            throw new BusinessException(MessageUtil.getMessage("task.execute.error"), HttpStatus.BAD_REQUEST);
-
-        if (task.getTaskChecks().size() != executeDistributedTaskRequest.checks().size())
-            throw new BusinessException("Task check size not matched", HttpStatus.BAD_REQUEST);
-
-        IntStream.range(0, task.getTaskChecks().size())
-                .forEach(i -> {
-                    var expected = executeDistributedTaskRequest.checks().get(i).getClass();
-                    var actual = task.getTaskChecks().get(i).mapToResponse().getClass();
-
-                    if (!actual.equals(expected))
-                        throw new BusinessException("Task check type not matched", HttpStatus.BAD_REQUEST);
-                });
-    }
-
-    private static TaskPatrolExecution createTaskPatrolExecution(
-            ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-            Task task,
-            Customer customer
-    ) {
-        TaskPatrolExecution taskPatrolExecution = new TaskPatrolExecution();
-        taskPatrolExecution.setId(task.getId());
-        taskPatrolExecution.setName(task.getName());
-        List<TaskCheckPatrolExecution> taskChecksPatrolExecution = createTaskCheckPatrolExecutions(executeDistributedTaskRequest, taskPatrolExecution);
-        taskPatrolExecution.setTaskCheckPatrolExecutions(taskChecksPatrolExecution);
-        taskPatrolExecution.setCustomer(customer);
-        return taskPatrolExecution;
-    }
-
-    private static List<TaskCheckPatrolExecution> createTaskCheckPatrolExecutions(
-            ExecuteDistributedTaskRequest executeDistributedTaskRequest,
-            TaskPatrolExecution taskPatrolExecution
-    ) {
-        List<TaskCheckPatrolExecution> taskChecksPatrolExecution = new ArrayList<>(executeDistributedTaskRequest.checks().size());
-        executeDistributedTaskRequest.checks()
-                .forEach(check -> taskChecksPatrolExecution.add(check.mapToExecutionEntity(taskPatrolExecution)));
-        return taskChecksPatrolExecution;
+            .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
+            .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
+            .siteId(0L)
+            .locationId(null)
+            .build();
     }
 
     private TaskExecutionSlot getTaskExecutionSlot(Long executionSlotId) {

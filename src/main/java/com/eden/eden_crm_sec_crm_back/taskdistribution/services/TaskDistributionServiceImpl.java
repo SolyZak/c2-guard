@@ -1,11 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
 import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
-// ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-// TaskPresenter is the ACL boundary exposed by the task_management module.
-// CLEANUP: this import stays permanently — it is the target integration point.
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
-// ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 import com.eden.eden_crm_sec_crm_back.dto.ContractIdsRequest;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -61,7 +57,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final SiteDistributionRepository siteDistributionRepository;
     private final LKCustomerContractOperationServiceRepository customerContractOperationServiceRepository;
     private final PatrolDetailRepository patrolDetailRepository;
-    private final TaskRepository taskRepository;
     private final TaskDistributionRepository taskDistributionRepository;
     private final PatrolTaskDistributionRepository patrolTaskDistributionRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
@@ -70,11 +65,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final CreateScheduledTaskForDistributionService createScheduledTaskForDistributionService;
     private final TaskDistributionMapper taskDistributionMapper;
     private final Utils utils;
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // ACL port — injected via @RequiredArgsConstructor like all other dependencies.
-    // CLEANUP: this field stays permanently after migration completes.
     private final TaskPresenter taskPresenter;
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
     @Override
@@ -104,24 +95,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
               for(PatrolDetail patrolDetail : patrolDetails) {
                   Patrol patrol = validateAndGetPatrol(patrolDetail, customer);
 
-                  // ─── [TASK-MIGRATION] dual-mode ────────────────────────────────────────────
-                  // NEW path: patrol detail carries taskDefinitionId (task_management module).
-                  // COEXISTENCE path: patrol detail still carries legacy Task entity.
-                  // CLEANUP: remove COEXISTENCE branch and make NEW path unconditional after Phase E.
-                  final TaskDistribution taskDistribution;
-                  if (patrolDetail.getTaskDefinitionId() != null) {
-                      // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────
-                      TaskDistribution newDist = buildTaskDistributionBase(customer, contract, DistributionType.PATROL);
-                      newDist.setTaskDefinitionId(patrolDetail.getTaskDefinitionId());
-                      taskDistribution = newDist;
-                      // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────
-                  } else {
-                      // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────
-                      // CLEANUP: delete this branch after Phase E.
-                      taskDistribution = buildTaskDistributionBase(customer, contract, patrolDetail.getTask(), DistributionType.PATROL);
-                      // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────
-                  }
-                  // ─── [TASK-MIGRATION] END dual-mode ───────────────────────────────────────
+                  TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, DistributionType.PATROL);
+                  taskDistribution.setTaskDefinitionId(patrolDetail.getTaskDefinitionId());
                   PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(customer, taskDistribution, service, patrolDetail, serviceTime, patrol);
                   taskDistribution.setPatrolTaskDistribution(patrolTaskDistribution);
 
@@ -171,29 +146,10 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
         CustomerContract contract = getContract(contractIds.iterator().next());
 
-        // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-        // New path: client sends taskDefinitionId pointing to the task_management module.
-        // Validates existence via the ACL (throws BusinessException 404 if not found),
-        // then builds TaskDistribution without a legacy Task entity.
-        // CLEANUP: after Phase E (task_definition_id is NOT NULL in DB), remove the
-        //          [COEXISTENCE] block below and make this path unconditional.
-        if (distributeImmediateTaskRequest.taskDefinitionId() != null) {
-            taskPresenter.getTaskDefinition(distributeImmediateTaskRequest.taskDefinitionId());
-            TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, DistributionType.IMMEDIATE);
-            taskDistribution.setTaskDefinitionId(distributeImmediateTaskRequest.taskDefinitionId());
-            completeAndSaveImmediateDistribution(taskDistribution, customer, loggedInUser, distributeImmediateTaskRequest);
-            return;
-        }
-        // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-
-        // ─── [TASK-MIGRATION] COEXISTENCE ─────────────────────────────────────────────
-        // Old path: client sends taskId pointing to the legacy `task` table.
-        // Reached only when taskDefinitionId is null (legacy clients).
-        // CLEANUP: delete this entire block after Phase E cleanup migration.
-        Task task = getTask(distributeImmediateTaskRequest.taskId());
-        TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, task, DistributionType.IMMEDIATE);
+        taskPresenter.getTaskDefinition(distributeImmediateTaskRequest.taskDefinitionId());
+        TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, DistributionType.IMMEDIATE);
+        taskDistribution.setTaskDefinitionId(distributeImmediateTaskRequest.taskDefinitionId());
         completeAndSaveImmediateDistribution(taskDistribution, customer, loggedInUser, distributeImmediateTaskRequest);
-        // ─── [TASK-MIGRATION] END COEXISTENCE ─────────────────────────────────────────
     }
 
     @Override
@@ -273,11 +229,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .orElseThrow(() -> new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST));
     }
 
-    private Task getTask(Long taskId) {
-        return taskRepository.findById(taskId)
-            .orElseThrow(() -> new BusinessException("invalid task", HttpStatus.BAD_REQUEST));
-    }
-
     private Optional<Location> getOptionalLocation(Long locationId) {
         if (locationId == null)
             return Optional.empty();
@@ -329,10 +280,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         );
     }
 
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // Shared persistence logic for immediate distribution, used by both new and old paths.
-    // Extracted to avoid duplicating the assignment + slot + save steps in both branches.
-    // CLEANUP: this method stays permanently after migration completes.
     private void completeAndSaveImmediateDistribution(
         TaskDistribution taskDistribution,
         Customer customer,
@@ -360,11 +307,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             taskDistribution.getExecutionSlots()
         );
     }
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-
-    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-    // Overload without Task — used by the new path where task_definition_id is set instead.
-    // CLEANUP: after Phase E, rename this to buildTaskDistributionBase and remove the overload below.
     private static TaskDistribution buildTaskDistributionBase(
         Customer customer,
         CustomerContract contract,
@@ -372,21 +314,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     ) {
         return TaskDistribution.builder()
             .contract(contract)
-            .customer(customer)
-            .distributionType(distributionType)
-            .build();
-    }
-    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
-
-    private static TaskDistribution buildTaskDistributionBase(
-        Customer customer,
-        CustomerContract contract,
-        Task task,
-        DistributionType distributionType
-    ) {
-        return TaskDistribution.builder()
-            .contract(contract)
-            .task(task)
             .customer(customer)
             .distributionType(distributionType)
             .build();
