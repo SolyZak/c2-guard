@@ -24,13 +24,16 @@ public class TaskCheckComparisonController {
     public ApiResponse<PaginateResponse<TaskCheckComparisonReportResponse>> getComparisonReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long locationId,
+            @RequestParam(required = false) String taskName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "comparisonDate") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection) {
 
         PaginateResponse<TaskCheckComparisonReportResponse> report =
-                taskCheckComparisonService.getComparisonReport(from, to, page, size, sortBy, sortDirection);
+                taskCheckComparisonService.getComparisonReport(
+                        from, to, locationId, taskName, page, size, sortBy, sortDirection);
         return ApiResponse.ok(report);
     }
 

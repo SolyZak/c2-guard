@@ -18,12 +18,8 @@ import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
-import com.eden.eden_crm_sec_crm_back.service.WorkforceService;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
 import com.eden.eden_crm_sec_crm_back.service.impl.CrmTriggerLogService;
-// ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
-// ACL interfaces from task_management module.
-// CLEANUP: TaskPresenter and TaskExecutionPresenter stay permanently after Phase E.
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.CreateTaskExecutionPayload;
@@ -38,7 +34,6 @@ import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkva
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.NumberCheckValue;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.TaskCheckValue;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.checkvalue.TextCheckValue;
-// ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.ExecuteDistributedTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.TodayTasksRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.TodayTaskEntryResponse;
@@ -97,14 +92,14 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         OffsetDateTime tomorrowMidnight = todayMidnight.plusDays(1);
 
         List<TodayTaskSlotProjection> slots = taskExecutionSlotRepository.findTodayTasks(
-            customer.getId(),
-            todayTasksRequest.contractId(),
-            todayMidnight,
-            tomorrowMidnight,
-            todayTasksRequest.serviceId(),
-            todayTasksRequest.serviceTimeId(),
-            todayTasksRequest.slotNumber(),
-            checkInData.getWorkforceId()
+                customer.getId(),
+                todayTasksRequest.contractId(),
+                todayMidnight,
+                tomorrowMidnight,
+                todayTasksRequest.serviceId(),
+                todayTasksRequest.serviceTimeId(),
+                todayTasksRequest.slotNumber(),
+                checkInData.getWorkforceId()
         );
 
         List<TodayTaskEntryResponse> tasks = new ArrayList<>();
@@ -120,27 +115,27 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             if (response.taskName() == null && response.taskDefinitionId() != null) {
                 String taskName = taskPresenter.getTaskDefinition(response.taskDefinitionId()).getName();
                 response = TodayTaskEntryResponse.builder()
-                    .taskId(response.taskDefinitionId())
-                    .taskDefinitionId(response.taskDefinitionId())
-                    .patrolId(response.patrolId())
-                    .premiseId(response.premiseId())
-                    .locationId(response.locationId())
-                    .taskName(taskName)
-                    .patrolName(response.patrolName())
-                    .locationName(response.locationName())
-                    .premiseName(response.premiseName())
-                    .patrolFrequency(response.patrolFrequency())
-                    .patrolFrequencyRate(response.patrolFrequencyRate())
-                    .endDateTime(response.endDateTime())
-                    .accessType(response.accessType())
-                    .latitude(response.latitude())
-                    .longitude(response.longitude())
-                    .taskDistributionId(response.taskDistributionId())
-                    .distributionType(response.distributionType())
-                    .patrolDistributionId(response.patrolDistributionId())
-                    .immediateDistributionId(response.immediateDistributionId())
-                    .executionSlots(response.executionSlots())
-                    .build();
+                        .taskId(response.taskDefinitionId())
+                        .taskDefinitionId(response.taskDefinitionId())
+                        .patrolId(response.patrolId())
+                        .premiseId(response.premiseId())
+                        .locationId(response.locationId())
+                        .taskName(taskName)
+                        .patrolName(response.patrolName())
+                        .locationName(response.locationName())
+                        .premiseName(response.premiseName())
+                        .patrolFrequency(response.patrolFrequency())
+                        .patrolFrequencyRate(response.patrolFrequencyRate())
+                        .endDateTime(response.endDateTime())
+                        .accessType(response.accessType())
+                        .latitude(response.latitude())
+                        .longitude(response.longitude())
+                        .taskDistributionId(response.taskDistributionId())
+                        .distributionType(response.distributionType())
+                        .patrolDistributionId(response.patrolDistributionId())
+                        .immediateDistributionId(response.immediateDistributionId())
+                        .executionSlots(response.executionSlots())
+                        .build();
             }
 
             tasks.add(response);
@@ -187,6 +182,10 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                 throw new BusinessException("Task check type not matched at index " + i, HttpStatus.BAD_REQUEST);
         });
 
+        // ── Extract locationId from the distribution ─────────────────────────
+        LocationPoints loc = getLocationPoints(taskExecutionSlot.getTaskDistribution());
+        Long locationId = loc.locationId();
+
         TaskExecutionPayload taskExecution = taskExecutionPresenter.createTaskExecution(
                 CreateTaskExecutionPayload.builder()
                         .workforceId(checkInData.getWorkforceId())
@@ -203,7 +202,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             String imagePath = (file != null && !file.isEmpty())
                     ? taskExecutionPresenter.uploadCheckExecutionImage(checkDef.getId(), file)
                     : null;
-
 
             TaskCheckExecutionPayload checkExecution = taskExecutionPresenter.submitTaskCheckExecution(
                     SubmitTaskCheckExecutionPayload.builder()
@@ -222,6 +220,8 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                             .taskCheckDefinitionId(checkDef.getId())
                             .taskCheckExecutionId(checkExecution.getId())
                             .customerId(customer.getId())
+                            .locationId(locationId)
+                            .evidenceImagePath(imagePath)
                             .build()
             );
         });
@@ -240,7 +240,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         if (dto instanceof TaskCheckDecimalDTO) return "DECIMAL";
         if (dto instanceof TaskCheckListDTO)    return "LIST";
         throw new BusinessException(
-            "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
+                "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
     }
 
     private static TaskCheckValue toCheckValue(TaskCheckDTO dto) {
@@ -249,23 +249,22 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         if (dto instanceof TaskCheckDecimalDTO d) return new DecimalCheckValue(d.getUnit(), d.getOperator(), d.getValue());
         if (dto instanceof TaskCheckListDTO l)    return new ListCheckValue(l.getListItems(), null);
         throw new BusinessException(
-            "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
+                "Unsupported check DTO type: " + dto.getClass().getSimpleName(), HttpStatus.BAD_REQUEST);
     }
 
     private void evaluateAndFireCheckAlerts(
-        List<TaskCheckDefinitionPayload> checkDefs,
-        List<TaskCheckDTO> submittedChecks,
-        String taskName,
-        Customer customer,
-        TaskExecutionSlot taskExecutionSlot
+            List<TaskCheckDefinitionPayload> checkDefs,
+            List<TaskCheckDTO> submittedChecks,
+            String taskName,
+            Customer customer,
+            TaskExecutionSlot taskExecutionSlot
     ) {
         OffsetDateTime now = OffsetDateTime.now();
         Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_DEVIATION.getId())
-            .orElseThrow(() -> new RuntimeException("Trigger PATROL_TASK_Deviation not found"));
+                .orElseThrow(() -> new RuntimeException("Trigger PATROL_TASK_Deviation not found"));
 
         for (int i = 0; i < checkDefs.size(); i++) {
             TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
-            // Checks without a configured severity are excluded from alerting
             if (checkDef.getSeverity() == null) continue;
 
             TaskCheckValue checkSettings = checkDef.getCheckSettings();
@@ -297,8 +296,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         }
     }
 
-    // Returns true if the submitted value violates the check definition's rule.
-    // TEXT checks are excluded — no alert criteria defined for them.
     private boolean isCheckViolated(TaskCheckValue checkSettings, TaskCheckDTO dto) {
         if (checkSettings instanceof ListCheckValue lv) {
             if (lv.getAlertValue() == null) return false;
@@ -316,8 +313,6 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         return false;
     }
 
-    // Returns true when the actual value satisfies the operator against the threshold.
-    // A false result means the check is violated and an alert should fire.
     private boolean evaluateOperator(String operator, double actual, double threshold) {
         return switch (operator) {
             case "gte" -> actual >= threshold;
@@ -326,7 +321,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             case "lt"  -> actual <  threshold;
             case "eq"  -> actual == threshold;
             case "ne"  -> actual != threshold;
-            default    -> true; // unknown operator → treat as not violated
+            default    -> true;
         };
     }
 
@@ -359,12 +354,12 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
 
     private TaskExecutionSlot getTaskExecutionSlot(Long executionSlotId) {
         return taskExecutionSlotRepository
-            .findById(executionSlotId)
-            .orElseThrow(() -> new BusinessException("Task execution slot not found", HttpStatus.NOT_FOUND));
+                .findById(executionSlotId)
+                .orElseThrow(() -> new BusinessException("Task execution slot not found", HttpStatus.NOT_FOUND));
     }
 
     private Customer getCustomer(Long customerId) {
         return customerRepository.findById(customerId)
-            .orElseThrow(UserNotProvided::new);
+                .orElseThrow(UserNotProvided::new);
     }
 }

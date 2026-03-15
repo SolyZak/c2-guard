@@ -1,11 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -28,6 +24,9 @@ public class TaskCheckComparisonJpaEntity {
 
     @Column(name = "task_check_execution_id", nullable = false)
     private Long taskCheckExecutionId;
+
+    @Column(name = "task_location_checks_image_id")           // ← NEW
+    private Long taskLocationChecksImageId;
 
     @Column(name = "matching")
     private Boolean matching;

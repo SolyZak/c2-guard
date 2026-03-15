@@ -54,6 +54,8 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
         request.setTaskCheckDefinitionId(payload.getTaskCheckDefinitionId());
         request.setTaskCheckExecutionId(payload.getTaskCheckExecutionId());
         request.setCustomerId(payload.getCustomerId());
+        request.setLocationId(payload.getLocationId());                   // ← NEW
+        request.setEvidenceImagePath(payload.getEvidenceImagePath());     // ← NEW
         return taskExternalMapper.toPayload(
                 taskExecutionService.createTaskCheckComparison(request));
     }

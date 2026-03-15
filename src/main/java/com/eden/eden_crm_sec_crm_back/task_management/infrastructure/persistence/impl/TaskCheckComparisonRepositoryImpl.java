@@ -39,6 +39,14 @@ public class TaskCheckComparisonRepositoryImpl implements TaskCheckComparisonRep
     }
 
     @Override
+    public Optional<TaskCheckComparison> findByTaskCheckExecutionIdAndTaskLocationChecksImageId(
+            Long taskCheckExecutionId, Long taskLocationChecksImageId) {
+        return jpaRepository.findByTaskCheckExecutionIdAndTaskLocationChecksImageId(
+                        taskCheckExecutionId, taskLocationChecksImageId)
+                .map(mapper::toDomain);
+    }
+
+    @Override
     public List<TaskCheckComparison> findAllByTaskCheckDefinitionId(Long taskCheckDefinitionId) {
         return jpaRepository.findAllByTaskCheckDefinitionId(taskCheckDefinitionId)
                 .stream().map(mapper::toDomain).collect(Collectors.toList());
@@ -52,7 +60,9 @@ public class TaskCheckComparisonRepositoryImpl implements TaskCheckComparisonRep
 
     @Override
     public Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
-            Long customerId, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
-        return jpaRepository.findComparisonReportPaginated(customerId, fromDate, toDate, pageable);
+            Long customerId, LocalDateTime fromDate, LocalDateTime toDate,
+            Long locationId, String taskName, Pageable pageable) {
+        return jpaRepository.findComparisonReportPaginated(
+                customerId, fromDate, toDate, locationId, taskName, pageable);
     }
 }

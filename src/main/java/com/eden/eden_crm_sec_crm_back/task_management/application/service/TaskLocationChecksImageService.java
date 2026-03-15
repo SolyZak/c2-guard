@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
 import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
+import com.eden.eden_crm_sec_crm_back.clients.dto.ReferenceImageUploadedRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.CreateTaskLocationChecksImageRequest;
@@ -36,6 +37,7 @@ public class TaskLocationChecksImageService {
     private final Utils utils;
     private final DocumentsFeignClient documentsFeignClient;
     private final OracleStorageUtil oracleStorageUtil;
+    private final ImageComparisonService imageComparisonService;
 
     @Transactional
     public TaskLocationChecksImageResponse create(CreateTaskLocationChecksImageRequest request) {
@@ -142,6 +144,14 @@ public class TaskLocationChecksImageService {
         }
 
         String fullUrl = oracleStorageUtil.getStorageUrl() + imagePath;
+
+        // ── Fire async notification to AI service (non-blocking, failure-safe) ───
+        imageComparisonService.notifyReferenceImageUploadedAsync(
+                ReferenceImageUploadedRequest.builder()
+                        .taskLocationChecksImageId(updated.getId())
+                        .referenceImageUrl(fullUrl)
+                        .build());
+
         return new TaskCheckImageResponse(taskCheckDefinitionId, locationId, fullUrl);
     }
 

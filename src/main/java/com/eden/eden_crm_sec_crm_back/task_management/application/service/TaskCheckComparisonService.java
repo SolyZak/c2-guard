@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.application.service;
 
 import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.clients.DocumentsFeignClient;
+import com.eden.eden_crm_sec_crm_back.clients.dto.MatchingFeedbackRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.UploadImageRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.WorkforceFullDataDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -44,20 +45,25 @@ public class TaskCheckComparisonService {
     private final TaskMapper taskMapper;
     private final Utils utils;
     private final DocumentsFeignClient documentsFeignClient;
+    private final ImageComparisonService imageComparisonService;
 
     @Transactional(readOnly = true)
     public PaginateResponse<TaskCheckComparisonReportResponse> getComparisonReport(
-            LocalDate from, LocalDate to, int page, int size, String sortBy, String sortDirection) {
+            LocalDate from, LocalDate to, Long locationId, String taskName,
+            int page, int size, String sortBy, String sortDirection) {
 
         Long customerId = utils.getLoggedInUser().getCustomerId();
 
         LocalDateTime fromDate = from.atStartOfDay();
         LocalDateTime toDate = to.atTime(23, 59, 59);
 
+        String normalizedTaskName = (taskName != null && !taskName.isBlank()) ? taskName.trim() : null;
+
         Pageable pageable = PageRequest.of(page, size);
 
         Page<TaskCheckComparisonReportProjection> resultPage =
-                taskCheckComparisonRepository.findComparisonReportPaginated(customerId, fromDate, toDate, pageable);
+                taskCheckComparisonRepository.findComparisonReportPaginated(
+                        customerId, fromDate, toDate, locationId, normalizedTaskName, pageable);
 
         if (resultPage.isEmpty()) {
             return new PaginateResponse<>(
@@ -92,7 +98,6 @@ public class TaskCheckComparisonService {
                         .build())
                 .toList();
 
-        // Apply in-memory sorting (native queries don't support Sort via Pageable reliably)
         Comparator<TaskCheckComparisonReportResponse> comparator = getComparator(sortBy);
         if (sortDirection.equalsIgnoreCase("DESC")) {
             comparator = comparator.reversed();
@@ -121,6 +126,13 @@ public class TaskCheckComparisonService {
 
         comparison.updateMatching(request.getMatching());
         comparison = taskCheckComparisonRepository.save(comparison);
+
+        imageComparisonService.sendMatchingFeedbackAsync(
+                MatchingFeedbackRequest.builder()
+                        .taskCheckExecutionId(comparison.getTaskCheckExecutionId())
+                        .taskLocationChecksImageId(comparison.getTaskLocationChecksImageId())
+                        .matching(comparison.getMatching())
+                        .build());
 
         return taskMapper.toTaskCheckComparisonResponse(comparison);
     }

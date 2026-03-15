@@ -17,11 +17,15 @@ public interface TaskCheckComparisonRepository {
 
     Optional<TaskCheckComparison> findByTaskCheckExecutionId(Long taskCheckExecutionId);
 
+    Optional<TaskCheckComparison> findByTaskCheckExecutionIdAndTaskLocationChecksImageId(
+            Long taskCheckExecutionId, Long taskLocationChecksImageId);
+
     List<TaskCheckComparison> findAllByTaskCheckDefinitionId(Long taskCheckDefinitionId);
 
     List<TaskCheckComparisonReportProjection> findComparisonReport(
             Long customerId, LocalDateTime fromDate, LocalDateTime toDate);
 
     Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
-            Long customerId, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable);
+            Long customerId, LocalDateTime fromDate, LocalDateTime toDate,
+            Long locationId, String taskName, Pageable pageable);
 }

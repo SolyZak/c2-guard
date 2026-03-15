@@ -114,7 +114,8 @@ public abstract class TaskPersistenceMapper {
                 entity.getMatching(),
                 entity.getRatio(),
                 entity.getCustomerId(),
-                entity.getCreatedDate());
+                entity.getCreatedDate(),
+                entity.getTaskLocationChecksImageId());   // ← NEW
     }
 
     public TaskLocationChecksImage toDomain(TaskLocationChecksImageJpaEntity entity) {
