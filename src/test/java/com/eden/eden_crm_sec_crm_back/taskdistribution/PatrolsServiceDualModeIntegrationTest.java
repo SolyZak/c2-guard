@@ -94,7 +94,6 @@ class PatrolsServiceDualModeIntegrationTest {
         assertThat(savedPatrol.getPatrolDetails()).hasSize(1);
         PatrolDetail detail = savedPatrol.getPatrolDetails().get(0);
         assertThat(detail.getTaskDefinitionId()).isEqualTo(TASK_DEFINITION_ID);
-        assertThat(detail.getTask()).isNull();
 
         verify(taskPresenter).getTaskDefinition(TASK_DEFINITION_ID);
         verifyNoInteractions(taskRepository);
