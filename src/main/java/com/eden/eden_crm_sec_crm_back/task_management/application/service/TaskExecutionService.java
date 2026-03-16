@@ -96,13 +96,18 @@ public class TaskExecutionService {
 
             String storageBaseUrl = oracleStorageUtil.getStorageUrl();
 
-            imageComparisonService.compareImagesAsync(
-                    ImageComparisonRequest.builder()
-                            .taskCheckExecutionId(request.getTaskCheckExecutionId())
-                            .taskLocationChecksImageId(taskLocationChecksImageId)
-                            .referenceImagePath(storageBaseUrl + referenceImagePath)
-                            .evidenceImagePath(storageBaseUrl + request.getEvidenceImagePath())
-                            .build());
+            try {
+                imageComparisonService.compareImagesAsync(
+                        ImageComparisonRequest.builder()
+                                .taskCheckExecutionId(request.getTaskCheckExecutionId())
+                                .taskLocationChecksImageId(taskLocationChecksImageId)
+                                .referenceImagePath(storageBaseUrl + referenceImagePath)
+                                .evidenceImagePath(storageBaseUrl + request.getEvidenceImagePath())
+                                .build());
+            } catch (Exception e) {
+                log.warn("Could not dispatch async image comparison for checkExecutionId={}: {}",
+                        request.getTaskCheckExecutionId(), e.getMessage());
+            }
         }
 
         return taskMapper.toTaskCheckComparisonResponse(comparison);
