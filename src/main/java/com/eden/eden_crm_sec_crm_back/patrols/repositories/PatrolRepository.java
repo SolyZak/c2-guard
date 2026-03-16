@@ -32,10 +32,10 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
                       )
                       or exists (
                         select 1
-                        from task t
-                        join patrol_detail tpd on t.id = tpd.task_id
+                        from task_definition tdef
+                        join patrol_detail tpd on tdef.id = tpd.task_definition_id
                         where tpd.patrol_id = p.id
-                        and lower(t.name) like lower(concat('%', :search, '%'))
+                        and lower(tdef.name) like lower(concat('%', :search, '%'))
                       )
                     )
             """, nativeQuery = true)
@@ -78,31 +78,23 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
             @Param("locationIds") Set<Long> locationIds
     );
 
-    // ─── [TASK-MIGRATION] COEXISTENCE ──────────────────────────────────────────
-    // Converted from JPQL to native SQL: JPQL cannot navigate task_definition via
-    // plain Long FK (pd.task_definition_id has no @ManyToOne relation).
-    // COALESCE handles both old-path (task != null) and new-path (task_definition_id != null).
-    // commentCheck is NULL for new-path — no equivalent column in task_check_execution.
-    // CLEANUP: after Phase E remove old-path JOINs (task, task_check, task_check_patrol_execution)
-    // and use tdef / tce columns directly.
-    // ─── [TASK-MIGRATION] END COEXISTENCE ──────────────────────────────────────
     @Query(value = """
         SELECT
-            loc.id                                                       AS locationId,
-            loc.name                                                     AS locationName,
-            site.id                                                      AS siteId,
-            site.name                                                    AS siteName,
-            svc.id                                                       AS serviceId,
-            cs.service_name                                              AS serviceName,
-            COALESCE(t.id,   pd.task_definition_id)                     AS taskId,
-            COALESCE(t.name, tdef.name)                                  AS taskName,
-            tes.status                                                   AS status,
-            COALESCE(tc.evidence, (tce.evidence_image_path IS NOT NULL)) AS hasEvidence,
-            COALESCE(tcpe.image,   tce.evidence_image_path)              AS evidenceImage,
-            tcpe.comment_check                                           AS commentCheck,
-            COALESCE(tcpe.comment, tce.comment)                         AS comment,
-            MIN(tes.start_date_time)                                     AS taskStartDateTime,
-            MAX(tes.end_date_time)                                       AS taskEndDateTime
+            loc.id                                     AS locationId,
+            loc.name                                   AS locationName,
+            site.id                                    AS siteId,
+            site.name                                  AS siteName,
+            svc.id                                     AS serviceId,
+            cs.service_name                            AS serviceName,
+            pd.task_definition_id                      AS taskId,
+            tdef.name                                  AS taskName,
+            tes.status                                 AS status,
+            (tce.evidence_image_path IS NOT NULL)      AS hasEvidence,
+            tce.evidence_image_path                    AS evidenceImage,
+            NULL                                       AS commentCheck,
+            tce.comment                                AS comment,
+            MIN(tes.start_date_time)                   AS taskStartDateTime,
+            MAX(tes.end_date_time)                     AS taskEndDateTime
         FROM patrol_task_distribution ptd
         JOIN patrol_detail pd
             ON pd.id = ptd.patrol_detail_id
@@ -122,31 +114,24 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
             ON cs.id = csd.customer_service_id
         LEFT JOIN task_execution_slot tes
             ON tes.task_distribution_id = ptd.task_distribution_id
-        LEFT JOIN task t
-            ON t.id = pd.task_id
-        LEFT JOIN task_check tc
-            ON tc.task_id = t.id
-        LEFT JOIN task_check_patrol_execution tcpe
-            ON tcpe.id = tc.id
         LEFT JOIN task_definition tdef
             ON tdef.id = pd.task_definition_id
-        LEFT JOIN task_execution te_new
-            ON te_new.id = tes.new_task_execution_id
+        LEFT JOIN task_execution te
+            ON te.id = tes.task_execution_id
         LEFT JOIN task_check_execution tce
-            ON tce.task_execution_id = te_new.id
+            ON tce.task_execution_id = te.id
         WHERE loc.premise_id = :premiseId
           AND pd.patrol_id   = :patrolId
         GROUP BY
             loc.id, loc.name,
             site.id, site.name,
             svc.id, cs.service_name,
-            COALESCE(t.id,   pd.task_definition_id),
-            COALESCE(t.name, tdef.name),
+            pd.task_definition_id,
+            tdef.name,
             tes.status,
-            COALESCE(tc.evidence, (tce.evidence_image_path IS NOT NULL)),
-            COALESCE(tcpe.image,   tce.evidence_image_path),
-            tcpe.comment_check,
-            COALESCE(tcpe.comment, tce.comment)
+            (tce.evidence_image_path IS NOT NULL),
+            tce.evidence_image_path,
+            tce.comment
     """, nativeQuery = true)
     List<PatrolReportDetailsAggregation> findPatrolDetails(
         @Param("premiseId") Long premiseId,

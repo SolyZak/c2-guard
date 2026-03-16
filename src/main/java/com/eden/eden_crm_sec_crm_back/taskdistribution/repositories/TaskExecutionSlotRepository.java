@@ -16,7 +16,7 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
     @Query("""
         SELECT
             tes.id AS id,
-            t.id AS taskId,
+            NULL AS taskId,
             td.taskDefinitionId AS taskDefinitionId,
             p.id AS patrolId,
             CASE
@@ -29,7 +29,7 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
                 WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN il.id
                 ELSE NULL
             END AS locationId,
-            t.name AS taskName,
+            NULL AS taskName,
             p.name AS patrolName,
             CASE
                 WHEN td.distributionType = 'PATROL' THEN pp.name
@@ -69,7 +69,6 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
             TaskExecutionSlot tes
             JOIN tes.taskAssignment ta
             JOIN tes.taskDistribution td
-            LEFT JOIN td.task t
             LEFT JOIN td.patrolTaskDistribution ptd
             LEFT JOIN td.immediateTaskDistribution itd
             LEFT JOIN ptd.patrolDetail pd

@@ -9,7 +9,6 @@ import com.eden.eden_crm_sec_crm_back.models.Location;
 import com.eden.eden_crm_sec_crm_back.models.Patrol;
 import com.eden.eden_crm_sec_crm_back.models.PatrolDetail;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
-import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationService;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
@@ -185,7 +184,6 @@ class MissedTaskAlertTest {
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-    /** Builds a PATROL-type slot. {@code newPath=true} sets taskDefinitionId=42L; false leaves it null. */
     private TaskExecutionSlot patrolSlot(TaskDistributionStatus status, boolean newPath) {
         Location location = Location.builder()
                 .id(10L).longitude(new BigDecimal("55.0")).latitude(new BigDecimal("25.0")).build();
@@ -207,14 +205,8 @@ class MissedTaskAlertTest {
 
         TaskDistribution taskDistribution = TaskDistribution.builder()
                 .distributionType(DistributionType.PATROL)
-                .taskDefinitionId(newPath ? 42L : null)
+                .taskDefinitionId(42L)
                 .build();
-
-        if (!newPath) {
-            Task task = mock(Task.class);
-            when(task.getName()).thenReturn("Check Perimeter");
-            taskDistribution.setTask(task);
-        }
 
         taskDistribution.setPatrolTaskDistribution(ptd);
 
@@ -237,14 +229,8 @@ class MissedTaskAlertTest {
 
         TaskDistribution taskDistribution = TaskDistribution.builder()
                 .distributionType(DistributionType.IMMEDIATE)
-                .taskDefinitionId(newPath ? 42L : null)
+                .taskDefinitionId(42L)
                 .build();
-
-        if (!newPath) {
-            Task task = mock(Task.class);
-            when(task.getName()).thenReturn("Check Perimeter");
-            taskDistribution.setTask(task);
-        }
 
         taskDistribution.setImmediateTaskDistribution(itd);
 

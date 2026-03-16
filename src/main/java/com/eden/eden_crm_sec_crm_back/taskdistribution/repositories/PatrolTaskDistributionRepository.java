@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PatrolTaskDistributionRepository extends JpaRepository<PatrolTaskDistribution, Long>, JpaSpecificationExecutor<PatrolTaskDistribution> {
     boolean existsByServiceTime_IdAndPatrolDetail_Id(Long serviceTimeId, Long patrolDetailId);
-    boolean existsByIdAndLocation_IdAndTaskDistribution_Task_Id(Long id, Long locationId, Long taskId);
+    boolean existsByIdAndLocation_IdAndTaskDistribution_TaskDefinitionId(Long id, Long locationId, Long taskDefinitionId);
 }

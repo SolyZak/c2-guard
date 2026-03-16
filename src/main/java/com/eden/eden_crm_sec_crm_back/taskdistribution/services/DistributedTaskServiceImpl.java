@@ -226,7 +226,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             );
         });
 
-        taskExecutionSlot.setNewTaskExecutionId(taskExecution.getId());
+        taskExecutionSlot.setTaskExecutionId(taskExecution.getId());
         taskExecutionSlot.setStatus(TaskDistributionStatus.FINISHED);
         taskExecutionSlot.setExecutedByWorkforceId(checkInData.getWorkforceId());
 
@@ -269,6 +269,8 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
 
             TaskCheckValue checkSettings = checkDef.getCheckSettings();
             if (!isCheckViolated(checkSettings, submittedChecks.get(i))) continue;
+
+
 
             String description = taskName + " - " + checkDef.getName();
 
