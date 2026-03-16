@@ -146,11 +146,16 @@ public class TaskLocationChecksImageService {
         String fullUrl = oracleStorageUtil.getStorageUrl() + imagePath;
 
         // ── Fire async notification to AI service (non-blocking, failure-safe) ───
-        imageComparisonService.notifyReferenceImageUploadedAsync(
-                ReferenceImageUploadedRequest.builder()
-                        .taskLocationChecksImageId(updated.getId())
-                        .referenceImageUrl(fullUrl)
-                        .build());
+        try {
+            imageComparisonService.notifyReferenceImageUploadedAsync(
+                    ReferenceImageUploadedRequest.builder()
+                            .taskLocationChecksImageId(updated.getId())
+                            .referenceImageUrl(fullUrl)
+                            .build());
+        } catch (Exception e) {
+            log.warn("Could not dispatch async baseline notification for taskLocationChecksImageId={}: {}",
+                    updated.getId(), e.getMessage());
+        }
 
         return new TaskCheckImageResponse(taskCheckDefinitionId, locationId, fullUrl);
     }
