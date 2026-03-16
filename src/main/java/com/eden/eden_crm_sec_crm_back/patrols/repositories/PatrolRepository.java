@@ -32,10 +32,10 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
                       )
                       or exists (
                         select 1
-                        from task_definition td
-                        join patrol_detail tpd on td.id = tpd.task_definition_id
+                        from task_definition tdef
+                        join patrol_detail tpd on tdef.id = tpd.task_definition_id
                         where tpd.patrol_id = p.id
-                        and lower(td.name) like lower(concat('%', :search, '%'))
+                        and lower(tdef.name) like lower(concat('%', :search, '%'))
                       )
                     )
             """, nativeQuery = true)
@@ -80,21 +80,21 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
 
     @Query(value = """
         SELECT
-            loc.id                                    AS locationId,
-            loc.name                                  AS locationName,
-            site.id                                   AS siteId,
-            site.name                                 AS siteName,
-            svc.id                                    AS serviceId,
-            cs.service_name                           AS serviceName,
-            pd.task_definition_id                     AS taskId,
-            tdef.name                                 AS taskName,
-            tes.status                                AS status,
-            (tce.evidence_image_path IS NOT NULL)     AS hasEvidence,
-            tce.evidence_image_path                   AS evidenceImage,
-            NULL                                      AS commentCheck,
-            tce.comment                               AS comment,
-            MIN(tes.start_date_time)                  AS taskStartDateTime,
-            MAX(tes.end_date_time)                    AS taskEndDateTime
+            loc.id                                     AS locationId,
+            loc.name                                   AS locationName,
+            site.id                                    AS siteId,
+            site.name                                  AS siteName,
+            svc.id                                     AS serviceId,
+            cs.service_name                            AS serviceName,
+            pd.task_definition_id                      AS taskId,
+            tdef.name                                  AS taskName,
+            tes.status                                 AS status,
+            (tce.evidence_image_path IS NOT NULL)      AS hasEvidence,
+            tce.evidence_image_path                    AS evidenceImage,
+            NULL                                       AS commentCheck,
+            tce.comment                                AS comment,
+            MIN(tes.start_date_time)                   AS taskStartDateTime,
+            MAX(tes.end_date_time)                     AS taskEndDateTime
         FROM patrol_task_distribution ptd
         JOIN patrol_detail pd
             ON pd.id = ptd.patrol_detail_id
@@ -112,10 +112,10 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
             ON csd.id = svc.service_details_id
         JOIN customer_service cs
             ON cs.id = csd.customer_service_id
-        LEFT JOIN task_definition tdef
-            ON tdef.id = pd.task_definition_id
         LEFT JOIN task_execution_slot tes
             ON tes.task_distribution_id = ptd.task_distribution_id
+        LEFT JOIN task_definition tdef
+            ON tdef.id = pd.task_definition_id
         LEFT JOIN task_execution te
             ON te.id = tes.task_execution_id
         LEFT JOIN task_check_execution tce
@@ -129,6 +129,7 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
             pd.task_definition_id,
             tdef.name,
             tes.status,
+            (tce.evidence_image_path IS NOT NULL),
             tce.evidence_image_path,
             tce.comment
     """, nativeQuery = true)
