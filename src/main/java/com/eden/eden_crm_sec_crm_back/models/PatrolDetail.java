@@ -27,7 +27,7 @@ public class PatrolDetail {
     @JoinColumn(name = "location_id", nullable = false)
     private Location location;
 
-    @Column(name = "task_definition_id", nullable = false)
+    @Column(name = "task_definition_id")
     private Long taskDefinitionId;
 
     @OneToMany(mappedBy = "patrolDetail")

@@ -39,7 +39,7 @@ public class TaskDistribution {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @Column(name = "task_definition_id", nullable = false)
+    @Column(name = "task_definition_id")
     private Long taskDefinitionId;
 
     @Enumerated(EnumType.STRING)

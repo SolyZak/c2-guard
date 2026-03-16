@@ -343,7 +343,7 @@ public class LocationServiceImpl implements LocationService {
                 .findLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
 
         boolean isValid = patrolTaskDistributionRepository
-                .existsByIdAndLocation_IdAndTaskDistribution_Task_Id(
+                .existsByIdAndLocation_IdAndTaskDistribution_TaskDefinitionId(
                         request.patrolDistributionId(),
                         id,
                         request.taskId()

@@ -12,7 +12,8 @@ public interface PatrolDetailRepository extends JpaRepository<PatrolDetail,Long>
     @Query(value = """
         SELECT
             pd.id                           AS patrolDetailId,
-            td.name                         AS taskName
+            td.name                         AS taskName,
+            pd.task_definition_id           AS taskDefinitionId
         FROM patrol_detail pd
         LEFT JOIN task_definition td
             ON pd.task_definition_id = td.id

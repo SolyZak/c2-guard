@@ -270,6 +270,8 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             TaskCheckValue checkSettings = checkDef.getCheckSettings();
             if (!isCheckViolated(checkSettings, submittedChecks.get(i))) continue;
 
+
+
             String description = taskName + " - " + checkDef.getName();
 
             Severity severity = Severity.valueOf(checkDef.getSeverity());
