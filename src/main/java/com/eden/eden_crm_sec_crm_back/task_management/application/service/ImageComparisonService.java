@@ -7,11 +7,11 @@ import com.eden.eden_crm_sec_crm_back.clients.dto.MatchingFeedbackRequest;
 import com.eden.eden_crm_sec_crm_back.clients.dto.ReferenceImageUploadedRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckComparison;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskCheckComparisonRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -29,7 +29,6 @@ public class ImageComparisonService {
      * On failure, logs the error and does NOT disrupt the main flow.
      */
     @Async
-    @Transactional
     public void compareImagesAsync(ImageComparisonRequest request) {
         try {
             log.info("Calling image comparison service for checkExecutionId={}, refImageId={}",
@@ -63,6 +62,10 @@ public class ImageComparisonService {
                         request.getTaskLocationChecksImageId());
             }
 
+        } catch (FeignException.NotFound e) {
+            log.warn("No baseline registered at AI service for checkExecutionId={}, refImageId={} — skipping comparison. Register a baseline first.",
+                    request.getTaskCheckExecutionId(),
+                    request.getTaskLocationChecksImageId());
         } catch (Exception e) {
             log.error("Failed to call image comparison service for checkExecutionId={}, refImageId={}: {}",
                     request.getTaskCheckExecutionId(),

@@ -127,12 +127,17 @@ public class TaskCheckComparisonService {
         comparison.updateMatching(request.getMatching());
         comparison = taskCheckComparisonRepository.save(comparison);
 
-        imageComparisonService.sendMatchingFeedbackAsync(
-                MatchingFeedbackRequest.builder()
-                        .taskCheckExecutionId(comparison.getTaskCheckExecutionId())
-                        .taskLocationChecksImageId(comparison.getTaskLocationChecksImageId())
-                        .matching(comparison.getMatching())
-                        .build());
+        try {
+            imageComparisonService.sendMatchingFeedbackAsync(
+                    MatchingFeedbackRequest.builder()
+                            .taskCheckExecutionId(comparison.getTaskCheckExecutionId())
+                            .taskLocationChecksImageId(comparison.getTaskLocationChecksImageId())
+                            .matching(comparison.getMatching())
+                            .build());
+        } catch (Exception e) {
+            log.warn("Could not dispatch async matching feedback for comparisonId={}: {}",
+                    comparison.getTaskCheckExecutionId(), e.getMessage());
+        }
 
         return taskMapper.toTaskCheckComparisonResponse(comparison);
     }
