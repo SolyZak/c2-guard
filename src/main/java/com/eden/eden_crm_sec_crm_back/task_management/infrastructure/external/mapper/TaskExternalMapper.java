@@ -30,6 +30,7 @@ public interface TaskExternalMapper {
 
     TaskDefinitionPayload toPayload(TaskDefinitionResponse response);
 
+
     TaskCheckDefinitionPayload toPayload(TaskCheckDefinitionResponse response);
 
     TaskDefinitionSummaryPayload toPayload(TaskDefinitionSummaryResponse response);
