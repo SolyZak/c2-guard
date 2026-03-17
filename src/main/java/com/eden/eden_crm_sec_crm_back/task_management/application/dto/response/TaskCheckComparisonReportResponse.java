@@ -3,13 +3,13 @@ package com.eden.eden_crm_sec_crm_back.task_management.application.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @Builder
 public class TaskCheckComparisonReportResponse {
     private Long comparisonId;
-    private LocalDateTime comparisonDate;
+    private OffsetDateTime comparisonDate;
     private Double comparisonRatio;
     private Boolean matching;
     private Long taskDefinitionId;

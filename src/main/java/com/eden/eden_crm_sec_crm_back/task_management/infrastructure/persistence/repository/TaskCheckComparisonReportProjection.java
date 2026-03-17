@@ -1,10 +1,10 @@
 package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public interface TaskCheckComparisonReportProjection {
     Long getComparisonId();
-    LocalDateTime getComparisonDate();
+    OffsetDateTime getComparisonDate();
     Double getComparisonRatio();
     Boolean getMatching();
     Long getTaskDefinitionId();

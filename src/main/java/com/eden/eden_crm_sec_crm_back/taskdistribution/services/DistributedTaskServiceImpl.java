@@ -16,6 +16,8 @@ import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckTextDTO;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
+import com.eden.eden_crm_sec_crm_back.models.Location;
+import com.eden.eden_crm_sec_crm_back.models.Premise;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
@@ -52,6 +54,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.Distributed
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +69,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DistributedTaskServiceImpl implements DistributedTaskService {
@@ -263,6 +267,16 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
         Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_DEVIATION.getId())
                 .orElseThrow(() -> new RuntimeException("Trigger PATROL_TASK_Deviation not found"));
 
+        // Resolve location ONCE outside the loop (same distribution every iteration)
+        LocationPoints loc = getLocationPoints(taskExecutionSlot.getTaskDistribution());
+
+        // Guard: if coordinates are still null after premise fallback, log once and skip all alerts
+        boolean hasCoordinates = loc.longitude() != null && loc.latitude() != null;
+        if (!hasCoordinates) {
+            log.warn("Location {} has null coordinates even after premise fallback — "
+                    + "violation alerts will be skipped for this execution", loc.locationId());
+        }
+
         for (int i = 0; i < checkDefs.size(); i++) {
             TaskCheckDefinitionPayload checkDef = checkDefs.get(i);
             if (checkDef.getSeverity() == null) continue;
@@ -270,31 +284,34 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             TaskCheckValue checkSettings = checkDef.getCheckSettings();
             if (!isCheckViolated(checkSettings, submittedChecks.get(i))) continue;
 
-
+            if (!hasCoordinates) {
+                log.warn("Skipping alert for check '{}': location {} has null coordinates",
+                        checkDef.getName(), loc.locationId());
+                continue;
+            }
 
             String description = taskName + " - " + checkDef.getName();
 
             Severity severity = Severity.valueOf(checkDef.getSeverity());
-            LocationPoints loc = getLocationPoints(taskExecutionSlot.getTaskDistribution());
 
             TriggerEventDto dto = TriggerEventDto.builder()
-                .triggerId(trigger.getId())
-                .triggerName(trigger.getCode())
-                .operationSiteId(loc.siteId())
-                .customerId(customer.getId())
-                .longitude(loc.longitude().doubleValue())
-                .latitude(loc.latitude().doubleValue())
-                .eventTime(now.toOffsetTime())
-                .eventDate(now.toLocalDate())
-                .servicePlatformName(ServicePlatformEnum.CRM.name())
-                .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
-                .serviceTriggerEventId(0L)
-                .description(description)
-                .locationId(loc.locationId())
-                .build();
+                    .triggerId(trigger.getId())
+                    .triggerName(trigger.getCode())
+                    .operationSiteId(loc.siteId())
+                    .customerId(customer.getId())
+                    .longitude(loc.longitude().doubleValue())
+                    .latitude(loc.latitude().doubleValue())
+                    .eventTime(now.toOffsetTime())
+                    .eventDate(now.toLocalDate())
+                    .servicePlatformName(ServicePlatformEnum.CRM.name())
+                    .workforceId(taskExecutionSlot.getExecutedByWorkforceId())
+                    .serviceTriggerEventId(0L)
+                    .description(description)
+                    .locationId(loc.locationId())
+                    .build();
 
-            CrmTriggerLog log = crmTriggerLogService.addNewCrmTriggerLog(dto);
-            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(log, severity, 6L);
+            CrmTriggerLog triggerLog = crmTriggerLogService.addNewCrmTriggerLog(dto);
+            c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(triggerLog, severity, 6L);
         }
     }
 
@@ -330,28 +347,54 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
     private LocationPoints getLocationPoints(TaskDistribution taskDistribution) {
         if (taskDistribution.getDistributionType() == DistributionType.PATROL) {
             PatrolTaskDistribution ptd = taskDistribution.getPatrolTaskDistribution();
+            Location location = ptd.getLocation();
+
+            BigDecimal lng = location.getLongitude();
+            BigDecimal lat = location.getLatitude();
+
+            // Fallback to premise coordinates for QR-based locations
+            if ((lng == null || lat == null) && location.getPremise() != null) {
+                Premise premise = location.getPremise();
+                if (lng == null) lng = premise.getLongitude();
+                if (lat == null) lat = premise.getLatitude();
+            }
+
             return LocationPoints.builder()
-                .longitude(ptd.getLocation().getLongitude())
-                .latitude(ptd.getLocation().getLatitude())
-                .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
-                .locationId(ptd.getLocation().getId())
-                .build();
+                    .longitude(lng)
+                    .latitude(lat)
+                    .siteId(ptd.getServiceTime().getSiteDistribution().getSite().getId())
+                    .locationId(location.getId())
+                    .build();
         }
+
         ImmediateTaskDistribution itd = taskDistribution.getImmediateTaskDistribution();
         if (itd != null && itd.getLocation() != null) {
+            Location location = itd.getLocation();
+
+            BigDecimal lng = location.getLongitude();
+            BigDecimal lat = location.getLatitude();
+
+            // Fallback to premise coordinates for QR-based locations
+            if ((lng == null || lat == null) && location.getPremise() != null) {
+                Premise premise = location.getPremise();
+                if (lng == null) lng = premise.getLongitude();
+                if (lat == null) lat = premise.getLatitude();
+            }
+
             return LocationPoints.builder()
-                .longitude(itd.getLocation().getLongitude())
-                .latitude(itd.getLocation().getLatitude())
-                .siteId(0L)
-                .locationId(itd.getLocation().getId())
-                .build();
+                    .longitude(lng)
+                    .latitude(lat)
+                    .siteId(0L)
+                    .locationId(location.getId())
+                    .build();
         }
+
         return LocationPoints.builder()
-            .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
-            .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
-            .siteId(0L)
-            .locationId(null)
-            .build();
+                .longitude(itd != null ? itd.getLongitude() : BigDecimal.ZERO)
+                .latitude(itd != null ? itd.getLatitude() : BigDecimal.ZERO)
+                .siteId(0L)
+                .locationId(null)
+                .build();
     }
 
     private TaskExecutionSlot getTaskExecutionSlot(Long executionSlotId) {

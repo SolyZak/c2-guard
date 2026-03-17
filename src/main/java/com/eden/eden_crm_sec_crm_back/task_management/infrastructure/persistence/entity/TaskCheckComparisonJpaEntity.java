@@ -3,7 +3,7 @@ package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistenc
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "task_check_comparison")
@@ -25,7 +25,7 @@ public class TaskCheckComparisonJpaEntity {
     @Column(name = "task_check_execution_id", nullable = false)
     private Long taskCheckExecutionId;
 
-    @Column(name = "task_location_checks_image_id")           // ← NEW
+    @Column(name = "task_location_checks_image_id")
     private Long taskLocationChecksImageId;
 
     @Column(name = "matching")
@@ -37,6 +37,6 @@ public class TaskCheckComparisonJpaEntity {
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
 
-    @Column(name = "created_date", nullable = false, updatable = false)
-    private LocalDateTime createdDate;
+    @Column(name = "created_date", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime createdDate;
 }

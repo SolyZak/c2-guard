@@ -10,7 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,13 +54,13 @@ public class TaskCheckComparisonRepositoryImpl implements TaskCheckComparisonRep
 
     @Override
     public List<TaskCheckComparisonReportProjection> findComparisonReport(
-            Long customerId, LocalDateTime fromDate, LocalDateTime toDate) {
+            Long customerId, OffsetDateTime fromDate, OffsetDateTime toDate) {
         return jpaRepository.findComparisonReport(customerId, fromDate, toDate);
     }
 
     @Override
     public Page<TaskCheckComparisonReportProjection> findComparisonReportPaginated(
-            Long customerId, LocalDateTime fromDate, LocalDateTime toDate,
+            Long customerId, OffsetDateTime fromDate, OffsetDateTime toDate,
             Long locationId, String taskName, Pageable pageable) {
         return jpaRepository.findComparisonReportPaginated(
                 customerId, fromDate, toDate, locationId, taskName, pageable);
