@@ -1,21 +1,18 @@
 package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity;
 
-import com.eden.eden_crm_sec_crm_back.models.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.SuperBuilder;
+import lombok.*;
+
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "task_location_checks_image")
 @Getter
 @Setter
-@SuperBuilder
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskLocationChecksImageJpaEntity extends BaseEntity {
+public class TaskLocationChecksImageJpaEntity {
 
     @Id
     @SequenceGenerator(name = "task_location_checks_image_seq",
@@ -39,4 +36,32 @@ public class TaskLocationChecksImageJpaEntity extends BaseEntity {
 
     @Column(name = "ref_image", length = 500)
     private String refImage;
+
+    @Builder.Default
+    @Column(name = "deleted")
+    private boolean deleted = false;
+
+    @Column(name = "created_by")
+    private Long createdBy;
+
+    @Column(name = "modified_by")
+    private Long modifiedBy;
+
+    @Column(name = "created_date", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime createdDate;
+
+    @Column(name = "modified_date", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime modifiedDate;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdDate == null) {
+            this.createdDate = OffsetDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.modifiedDate = OffsetDateTime.now();
+    }
 }

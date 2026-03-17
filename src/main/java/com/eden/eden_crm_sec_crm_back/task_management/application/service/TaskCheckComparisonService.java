@@ -27,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -54,8 +56,10 @@ public class TaskCheckComparisonService {
 
         Long customerId = utils.getLoggedInUser().getCustomerId();
 
-        LocalDateTime fromDate = from.atStartOfDay();
-        LocalDateTime toDate = to.atTime(23, 59, 59);
+        // Convert LocalDate range to OffsetDateTime in UTC.
+        // PostgreSQL will compare correctly against the timestamptz column.
+        OffsetDateTime fromDate = from.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime toDate = to.atTime(LocalTime.of(23, 59, 59)).atOffset(ZoneOffset.UTC);
 
         String normalizedTaskName = (taskName != null && !taskName.isBlank()) ? taskName.trim() : null;
 

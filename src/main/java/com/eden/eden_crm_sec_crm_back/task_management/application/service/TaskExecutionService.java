@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Optional;
 
@@ -90,23 +92,43 @@ public class TaskExecutionService {
 
         comparison = taskCheckComparisonRepository.save(comparison);
 
+        // Dispatch the async image comparison AFTER the transaction commits
+        // so the comparison record is visible to the async thread's transaction.
         if (taskLocationChecksImageId != null
                 && referenceImagePath != null
                 && request.getEvidenceImagePath() != null) {
 
             String storageBaseUrl = oracleStorageUtil.getStorageUrl();
 
-            try {
-                imageComparisonService.compareImagesAsync(
-                        ImageComparisonRequest.builder()
-                                .taskCheckExecutionId(request.getTaskCheckExecutionId())
-                                .taskLocationChecksImageId(taskLocationChecksImageId)
-                                .referenceImagePath(storageBaseUrl + referenceImagePath)
-                                .evidenceImagePath(storageBaseUrl + request.getEvidenceImagePath())
-                                .build());
-            } catch (Exception e) {
-                log.warn("Could not dispatch async image comparison for checkExecutionId={}: {}",
-                        request.getTaskCheckExecutionId(), e.getMessage());
+            ImageComparisonRequest comparisonRequest = ImageComparisonRequest.builder()
+                    .taskCheckExecutionId(request.getTaskCheckExecutionId())
+                    .taskLocationChecksImageId(taskLocationChecksImageId)
+                    .referenceImagePath(storageBaseUrl + referenceImagePath)
+                    .evidenceImagePath(storageBaseUrl + request.getEvidenceImagePath())
+                    .build();
+
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            imageComparisonService.compareImagesAsync(comparisonRequest);
+                        } catch (Exception e) {
+                            log.warn("Could not dispatch async image comparison for checkExecutionId={}: {}",
+                                    comparisonRequest.getTaskCheckExecutionId(), e.getMessage());
+                        }
+                    }
+                });
+            } else {
+                // Fallback: no active transaction synchronization — fire directly
+                log.warn("No active transaction synchronization — dispatching image comparison directly "
+                        + "for checkExecutionId={}", request.getTaskCheckExecutionId());
+                try {
+                    imageComparisonService.compareImagesAsync(comparisonRequest);
+                } catch (Exception e) {
+                    log.warn("Could not dispatch async image comparison for checkExecutionId={}: {}",
+                            request.getTaskCheckExecutionId(), e.getMessage());
+                }
             }
         }
 
