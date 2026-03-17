@@ -1,10 +1,10 @@
 package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 public interface TaskCheckComparisonReportProjection {
     Long getComparisonId();
-    OffsetDateTime getComparisonDate();
+    Instant getComparisonDate();      // ← Instant (what JDBC actually returns for timestamptz)
     Double getComparisonRatio();
     Boolean getMatching();
     Long getTaskDefinitionId();

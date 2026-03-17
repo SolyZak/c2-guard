@@ -56,8 +56,6 @@ public class TaskCheckComparisonService {
 
         Long customerId = utils.getLoggedInUser().getCustomerId();
 
-        // Convert LocalDate range to OffsetDateTime in UTC.
-        // PostgreSQL will compare correctly against the timestamptz column.
         OffsetDateTime fromDate = from.atStartOfDay().atOffset(ZoneOffset.UTC);
         OffsetDateTime toDate = to.atTime(LocalTime.of(23, 59, 59)).atOffset(ZoneOffset.UTC);
 
@@ -85,7 +83,9 @@ public class TaskCheckComparisonService {
         List<TaskCheckComparisonReportResponse> content = resultPage.getContent().stream()
                 .map(row -> TaskCheckComparisonReportResponse.builder()
                         .comparisonId(row.getComparisonId())
-                        .comparisonDate(row.getComparisonDate())
+                        .comparisonDate(row.getComparisonDate() != null
+                                ? row.getComparisonDate().atOffset(ZoneOffset.UTC)  // Instant → OffsetDateTime
+                                : null)
                         .comparisonRatio(row.getComparisonRatio())
                         .matching(row.getMatching())
                         .taskDefinitionId(row.getTaskDefinitionId())
