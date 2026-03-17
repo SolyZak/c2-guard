@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @Builder
@@ -15,5 +16,5 @@ public class TaskCheckComparisonPayload {
     private Boolean matching;
     private Double ratio;
     private Long customerId;
-    private LocalDateTime createdDate;
+    private OffsetDateTime createdDate;
 }
