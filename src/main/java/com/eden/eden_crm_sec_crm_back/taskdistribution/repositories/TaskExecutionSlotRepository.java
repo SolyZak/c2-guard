@@ -34,7 +34,7 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
             CASE
                 WHEN td.distributionType = 'PATROL' THEN pp.name
                 WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN ip.name
-            ELSE NULL
+                ELSE NULL
             END AS premiseName,
             CASE
                 WHEN td.distributionType = 'PATROL' THEN pl.name
@@ -51,13 +51,13 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
                 ELSE NULL
             END AS accessType,
             CASE
-                WHEN td.distributionType = 'PATROL' THEN pl.latitude
-                WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN il.latitude
+                WHEN td.distributionType = 'PATROL' THEN COALESCE(pl.latitude, pp.latitude)
+                WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN COALESCE(il.latitude, ip.latitude)
                 ELSE itd.latitude
             END AS latitude,
             CASE
-                WHEN td.distributionType = 'PATROL' THEN pl.longitude
-                WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN il.longitude
+                WHEN td.distributionType = 'PATROL' THEN COALESCE(pl.longitude, pp.longitude)
+                WHEN td.distributionType = 'IMMEDIATE' AND il.id IS NOT NULL THEN COALESCE(il.longitude, ip.longitude)
                 ELSE itd.longitude
             END AS longitude,
             tes.status AS status,
@@ -99,13 +99,13 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
             tes.startDateTime ASC
     """)
     List<TodayTaskSlotProjection> findTodayTasks(
-        @Param("customerId") Long customerId,
-        @Param("contractId") Long contractId,
-        @Param("today") OffsetDateTime today, // midnight today
-        @Param("tomorrow") OffsetDateTime tomorrow, // midnight tomorrow
-        @Param("serviceId") Long serviceId,
-        @Param("serviceTimeId") Long serviceTimeId,
-        @Param("slotNumber") Integer slotNumber,
-        @Param("workforceId") Long workforceId
+            @Param("customerId") Long customerId,
+            @Param("contractId") Long contractId,
+            @Param("today") OffsetDateTime today, // midnight today
+            @Param("tomorrow") OffsetDateTime tomorrow, // midnight tomorrow
+            @Param("serviceId") Long serviceId,
+            @Param("serviceTimeId") Long serviceTimeId,
+            @Param("slotNumber") Integer slotNumber,
+            @Param("workforceId") Long workforceId
     );
 }

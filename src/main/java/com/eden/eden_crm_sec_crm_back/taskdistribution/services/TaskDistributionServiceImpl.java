@@ -281,31 +281,39 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     }
 
     private void completeAndSaveImmediateDistribution(
-        TaskDistribution taskDistribution,
-        Customer customer,
-        UserData loggedInUser,
-        DistributeImmediateTaskRequest request
+            TaskDistribution taskDistribution,
+            Customer customer,
+            UserData loggedInUser,
+            DistributeImmediateTaskRequest request
     ) {
         ImmediateTaskDistribution immediateTaskDistribution = buildImmediateTaskDistribution(
-            customer, taskDistribution, Long.valueOf(loggedInUser.getId()), request
+                customer, taskDistribution, Long.valueOf(loggedInUser.getId()), request
         );
         taskDistribution.setImmediateTaskDistribution(immediateTaskDistribution);
 
         OffsetDateTime assignedAt = OffsetDateTime.now();
         List<TaskAssignment> taskAssignments = createTaskAssignmentsByWorkforceId(
-            customer, request.workforceIds(), assignedAt
+                customer, request.workforceIds(), assignedAt
         );
         List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(
-            customer, taskDistribution, taskAssignments, request
+                customer, taskDistribution, taskAssignments, request
         );
         taskDistribution.setExecutionSlots(executionSlots);
         taskDistribution = taskDistributionRepository.saveAndFlush(taskDistribution);
 
         createScheduledTaskForDistributionService.createDistributionScheduledTasks(
-            "ImmediateTaskDistributionId",
-            taskDistribution.getImmediateTaskDistribution().getId(),
-            taskDistribution.getExecutionSlots()
+                "ImmediateTaskDistributionId",
+                taskDistribution.getImmediateTaskDistribution().getId(),
+                taskDistribution.getExecutionSlots()
         );
+
+        if (request.locationId() != null) {
+            taskPresenter.initLocationCheckImages(
+                    request.taskDefinitionId(),
+                    request.locationId(),
+                    customer.getId()
+            );
+        }
     }
     private static TaskDistribution buildTaskDistributionBase(
         Customer customer,
