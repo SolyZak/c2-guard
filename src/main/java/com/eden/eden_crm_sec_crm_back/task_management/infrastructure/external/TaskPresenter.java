@@ -9,6 +9,8 @@ public interface TaskPresenter {
 
     TaskDefinitionPayload getTaskDefinition(Long id);
 
+    TaskDefinitionPayload getTaskDefinitionWithReferenceImages(Long id, Long locationId);
+
     List<TaskDefinitionPayload> listTaskDefinitions(int page, int size);
 
     List<TaskDefinitionSummaryPayload> listAllTaskDefinitions();

@@ -7,6 +7,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,5 +31,13 @@ public class TaskLocationChecksImageRepositoryImpl implements TaskLocationChecks
     @Override
     public void updateRefImage(Long locationId, Long taskCheckDefinitionId, String refImage) {
         jpaRepository.updateRefImage(locationId, taskCheckDefinitionId, refImage);
+    }
+
+    @Override
+    public List<TaskLocationChecksImage> findAllByLocationIdAndTaskDefinitionId(Long locationId, Long taskDefinitionId) {
+        return jpaRepository.findAllByLocationIdAndTaskDefinitionIdAndDeletedFalse(locationId, taskDefinitionId)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 }

@@ -42,6 +42,8 @@ public abstract class TaskCheckDTO {
     // ✅ Base64-encoded image string (optional)
     private String imageBase64;
 
+    private String referenceImageUrl;
+
 
     public abstract TaskCheck mapToEntity(Task task);
 

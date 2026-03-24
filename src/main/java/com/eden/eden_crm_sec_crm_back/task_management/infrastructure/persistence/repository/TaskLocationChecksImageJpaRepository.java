@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -24,4 +25,7 @@ public interface TaskLocationChecksImageJpaRepository extends JpaRepository<Task
     void updateRefImage(@Param("locationId") Long locationId,
                         @Param("taskCheckDefinitionId") Long taskCheckDefinitionId,
                         @Param("refImage") String refImage);
+
+    List<TaskLocationChecksImageJpaEntity> findAllByLocationIdAndTaskDefinitionIdAndDeletedFalse(
+            Long locationId, Long taskDefinitionId);
 }

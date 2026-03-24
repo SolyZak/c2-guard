@@ -86,8 +86,16 @@ public class WorkforceController {
     }
 
     @GetMapping("/{taskId}")
-    public ApiResponse<TaskCheckDto> getTaskById(@PathVariable("taskId") Long taskId) {
-        TaskDefinitionPayload taskDefinition = taskPresenter.getTaskDefinition(taskId);
+    public ApiResponse<TaskCheckDto> getTaskById(
+            @PathVariable("taskId") Long taskId,
+            @RequestParam(value = "locationId", required = false) Long locationId) {
+
+        TaskDefinitionPayload taskDefinition;
+        if (locationId != null) {
+            taskDefinition = taskPresenter.getTaskDefinitionWithReferenceImages(taskId, locationId);
+        } else {
+            taskDefinition = taskPresenter.getTaskDefinition(taskId);
+        }
         return ApiResponse.ok(toTaskCheckDto(taskDefinition));
     }
 
