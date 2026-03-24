@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ImmediateTaskDistributionRepository extends JpaRepository<ImmediateTaskDistribution, Long>, JpaSpecificationExecutor<ImmediateTaskDistribution> {
+    boolean existsByIdAndLocation_IdAndTaskDistribution_TaskDefinitionId(Long id, Long locationId, Long taskDefinitionId);
 }
