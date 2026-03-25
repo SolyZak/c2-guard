@@ -35,7 +35,8 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
                 tce.evidence_image_path AS checkTransactionImagePath,
                 te.workforce_id AS workforceId,
                 l.id AS locationId,
-                l.name AS locationName
+                l.name AS locationName,
+                array_to_string(tcc.missing_quality, ',') AS missingQualityRaw
             FROM task_check_comparison tcc
             JOIN task_check_definition tcd ON tcd.id = tcc.task_check_definition_id
             JOIN task_definition td ON td.id = tcd.task_definition_id
@@ -73,7 +74,8 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
                 tce.evidence_image_path AS checkTransactionImagePath,
                 te.workforce_id AS workforceId,
                 l.id AS locationId,
-                l.name AS locationName
+                l.name AS locationName,
+                array_to_string(tcc.missing_quality, ',') AS missingQualityRaw
             FROM task_check_comparison tcc
             JOIN task_check_definition tcd ON tcd.id = tcc.task_check_definition_id
             JOIN task_definition td ON td.id = tcd.task_definition_id

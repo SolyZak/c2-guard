@@ -13,6 +13,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.T
 import com.eden.eden_crm_sec_crm_back.task_management.application.mapper.TaskMapper;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckComparison;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.repository.TaskCheckComparisonRepository;
+import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.ImageQualityIssue;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository.TaskCheckComparisonReportProjection;
 import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -30,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -84,7 +86,7 @@ public class TaskCheckComparisonService {
                 .map(row -> TaskCheckComparisonReportResponse.builder()
                         .comparisonId(row.getComparisonId())
                         .comparisonDate(row.getComparisonDate() != null
-                                ? row.getComparisonDate().atOffset(ZoneOffset.UTC)  // Instant → OffsetDateTime
+                                ? row.getComparisonDate().atOffset(ZoneOffset.UTC)
                                 : null)
                         .comparisonRatio(row.getComparisonRatio())
                         .matching(row.getMatching())
@@ -99,6 +101,7 @@ public class TaskCheckComparisonService {
                         .workforceName(workforceNames.get(row.getWorkforceId()))
                         .locationId(row.getLocationId())
                         .locationName(row.getLocationName())
+                        .missingQuality(parseMissingQualityRaw(row.getMissingQualityRaw()))
                         .build())
                 .toList();
 
@@ -144,6 +147,25 @@ public class TaskCheckComparisonService {
         }
 
         return taskMapper.toTaskCheckComparisonResponse(comparison);
+    }
+
+    private List<ImageQualityIssue> parseMissingQualityRaw(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(value -> {
+                    try {
+                        return ImageQualityIssue.valueOf(value);
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Unknown ImageQualityIssue value in database: '{}'", value);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private Comparator<TaskCheckComparisonReportResponse> getComparator(String sortBy) {

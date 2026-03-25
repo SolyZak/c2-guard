@@ -54,11 +54,13 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
         request.setTaskCheckDefinitionId(payload.getTaskCheckDefinitionId());
         request.setTaskCheckExecutionId(payload.getTaskCheckExecutionId());
         request.setCustomerId(payload.getCustomerId());
-        request.setLocationId(payload.getLocationId());                   // ← NEW
-        request.setEvidenceImagePath(payload.getEvidenceImagePath());     // ← NEW
+        request.setLocationId(payload.getLocationId());
+        request.setEvidenceImagePath(payload.getEvidenceImagePath());
+        request.setMissingQuality(payload.getMissingQuality());
         return taskExternalMapper.toPayload(
                 taskExecutionService.createTaskCheckComparison(request));
     }
+
     @Override
     public String uploadCheckExecutionImage(Long checkDefId, MultipartFile image) {
         return taskCheckComparisonService.uploadExecutionImage(checkDefId, image);

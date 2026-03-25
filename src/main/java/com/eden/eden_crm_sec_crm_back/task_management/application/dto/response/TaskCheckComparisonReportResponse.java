@@ -1,9 +1,11 @@
 package com.eden.eden_crm_sec_crm_back.task_management.application.dto.response;
 
+import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.ImageQualityIssue;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,4 +25,5 @@ public class TaskCheckComparisonReportResponse {
     private String workforceName;
     private Long locationId;
     private String locationName;
+    private List<ImageQualityIssue> missingQuality;
 }
