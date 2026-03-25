@@ -88,7 +88,8 @@ public class TaskExecutionService {
                 null,
                 null,
                 request.getCustomerId(),
-                taskLocationChecksImageId);
+                taskLocationChecksImageId,
+                request.getMissingQuality());
 
         comparison = taskCheckComparisonRepository.save(comparison);
 

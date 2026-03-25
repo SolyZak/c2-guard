@@ -22,6 +22,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
 import com.eden.eden_crm_sec_crm_back.service.impl.CrmTriggerLogService;
+import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.ImageQualityIssue;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.CreateTaskExecutionPayload;
@@ -226,6 +227,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                             .customerId(customer.getId())
                             .locationId(locationId)
                             .evidenceImagePath(imagePath)
+                            .missingQuality(toImageQualityIssues(checkDto.getMissingQuality()))
                             .build()
             );
         });
@@ -236,6 +238,13 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
 
         // After execution is recorded, evaluate each check for violations and fire alerts if needed
         evaluateAndFireCheckAlerts(checkDefs, request.checks(), taskDefinition.getName(), customer, taskExecutionSlot);
+    }
+
+    private static List<ImageQualityIssue> toImageQualityIssues(List<String> raw) {
+        if (raw == null || raw.isEmpty()) return null;
+        return raw.stream()
+                .map(ImageQualityIssue::valueOf)
+                .toList();
     }
 
     private static String getCheckTypeFromDto(TaskCheckDTO dto) {

@@ -14,4 +14,5 @@ public class TaskCheckDefinitionPayload {
     private TaskCheckValue checkSettings;
     private boolean hasEvidence;
     private boolean hasComment;
+    private String referenceImageUrl;
 }

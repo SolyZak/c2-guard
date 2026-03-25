@@ -15,6 +15,7 @@ import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.repository.PremiseRepository;
 import com.eden.eden_crm_sec_crm_back.service.LocationService;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.ImmediateTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.utils.LocationUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
@@ -48,6 +49,7 @@ public class LocationServiceImpl implements LocationService {
     private final PremiseRepository premiseRepository;
     private final CustomerRepository customerRepository;
     private final PatrolTaskDistributionRepository patrolTaskDistributionRepository;
+    private final ImmediateTaskDistributionRepository immediateTaskDistributionRepository;
     private final Utils utils;
 
     private final EntityManager em;
@@ -70,7 +72,6 @@ public class LocationServiceImpl implements LocationService {
             location.setPremise(premise);
             location.setName(dto.getLocationName());
 
-            // IMPORTANT: your current condition is impossible (&&). This is the typical correct validation:
             String accessType = dto.getAccessType();
             if (!accessType.equals(LocationAccessTypeEnum.QR_CODE.getType())
                     && !accessType.equals(LocationAccessTypeEnum.SPECIFIC_POINT.getType())) {
@@ -89,11 +90,9 @@ public class LocationServiceImpl implements LocationService {
             locations.add(location);
         }
 
-        // 1) Persist first so IDs are assigned
         locations = locationRepository.saveAll(locations);
-        locationRepository.flush(); // ensures inserts happen now (safe)
+        locationRepository.flush();
 
-        // 2) Generate QR for QR_CODE locations
         for (Location location : locations) {
             if (LocationAccessTypeEnum.QR_CODE.getType().equals(location.getAccessType())) {
                 byte[] qr = QrCodeUtil.generateQrCode(String.valueOf(location.getId()), 300, 300);
@@ -101,7 +100,6 @@ public class LocationServiceImpl implements LocationService {
             }
         }
 
-        // 3) Update with QR images
         locationRepository.saveAll(locations);
     }
 
@@ -109,12 +107,10 @@ public class LocationServiceImpl implements LocationService {
     @Transactional
     public UpdateLocationResponse updateLocation(Long id, UpdateLocationRequest request) {
 
-        // Get logged-in customer
         Customer customer = customerRepository
                 .findById(utils.getLoggedInUser().getCustomerId())
                 .orElseThrow(UserNotProvided::new);
 
-        // Check access type FIRST (no LOB loading)
         String accessType = locationRepository.findAccessTypeById(id)
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("validation.location.not.found"),
@@ -128,14 +124,12 @@ public class LocationServiceImpl implements LocationService {
             );
         }
 
-        // Now safe to load full entity
         Location location = locationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("validation.location.not.found"),
                         HttpStatus.NOT_FOUND
                 ));
 
-        // Verify ownership
         if (!location.getCustomer().getId().equals(customer.getId())) {
             throw new BusinessException(
                     MessageUtil.getMessage("validation.location.unauthorized"),
@@ -143,7 +137,6 @@ public class LocationServiceImpl implements LocationService {
             );
         }
 
-        // Track what's being updated
         String updatedLocationName = null;
         BigDecimal updatedLongitude = null;
         BigDecimal updatedLatitude = null;
@@ -263,7 +256,6 @@ public class LocationServiceImpl implements LocationService {
                 locationRepository.listAllLoggedInCustomerLocationsByPatrolId(
                         customer.getId(), patrolId);
 
-        /* Using a LinkedHashMap just to keep insertion order and ensure uniqueness */
         Map<Long, LocationProjection> uniqueById = new LinkedHashMap<>();
         for (LocationProjection lp : patrolLocations) {
             uniqueById.putIfAbsent(lp.getId(), lp);
@@ -338,36 +330,47 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
-        final Long id = Long.valueOf(request.payload());
+        final Long locationId = Long.valueOf(request.payload());
+
         Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
-                .findLocationByIdAndAccessType(id, LocationAccessTypeEnum.QR_CODE.getType());
+                .findLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.QR_CODE.getType());
 
-        boolean isValid = patrolTaskDistributionRepository
-                .existsByIdAndLocation_IdAndTaskDistribution_TaskDefinitionId(
-                        request.patrolDistributionId(),
-                        id,
-                        request.taskId()
-                );
-
-        if (!isValid) {
-            String msg = MessageUtil.getMessage("validation.qr.patrol.distribution.invalid");
-            return new ValidateQrResponse(false, msg, null, null);
+        if (opt.isEmpty()) {
+            String msg = MessageUtil.getMessage("validation.qr.invalid");
+            return new ValidateQrResponse(false, msg, null, "");
         }
 
+        boolean isValid;
 
-        if (opt.isPresent()) {
-            var loc = opt.get();
-            String msg = MessageUtil.getMessage("validation.qr.success");
-            return new ValidateQrResponse(
-                    true,
-                    msg,
-                    loc.getId(),
-                    loc.getName()
-            );
+        if (request.patrolDistributionId() != null && request.patrolDistributionId() > 0) {
+            isValid = patrolTaskDistributionRepository
+                    .existsByIdAndLocation_IdAndTaskDistribution_TaskDefinitionId(
+                            request.patrolDistributionId(),
+                            locationId,
+                            request.taskDefinitionId()
+                    );
+
+            if (!isValid) {
+                String msg = MessageUtil.getMessage("validation.qr.patrol.distribution.invalid");
+                return new ValidateQrResponse(false, msg, null, null);
+            }
+        } else {
+            isValid = immediateTaskDistributionRepository
+                    .existsByIdAndLocation_IdAndTaskDistribution_TaskDefinitionId(
+                            request.immediateDistributionId(),
+                            locationId,
+                            request.taskDefinitionId()
+                    );
+
+            if (!isValid) {
+                String msg = MessageUtil.getMessage("validation.qr.immediate.distribution.invalid");
+                return new ValidateQrResponse(false, msg, null, null);
+            }
         }
 
-        String msg = MessageUtil.getMessage("validation.qr.invalid");
-        return new ValidateQrResponse(false, msg, null, "");
+        var loc = opt.get();
+        String msg = MessageUtil.getMessage("validation.qr.success");
+        return new ValidateQrResponse(true, msg, loc.getId(), loc.getName());
     }
 
     @Override
@@ -384,7 +387,6 @@ public class LocationServiceImpl implements LocationService {
 
         var loc = opt.get();
 
-        // Check if tolerance is null
         if (loc.getTolerance() == null) {
             throw new BusinessException(
                     MessageUtil.getMessage("validation.location.tolerance.not.set"),

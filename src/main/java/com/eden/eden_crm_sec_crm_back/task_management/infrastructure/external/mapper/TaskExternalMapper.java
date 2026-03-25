@@ -17,7 +17,6 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.pa
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckComparisonResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckComparisonPayload;
 
-
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
@@ -29,7 +28,6 @@ public interface TaskExternalMapper {
     // ── Response → Payload (output) ──────────────────────────────────────────
 
     TaskDefinitionPayload toPayload(TaskDefinitionResponse response);
-
 
     TaskCheckDefinitionPayload toPayload(TaskCheckDefinitionResponse response);
 

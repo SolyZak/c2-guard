@@ -2,6 +2,8 @@ package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistenc
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 
@@ -39,4 +41,8 @@ public class TaskCheckComparisonJpaEntity {
 
     @Column(name = "created_date", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdDate;
+
+    @Column(name = "missing_quality", columnDefinition = "text[]")
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    private String[] missingQuality;
 }

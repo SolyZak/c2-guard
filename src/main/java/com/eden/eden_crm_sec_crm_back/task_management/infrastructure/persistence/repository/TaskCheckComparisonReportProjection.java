@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public interface TaskCheckComparisonReportProjection {
     Long getComparisonId();
-    Instant getComparisonDate();      // ← Instant (what JDBC actually returns for timestamptz)
+    Instant getComparisonDate();
     Double getComparisonRatio();
     Boolean getMatching();
     Long getTaskDefinitionId();
@@ -17,4 +17,5 @@ public interface TaskCheckComparisonReportProjection {
     Long getWorkforceId();
     Long getLocationId();
     String getLocationName();
+    String getMissingQualityRaw();
 }

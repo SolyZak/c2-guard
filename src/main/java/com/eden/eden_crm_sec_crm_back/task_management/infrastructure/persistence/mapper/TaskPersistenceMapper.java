@@ -3,11 +3,14 @@ package com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistenc
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.*;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.CheckType;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.Severity;
+import com.eden.eden_crm_sec_crm_back.task_management.domain.valueobject.ImageQualityIssue;
+
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,8 +31,20 @@ public abstract class TaskPersistenceMapper {
     @Mapping(target = "checkType", source = "checkType")
     public abstract TaskCheckExecutionJpaEntity toJpaEntity(TaskCheckExecution domain);
 
-    public abstract TaskCheckComparisonJpaEntity toJpaEntity(TaskCheckComparison domain);
-
+    public TaskCheckComparisonJpaEntity toJpaEntity(TaskCheckComparison domain) {
+        if (domain == null) return null;
+        return TaskCheckComparisonJpaEntity.builder()
+                .id(domain.getId())
+                .taskCheckDefinitionId(domain.getTaskCheckDefinitionId())
+                .taskCheckExecutionId(domain.getTaskCheckExecutionId())
+                .taskLocationChecksImageId(domain.getTaskLocationChecksImageId())
+                .matching(domain.getMatching())
+                .ratio(domain.getRatio())
+                .customerId(domain.getCustomerId())
+                .createdDate(domain.getCreatedDate())
+                .missingQuality(imageQualityIssuesToStringArray(domain.getMissingQuality()))
+                .build();
+    }
 
     public TaskLocationChecksImageJpaEntity toJpaEntity(TaskLocationChecksImage domain) {
         if (domain == null) return null;
@@ -47,6 +62,7 @@ public abstract class TaskPersistenceMapper {
                 .modifiedDate(domain.getModifiedDate())
                 .build();
     }
+
     // ---- toDomain (manual — domain uses private constructors + static
     // reconstitute factories) ----
 
@@ -107,6 +123,7 @@ public abstract class TaskPersistenceMapper {
     }
 
     public TaskCheckComparison toDomain(TaskCheckComparisonJpaEntity entity) {
+        if (entity == null) return null;
         return TaskCheckComparison.reconstitute(
                 entity.getId(),
                 entity.getTaskCheckDefinitionId(),
@@ -115,7 +132,8 @@ public abstract class TaskPersistenceMapper {
                 entity.getRatio(),
                 entity.getCustomerId(),
                 entity.getCreatedDate(),
-                entity.getTaskLocationChecksImageId());   // ← NEW
+                entity.getTaskLocationChecksImageId(),
+                stringArrayToImageQualityIssues(entity.getMissingQuality()));
     }
 
     public TaskLocationChecksImage toDomain(TaskLocationChecksImageJpaEntity entity) {
@@ -134,6 +152,20 @@ public abstract class TaskPersistenceMapper {
                 .modifiedDate(entity.getModifiedDate())
                 .build();
     }
+
+    // ── Helper conversion methods ──
+
+    protected String[] imageQualityIssuesToStringArray(List<ImageQualityIssue> issues) {
+        if (issues == null || issues.isEmpty()) return null;
+        return issues.stream()
+                .map(ImageQualityIssue::name)
+                .toArray(String[]::new);
+    }
+
+    protected List<ImageQualityIssue> stringArrayToImageQualityIssues(String[] array) {
+        if (array == null || array.length == 0) return null;
+        return Arrays.stream(array)
+                .map(ImageQualityIssue::valueOf)
+                .toList();
+    }
 }
-
-
