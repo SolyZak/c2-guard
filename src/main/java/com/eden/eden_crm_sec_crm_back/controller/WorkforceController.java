@@ -101,8 +101,8 @@ public class WorkforceController {
 
     @PostMapping("/{id}/location")
     public ApiResponse<Map<String, String>> addWorkforceLocation(
-        @PathVariable("id") Long workforceId,
-        @Valid@RequestBody WorkforceLocationRequest workforceLocationRequest
+            @PathVariable("id") Long workforceId,
+            @Valid@RequestBody WorkforceLocationRequest workforceLocationRequest
     ) {
         workforceService.addWorkforceLocation(workforceId, workforceLocationRequest);
         return ApiResponse.ok(Map.of("message", "Workforce location updated successfully"));
@@ -110,60 +110,64 @@ public class WorkforceController {
 
     private static TaskCheckDto toTaskCheckDto(TaskDefinitionPayload taskDefinition) {
         List<TaskCheckDTO> checks = taskDefinition.getChecks().stream()
-            .map(WorkforceController::toTaskCheckDTO)
-            .toList();
+                .map(WorkforceController::toTaskCheckDTO)
+                .toList();
         return new TaskCheckDto(taskDefinition.getName(), checks);
     }
 
     private static TaskCheckDTO toTaskCheckDTO(TaskCheckDefinitionPayload checkDef) {
-        return switch (checkDef.getCheckType()) {
+        TaskCheckDTO dto = switch (checkDef.getCheckType()) {
             case "TEXT" -> {
-                TaskCheckTextDTO dto = new TaskCheckTextDTO();
-                dto.setId(checkDef.getId());
-                dto.setName(checkDef.getName());
-                dto.setEvidence(checkDef.isHasEvidence());
-                dto.setCommentCheck(checkDef.isHasComment());
+                TaskCheckTextDTO textDto = new TaskCheckTextDTO();
+                textDto.setId(checkDef.getId());
+                textDto.setName(checkDef.getName());
+                textDto.setEvidence(checkDef.isHasEvidence());
+                textDto.setCommentCheck(checkDef.isHasComment());
                 if (checkDef.getCheckSettings() instanceof TextCheckValue textVal)
-                    dto.setNotes(textVal.getNotes());
-                yield dto;
+                    textDto.setNotes(textVal.getNotes());
+                yield textDto;
             }
             case "NUMBER" -> {
-                TaskCheckNumberDTO dto = new TaskCheckNumberDTO();
-                dto.setId(checkDef.getId());
-                dto.setName(checkDef.getName());
-                dto.setEvidence(checkDef.isHasEvidence());
-                dto.setCommentCheck(checkDef.isHasComment());
+                TaskCheckNumberDTO numDto = new TaskCheckNumberDTO();
+                numDto.setId(checkDef.getId());
+                numDto.setName(checkDef.getName());
+                numDto.setEvidence(checkDef.isHasEvidence());
+                numDto.setCommentCheck(checkDef.isHasComment());
                 if (checkDef.getCheckSettings() instanceof NumberCheckValue numVal) {
-                    dto.setUnit(numVal.getUnit());
-                    dto.setOperator(numVal.getOperator());
-                    dto.setValue(numVal.getValue());
+                    numDto.setUnit(numVal.getUnit());
+                    numDto.setOperator(numVal.getOperator());
+                    numDto.setValue(numVal.getValue());
                 }
-                yield dto;
+                yield numDto;
             }
             case "DECIMAL" -> {
-                TaskCheckDecimalDTO dto = new TaskCheckDecimalDTO();
-                dto.setId(checkDef.getId());
-                dto.setName(checkDef.getName());
-                dto.setEvidence(checkDef.isHasEvidence());
-                dto.setCommentCheck(checkDef.isHasComment());
+                TaskCheckDecimalDTO decDto = new TaskCheckDecimalDTO();
+                decDto.setId(checkDef.getId());
+                decDto.setName(checkDef.getName());
+                decDto.setEvidence(checkDef.isHasEvidence());
+                decDto.setCommentCheck(checkDef.isHasComment());
                 if (checkDef.getCheckSettings() instanceof DecimalCheckValue decVal) {
-                    dto.setUnit(decVal.getUnit());
-                    dto.setOperator(decVal.getOperator());
-                    dto.setValue(decVal.getValue());
+                    decDto.setUnit(decVal.getUnit());
+                    decDto.setOperator(decVal.getOperator());
+                    decDto.setValue(decVal.getValue());
                 }
-                yield dto;
+                yield decDto;
             }
             case "LIST" -> {
-                TaskCheckListDTO dto = new TaskCheckListDTO();
-                dto.setId(checkDef.getId());
-                dto.setName(checkDef.getName());
-                dto.setEvidence(checkDef.isHasEvidence());
-                dto.setCommentCheck(checkDef.isHasComment());
+                TaskCheckListDTO listDto = new TaskCheckListDTO();
+                listDto.setId(checkDef.getId());
+                listDto.setName(checkDef.getName());
+                listDto.setEvidence(checkDef.isHasEvidence());
+                listDto.setCommentCheck(checkDef.isHasComment());
                 if (checkDef.getCheckSettings() instanceof ListCheckValue listVal)
-                    dto.setListItems(listVal.getItems());
-                yield dto;
+                    listDto.setListItems(listVal.getItems());
+                yield listDto;
             }
             default -> throw new IllegalStateException("Unknown check type: " + checkDef.getCheckType());
         };
+
+        dto.setReferenceImageUrl(checkDef.getReferenceImageUrl());
+
+        return dto;
     }
 }
