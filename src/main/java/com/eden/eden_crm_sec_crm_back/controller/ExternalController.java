@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
+import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.objects.UserData;
@@ -139,5 +140,12 @@ public class ExternalController {
 
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
+    }
+
+    @GetMapping(path = "/operation-sites/{operationSiteId}/cameras")
+    ApiResponse<List<OperationSiteCameraData>> getCamerasByOperationSite(
+            @PathVariable("operationSiteId") Long operationSiteId
+    ) {
+        return ApiResponse.ok(externalService.getCamerasByOperationSiteId(operationSiteId));
     }
 }
