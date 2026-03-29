@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "/eden/operation-site-cameras")
+@RequestMapping(path = "/operation-site-cameras")
 @Tag(
         name = "Operation Site Cameras APIs",
         description = "APIs for managing camera assignments to operation sites"
