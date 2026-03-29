@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS location_cameras (
     camera_id   BIGINT NOT NULL,
     customer_id BIGINT NOT NULL,
 
-    CONSTRAINT fk_location_cameras_location FOREIGN KEY (location_id) REFERENCES locations(id),
+    CONSTRAINT fk_location_cameras_location FOREIGN KEY (location_id) REFERENCES location(id),
     CONSTRAINT fk_location_cameras_camera   FOREIGN KEY (camera_id)   REFERENCES cameras(id),
     CONSTRAINT fk_location_cameras_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
     CONSTRAINT uq_location_camera           UNIQUE (location_id, camera_id)
