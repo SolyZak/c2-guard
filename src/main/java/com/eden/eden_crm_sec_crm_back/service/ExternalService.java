@@ -18,4 +18,5 @@ public interface ExternalService {
     List<ContractPlannedQntDto> getContractPlannedQnt(Long customerId, Long securityCompanyId, List<Long> contractId, LocalDate from, LocalDate to);
     Map<String, Object> workforceHasActivity(WorkforceHasActivityRequest request);
     Map<Long, Long> getPremiseIdsByOperationSiteIds(Long customerId, List<Long> operationSiteIds);
+    List<OperationSiteCameraData> getCamerasByOperationSiteId(Long operationSiteId);
 }
