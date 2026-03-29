@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
+import com.eden.eden_crm_sec_crm_back.dto.request.BulkOperationSiteCameraRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.OperationSiteCameraRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.OperationSiteCameraResponseDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
@@ -20,6 +21,7 @@ import java.util.List;
 )
 @RequiredArgsConstructor
 public class OperationSiteCamerasController {
+
     private final OperationSiteCameraService operationSiteCameraService;
 
     @Operation(summary = "Assign a camera to an operation site")
@@ -30,7 +32,15 @@ public class OperationSiteCamerasController {
         return ApiResponse.ok(operationSiteCameraService.assignCameraToOperationSite(dto));
     }
 
-    @Operation(summary = "Get all cameras for a specific operation site with full details (camera + vendor info)")
+    @Operation(summary = "Assign multiple cameras to an operation site")
+    @PostMapping(path = "/bulk")
+    ApiResponse<List<OperationSiteCameraResponseDto>> bulkAssignCamerasToOperationSite(
+            @Valid @RequestBody BulkOperationSiteCameraRequestDto dto
+    ) {
+        return ApiResponse.ok(operationSiteCameraService.bulkAssignCamerasToOperationSite(dto));
+    }
+
+    @Operation(summary = "Get all cameras for a specific operation site with full details")
     @GetMapping(path = "/{operationSiteId}")
     ApiResponse<List<OperationSiteCameraResponseDto>> getCamerasByOperationSite(
             @PathVariable("operationSiteId") Long operationSiteId
@@ -38,4 +48,3 @@ public class OperationSiteCamerasController {
         return ApiResponse.ok(operationSiteCameraService.getCamerasByOperationSiteId(operationSiteId));
     }
 }
-
