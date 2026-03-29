@@ -2,16 +2,20 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.BulkOperationSiteCameraRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.OperationSiteCameraRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CameraAssignmentResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.OperationSiteCameraResponseDto;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
+import com.eden.eden_crm_sec_crm_back.mapper.CameraMapper;
 import com.eden.eden_crm_sec_crm_back.mapper.OperationSiteCameraMapper;
 import com.eden.eden_crm_sec_crm_back.models.Camera;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.OperationSiteCamera;
+import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.repository.CameraRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
 import com.eden.eden_crm_sec_crm_back.repository.OperationSiteCameraRepository;
 import com.eden.eden_crm_sec_crm_back.service.OperationSiteCameraService;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,7 +23,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +33,10 @@ public class OperationSiteCameraServiceImpl implements OperationSiteCameraServic
 
     private final OperationSiteCameraRepository repository;
     private final OperationSiteCameraMapper mapper;
+    private final CameraMapper cameraMapper;
     private final CameraRepository cameraRepository;
     private final CustomerSiteRepository customerSiteRepository;
+    private final Utils utils;
 
     @Transactional
     @Override
@@ -56,14 +64,11 @@ public class OperationSiteCameraServiceImpl implements OperationSiteCameraServic
     @Transactional
     @Override
     public List<OperationSiteCameraResponseDto> bulkAssignCamerasToOperationSite(BulkOperationSiteCameraRequestDto dto) {
-        // Validate operation site exists
         CustomerSite operationSite = customerSiteRepository.findById(dto.operationSiteId())
                 .orElseThrow(() -> new BusinessException("Operation site not found", HttpStatus.NOT_FOUND));
 
-        // Fetch all cameras in one query
         List<Camera> cameras = cameraRepository.findAllById(dto.cameraIds());
 
-        // Validate all camera IDs exist
         if (cameras.size() != dto.cameraIds().size()) {
             List<Long> foundIds = cameras.stream().map(Camera::getId).toList();
             List<Long> missingIds = dto.cameraIds().stream()
@@ -75,7 +80,6 @@ public class OperationSiteCameraServiceImpl implements OperationSiteCameraServic
             );
         }
 
-        // Build all entities
         List<OperationSiteCamera> operationSiteCameras = new ArrayList<>();
         for (Camera camera : cameras) {
             OperationSiteCamera osc = OperationSiteCamera.builder()
@@ -85,7 +89,6 @@ public class OperationSiteCameraServiceImpl implements OperationSiteCameraServic
             operationSiteCameras.add(osc);
         }
 
-        // Save all in one batch
         try {
             operationSiteCameras = repository.saveAll(operationSiteCameras);
         } catch (DataIntegrityViolationException e) {
@@ -108,6 +111,34 @@ public class OperationSiteCameraServiceImpl implements OperationSiteCameraServic
         return repository.findByOperationSiteIdWithCameraAndVendor(operationSiteId)
                 .stream()
                 .map(mapper::operationSiteCameraToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<CameraAssignmentResponseDto> getAvailableCamerasForOperationSite(Long operationSiteId) {
+        // Validate operation site exists
+        customerSiteRepository.findById(operationSiteId)
+                .orElseThrow(() -> new BusinessException("Operation site not found", HttpStatus.NOT_FOUND));
+
+        // Resolve customer from token
+        UserData userData = utils.getLoggedInUser();
+        Long customerId = userData.getCustomerId();
+
+        // Get all cameras belonging to this customer
+        List<Camera> allCameras = cameraRepository.findByCustomerIdWithDetails(customerId);
+
+        // Get camera IDs already assigned to this operation site
+        Set<Long> assignedCameraIds = new HashSet<>(
+                repository.findCameraIdsByOperationSiteId(operationSiteId)
+        );
+
+        // Map with assigned boolean
+        return allCameras.stream()
+                .map(camera -> {
+                    CameraAssignmentResponseDto dto = cameraMapper.cameraToAssignmentResponse(camera);
+                    dto.setAssigned(assignedCameraIds.contains(camera.getId()));
+                    return dto;
+                })
                 .toList();
     }
 }

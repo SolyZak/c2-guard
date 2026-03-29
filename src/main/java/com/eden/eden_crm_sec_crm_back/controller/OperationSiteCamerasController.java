@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.BulkOperationSiteCameraRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.OperationSiteCameraRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CameraAssignmentResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.OperationSiteCameraResponseDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.OperationSiteCameraService;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "/operation-site-cameras")
+@RequestMapping(path = "/eden/operation-site-cameras")
 @Tag(
         name = "Operation Site Cameras APIs",
         description = "APIs for managing camera assignments to operation sites"
@@ -40,11 +41,19 @@ public class OperationSiteCamerasController {
         return ApiResponse.ok(operationSiteCameraService.bulkAssignCamerasToOperationSite(dto));
     }
 
-    @Operation(summary = "Get all cameras for a specific operation site with full details")
+    @Operation(summary = "Get all cameras assigned to a specific operation site")
     @GetMapping(path = "/{operationSiteId}")
     ApiResponse<List<OperationSiteCameraResponseDto>> getCamerasByOperationSite(
             @PathVariable("operationSiteId") Long operationSiteId
     ) {
         return ApiResponse.ok(operationSiteCameraService.getCamerasByOperationSiteId(operationSiteId));
+    }
+
+    @Operation(summary = "Get all customer cameras with assignment status for a specific operation site")
+    @GetMapping(path = "/{operationSiteId}/available")
+    ApiResponse<List<CameraAssignmentResponseDto>> getAvailableCamerasForOperationSite(
+            @PathVariable("operationSiteId") Long operationSiteId
+    ) {
+        return ApiResponse.ok(operationSiteCameraService.getAvailableCamerasForOperationSite(operationSiteId));
     }
 }

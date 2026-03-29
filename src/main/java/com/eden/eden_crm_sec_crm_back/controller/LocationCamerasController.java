@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.BulkLocationCameraRequestDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.LocationCameraRequestDto;
+import com.eden.eden_crm_sec_crm_back.dto.response.CameraAssignmentResponseDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.LocationCameraResponseDto;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.LocationCameraService;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "/location-cameras")
+@RequestMapping(path = "/eden/location-cameras")
 @Tag(
         name = "Location Cameras APIs",
         description = "APIs for managing camera assignments to locations"
@@ -40,11 +41,19 @@ public class LocationCamerasController {
         return ApiResponse.ok(locationCameraService.bulkAssignCamerasToLocation(dto));
     }
 
-    @Operation(summary = "Get all cameras for a specific location with full details")
+    @Operation(summary = "Get all cameras assigned to a specific location")
     @GetMapping(path = "/{locationId}")
     ApiResponse<List<LocationCameraResponseDto>> getCamerasByLocation(
             @PathVariable("locationId") Long locationId
     ) {
         return ApiResponse.ok(locationCameraService.getCamerasByLocationId(locationId));
+    }
+
+    @Operation(summary = "Get all customer cameras with assignment status for a specific location")
+    @GetMapping(path = "/{locationId}/available")
+    ApiResponse<List<CameraAssignmentResponseDto>> getAvailableCamerasForLocation(
+            @PathVariable("locationId") Long locationId
+    ) {
+        return ApiResponse.ok(locationCameraService.getAvailableCamerasForLocation(locationId));
     }
 }

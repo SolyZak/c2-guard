@@ -14,8 +14,5 @@ public record CreateCameraRequest(
         String ip,
 
         @NotNull(message = "{validation.vendor.id.not.null}")
-        Long vendorId,
-
-        @NotNull(message = "{validation.customer.id.not.null}")
-        Long customerId
+        Long vendorId
 ) {}

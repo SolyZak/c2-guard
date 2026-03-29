@@ -19,4 +19,7 @@ public interface LocationCameraRepository extends JpaRepository<LocationCamera, 
             WHERE lc.location.id = :locationId
             """)
     List<LocationCamera> findByLocationIdWithCameraAndVendor(@Param("locationId") Long locationId);
+
+    @Query("SELECT lc.camera.id FROM LocationCamera lc WHERE lc.location.id = :locationId")
+    List<Long> findCameraIdsByLocationId(@Param("locationId") Long locationId);
 }
