@@ -10,6 +10,7 @@ import java.util.List;
 
 @Repository
 public interface OperationSiteCameraRepository extends JpaRepository<OperationSiteCamera, Long> {
+
     @Query("""
             SELECT osc FROM OperationSiteCamera osc
             JOIN FETCH osc.camera c
@@ -17,5 +18,7 @@ public interface OperationSiteCameraRepository extends JpaRepository<OperationSi
             WHERE osc.operationSite.id = :operationSiteId
             """)
     List<OperationSiteCamera> findByOperationSiteIdWithCameraAndVendor(@Param("operationSiteId") Long operationSiteId);
-}
 
+    @Query("SELECT osc.camera.id FROM OperationSiteCamera osc WHERE osc.operationSite.id = :operationSiteId")
+    List<Long> findCameraIdsByOperationSiteId(@Param("operationSiteId") Long operationSiteId);
+}

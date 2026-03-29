@@ -7,11 +7,13 @@ import com.eden.eden_crm_sec_crm_back.mapper.CameraMapper;
 import com.eden.eden_crm_sec_crm_back.models.Camera;
 import com.eden.eden_crm_sec_crm_back.models.Customer;
 import com.eden.eden_crm_sec_crm_back.models.Vendor;
+import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CameraRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.VendorRepository;
 import com.eden.eden_crm_sec_crm_back.service.CameraService;
+import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,17 +31,19 @@ public class CameraServiceImpl implements CameraService {
     private final CameraMapper mapper;
     private final CustomerRepository customerRepository;
     private final VendorRepository vendorRepository;
+    private final Utils utils;
 
     @Transactional
     @Override
     public CameraResponseDto create(CreateCameraRequest dto) {
+        // Resolve customer from token
+        UserData userData = utils.getLoggedInUser();
+        Customer customer = customerRepository.findById(userData.getCustomerId())
+                .orElseThrow(() -> new BusinessException("Customer not found", HttpStatus.NOT_FOUND));
+
         // Validate vendor exists
         Vendor vendor = vendorRepository.findById(dto.vendorId())
                 .orElseThrow(() -> new BusinessException("Vendor not found", HttpStatus.NOT_FOUND));
-
-        // Validate customer exists
-        Customer customer = customerRepository.findById(dto.customerId())
-                .orElseThrow(() -> new BusinessException("Customer not found", HttpStatus.NOT_FOUND));
 
         Camera camera = mapper.requestToCamera(dto);
         camera.setVendor(vendor);
