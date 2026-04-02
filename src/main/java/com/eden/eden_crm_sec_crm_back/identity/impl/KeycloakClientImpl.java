@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
 import java.util.*;
 
 @Slf4j
@@ -32,72 +31,101 @@ public class KeycloakClientImpl implements KeycloakClient {
     private String realm;
 
     @Override
-    public Boolean userExits(String username) {
+    public Boolean userExists(String username) {
         UsersResource usersResource = getRealmResource().users();
-        List<UserRepresentation> users = usersResource.search(username, 0, 1);
+        List<UserRepresentation> users = usersResource.search(username, true);
         return users != null && !users.isEmpty();
     }
 
     @Override
-    public Boolean userExitsIgnoreUserId(String username, Long userId) {
+    public Boolean userExistsIgnoreUserId(String username, Long userId) {
         UsersResource usersResource = getRealmResource().users();
-        List<UserRepresentation> users = usersResource.search(username, 0, 1);
-        if (users != null && !users.isEmpty()) {
-            Map<String, List<String>> userAttributes = users.stream().findFirst().get().getAttributes();
-            Optional<String> userIdExists = userAttributes.get(USER_ID_ATTRIBUTE).stream().findFirst();
-            return userIdExists.isEmpty() || !userIdExists.get().equalsIgnoreCase(userId.toString());
+        List<UserRepresentation> users = usersResource.search(username, true);
+
+        if (users == null || users.isEmpty()) {
+            return false;
         }
-        return false;
+
+        UserRepresentation user = users.get(0);
+        Map<String, List<String>> userAttributes = user.getAttributes();
+
+        if (userAttributes == null) {
+            return true;
+        }
+
+        List<String> userIdValues = userAttributes.get(USER_ID_ATTRIBUTE);
+        if (userIdValues == null || userIdValues.isEmpty()) {
+            return true;
+        }
+
+        return !userIdValues.get(0).equalsIgnoreCase(userId.toString());
     }
 
     @Override
     public void createUser(UserRequest userRequest) {
         UserRepresentation userRepresentation = getUserRepresentation(userRequest);
+
         try (Response response = getRealmResource().users().create(userRepresentation)) {
             if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
-                URI location = response.getLocation();
-                if (location != null) return;
-            } else {
-                log.error("failed to create user with keycloak response: {}", response.getStatusInfo().getReasonPhrase());
-                throw new BusinessException(MessageUtil.getMessage("identity-manager.failed.create.user"), HttpStatus.BAD_REQUEST);
+                log.info("Successfully created user: {}", userRepresentation.getUsername());
+                return;
             }
+            log.error("Failed to create user with keycloak response: {}", response.getStatusInfo().getReasonPhrase());
+            throw new BusinessException(
+                    MessageUtil.getMessage("identity-manager.failed.create.user"),
+                    HttpStatus.BAD_REQUEST
+            );
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to create user: {}", e.getMessage());
-            throw new BusinessException(MessageUtil.getMessage("identity-manager.failed.create.user"), HttpStatus.SERVICE_UNAVAILABLE);
+            log.error("Failed to create user: {}", e.getMessage(), e);
+            throw new BusinessException(
+                    MessageUtil.getMessage("identity-manager.failed.create.user"),
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
-        log.error("Failed to return user for username: {}", userRepresentation.getUsername());
-        throw new BusinessException(MessageUtil.getMessage("identity-manager.failed.retrieve.user"), HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @Override
     public void deleteUser(String username) {
         UsersResource usersResource = getRealmResource().users();
-        UserRepresentation user = usersResource.search(username, 0, 1)
+        UserRepresentation user = usersResource.search(username, true)
                 .stream().findFirst()
-                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("identity-manager.user.not.found"), HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("identity-manager.user.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
 
         try (Response response = getRealmResource().users().delete(user.getId())) {
-            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-                log.error("failed to delete user with keycloak response: {}", response.getStatusInfo().getReasonPhrase());
-                throw new BusinessException(MessageUtil.getMessage("identity-manager.failed.delete.user"), HttpStatus.BAD_REQUEST);
+            if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                log.error("Failed to delete user with keycloak response: {}", response.getStatusInfo().getReasonPhrase());
+                throw new BusinessException(
+                        MessageUtil.getMessage("identity-manager.failed.delete.user"),
+                        HttpStatus.BAD_REQUEST
+                );
             }
+            log.info("Successfully deleted user: {}", username);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to delete user: {}", e.getMessage());
-            throw new BusinessException(MessageUtil.getMessage("identity-manager.failed.delete.user"), HttpStatus.SERVICE_UNAVAILABLE);
+            log.error("Failed to delete user: {}", e.getMessage(), e);
+            throw new BusinessException(
+                    MessageUtil.getMessage("identity-manager.failed.delete.user"),
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 
     @Override
     public void updateUser(String username, UserRequest updatedRequest) {
         UsersResource usersResource = getRealmResource().users();
-        Optional<UserRepresentation> userOptional = usersResource.search(username, 0, 1)
-                .stream().findFirst();
+        UserRepresentation existingUser = usersResource.search(username, true)
+                .stream().findFirst()
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("identity-manager.user.not.found"),
+                        HttpStatus.NOT_FOUND
+                ));
 
-        if (userOptional.isEmpty()) {
-            throw new BusinessException(MessageUtil.getMessage("identity-manager.user.not.found"), HttpStatus.NOT_FOUND);
-        }
-
-        UserRepresentation existingUser = userOptional.get();
         String userId = existingUser.getId();
 
         // Update fields
@@ -116,19 +144,24 @@ public class KeycloakClientImpl implements KeycloakClient {
 
         try {
             usersResource.get(userId).update(existingUser);
+            log.info("Successfully updated user: {}", username);
         } catch (Exception e) {
-            log.error("Failed to update user: {}", e.getMessage());
-            throw new BusinessException(MessageUtil.getMessage("identity-manager.failed.update.user"), HttpStatus.SERVICE_UNAVAILABLE);
+            log.error("Failed to update user: {}", e.getMessage(), e);
+            throw new BusinessException(
+                    MessageUtil.getMessage("identity-manager.failed.update.user"),
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
         }
     }
 
     @Override
     public void resetPassword(String username, String newPassword, boolean forceChangeOnFirstLogin) {
         UsersResource usersResource = getRealmResource().users();
-        UserRepresentation user = usersResource.search(username, 0, 1)
+        UserRepresentation user = usersResource.search(username, true)
                 .stream().findFirst()
                 .orElseThrow(() -> new BusinessException(
-                        MessageUtil.getMessage("identity-manager.user.not.found"), HttpStatus.NOT_FOUND
+                        MessageUtil.getMessage("identity-manager.user.not.found"),
+                        HttpStatus.NOT_FOUND
                 ));
 
         CredentialRepresentation credential = new CredentialRepresentation();
@@ -138,15 +171,15 @@ public class KeycloakClientImpl implements KeycloakClient {
 
         try {
             usersResource.get(user.getId()).resetPassword(credential);
+            log.info("Successfully reset password for user: {}", username);
         } catch (Exception e) {
-            log.error("Failed to reset password for user [{}]: {}", username, e.getMessage());
+            log.error("Failed to reset password for user [{}]: {}", username, e.getMessage(), e);
             throw new BusinessException(
                     MessageUtil.getMessage("identity-manager.failed.reset.password"),
                     HttpStatus.BAD_REQUEST
             );
         }
     }
-
 
     private RealmResource getRealmResource() {
         return keycloak.realm(realm);
