@@ -18,7 +18,6 @@ import com.eden.eden_crm_sec_crm_back.service.CustomerService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,34 +25,25 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
-
     private final CustomerRepository repository;
     private final CustomerMapper mapper;
     private final AsyncEmailService asyncEmailService;
     private final KeycloakClient keycloakClient;
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&!";
-    private static final int PASSWORD_LENGTH = 12;
-
     @Value("${customer-portal.url}")
     private String customerPortalUrl;
 
-    @Override
     @Transactional
     public CustomerResponseDto create(CustomerRequestDto dto) {
         isEmailExists(dto.email());
         isCodeExists(dto.code());
-
-        if (keycloakClient.userExists(dto.email())) {
+        if (keycloakClient.userExits(dto.email())) {
             throw new BusinessException(
                     MessageUtil.getMessage("email-cant-login"),
                     HttpStatus.BAD_REQUEST
@@ -81,34 +71,25 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public List<CustomerResponseDto> all(String keyword) {
-        List<Customer> customers = ObjectUtils.isEmpty(keyword)
-                ? repository.findAll()
-                : repository.findAll(keyword);
-        return customers.stream()
+        List<Customer> customers = ObjectUtils.isEmpty(keyword) ? repository.findAll() : repository.findAll(keyword);
+        return customers
+                .stream()
                 .map(mapper::customerToResponse)
                 .toList();
     }
 
-    @Override
     @Transactional
+    @Override
     public MessageResponse delete(Long id) {
         Customer customer = repository.findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        MessageUtil.getMessage("exception.customer.not.found"),
-                        HttpStatus.NOT_FOUND
-                ));
+                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
 
-        // TODO: check if customer has active projects or not; if yes, throw exception
-        // if (hasActiveProjects(customer)) {
-        //     throw new BusinessException(ExceptionMessages.CUSTOMER_HAS_PROJECT, HttpStatus.BAD_REQUEST);
-        // }
+        keycloakClient.deleteUser(customer.getEmail());
 
-        // Delete Keycloak user only if one exists
-        if (keycloakClient.userExists(customer.getEmail())) {
-            keycloakClient.deleteUser(customer.getEmail());
-        }
+        // TODO: check if customer has active projects or not if yes throw next exception
+        // throw new BusinessException(ExceptionMessages.CUSTOMER_HAS_PROJECT, HttpStatus.BAD_REQUEST);
 
-        // TODO: apply soft deletes which will reflect in getting data
+        // TODO: need to apply soft deletes which will reflect in getting data
         repository.delete(customer);
 
         return new MessageResponse(MessageUtil.getMessage("success.customer.deleted"));
@@ -117,55 +98,39 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponseDto show(Long id) {
         Customer customer = repository.findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        MessageUtil.getMessage("exception.customer.not.found"),
-                        HttpStatus.NOT_FOUND
-                ));
+                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
+
         return mapper.customerToResponse(customer);
     }
 
     @Override
-    @Transactional
     public CustomerResponseDto update(Long id, UpdateCustomerRequestDto dto) {
         Customer customer = repository.findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        MessageUtil.getMessage("exception.customer.not.found"),
-                        HttpStatus.NOT_FOUND
-                ));
+                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
 
-        // Validate email uniqueness
+        // validate email
         isEmailExists(dto.email(), id);
-        if (keycloakClient.userExistsIgnoreUserId(dto.email(), id)) {
+        if (keycloakClient.userExitsIgnoreUserId(dto.email(), id)) {
             throw new BusinessException(
                     MessageUtil.getMessage("email-cant-login"),
                     HttpStatus.BAD_REQUEST
             );
         }
-
         String oldUsername = customer.getEmail();
 
         mapper.updateCustomerFromDto(dto, customer);
+
         repository.save(customer);
 
         if (customer.isActive()) {
-            String password = generateSecurePassword();
             UserRequest userRequest = new UserRequest(
-                    customer.getId(),
-                    UserType.CUSTOMER,
-                    customer.getEmail(),
-                    customer.getName(),
-                    "",
-                    password,
-                    customer.getEmail(),
-                    true
+                    customer.getId(), UserType.CUSTOMER, customer.getEmail(), customer.getName(), "",
+                    customer.getEmail() + "@123", customer.getEmail(), true
             );
-
-            if (keycloakClient.userExists(oldUsername)) {
+            if (keycloakClient.userExits(oldUsername)) {
                 keycloakClient.updateUser(oldUsername, userRequest);
             } else {
                 keycloakClient.createUser(userRequest);
-                // Notify customer of new credentials since a new Keycloak user was created
-                sendEmailToEnabledCustomer(customer.getEmail(), customer.getEmail(), password);
             }
         }
 
@@ -173,30 +138,16 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    @Transactional
     public void enableCustomer(Long customerId) {
-        Customer customer = repository.findById(customerId)
-                .orElseThrow(() -> new BusinessException(
-                        MessageUtil.getMessage("exception.customer.not.found"),
-                        HttpStatus.NOT_FOUND
-                ));
-
-        if (customer.isActive()) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("exception.customer.already.active"),
-                    HttpStatus.BAD_REQUEST
-            );
-        }
+        Customer customer = this.repository.findById(customerId)
+                .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
 
         if (ObjectUtils.isEmpty(customer.getEmail())) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("validation.email.not.empty"),
-                    HttpStatus.UNPROCESSABLE_ENTITY
-            );
+            throw new BusinessException(MessageUtil.getMessage("validation.email.not.empty"), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        if (!keycloakClient.userExists(customer.getEmail())) {
-            String password = generateSecurePassword();
+        if (!keycloakClient.userExits(customer.getEmail())) {
+            String password = customer.getEmail() + "@123";
             keycloakClient.createUser(new UserRequest(
                     customer.getId(),
                     UserType.CUSTOMER,
@@ -209,64 +160,48 @@ public class CustomerServiceImpl implements CustomerService {
             ));
             customer.setActive(true);
             repository.save(customer);
-            sendEmailToEnabledCustomer(customer.getEmail(), customer.getEmail(), password);
+            sendEmailToEnabledCustomer(customer.getEmail(), customer.getId().toString(), password);
         }
     }
 
     private void isEmailExists(String email) {
         Optional<Customer> emailExists = repository.findFirstByEmail(email);
         if (emailExists.isPresent()) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("exception.email.exists"),
-                    HttpStatus.UNPROCESSABLE_ENTITY
-            );
+            throw new BusinessException(MessageUtil.getMessage("exception.email.exists"), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
     private void isEmailExists(String email, Long id) {
         Optional<Customer> emailExists = repository.findFirstByEmailIgnoreId(email, id);
         if (emailExists.isPresent()) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("exception.email.exists"),
-                    HttpStatus.UNPROCESSABLE_ENTITY
-            );
+            throw new BusinessException(MessageUtil.getMessage("exception.email.exists"), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
     private void isCodeExists(String code) {
         Optional<Customer> codeExists = repository.findFirstByCode(code);
         if (codeExists.isPresent()) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("exception.code.exists"),
-                    HttpStatus.UNPROCESSABLE_ENTITY
-            );
+            throw new BusinessException(MessageUtil.getMessage("exception.code.exists"), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
     private Page<Customer> customers(CustomerPaginateDto dto) {
         int page = dto.getPage() != null ? dto.getPage() : 0;
-        int size = dto.getSize() != null ? dto.getSize() : 10;
+        int size = dto.getSize() != null ? dto.getSize() : 0;
         PageRequest pageRequest = PageRequest.of(page, size);
 
-        return ObjectUtils.isEmpty(dto.getSearch())
-                ? repository.paginatedCustomers(pageRequest)
-                : repository.paginatedCustomers(dto.getSearch(), pageRequest);
+        return
+                ObjectUtils.isEmpty(dto.getSearch()) ?
+                        repository.paginatedCustomers(pageRequest) :
+                        repository.paginatedCustomers(dto.getSearch(), pageRequest);
     }
 
-    private String generateSecurePassword() {
-        StringBuilder sb = new StringBuilder(PASSWORD_LENGTH);
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            sb.append(PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(PASSWORD_CHARS.length())));
-        }
-        return sb.toString();
-    }
-
-    private void sendEmailToEnabledCustomer(String emailTo, String username, String password) {
+    private void sendEmailToEnabledCustomer(String emailTo, String code, String password) {
         String subject = "Customer Portal Credentials";
         String body = "Dear Customer,<br><br>" +
                 "Your account has been activated. Please <a href=\"" + customerPortalUrl + "\">visit link</a> and find your credentials below:<br>" +
                 "<br>" +
-                "Username: " + username + "<br>" +
+                "Username: " + code + "<br>" +
                 "Password: " + password + "<br>" +
                 "Link: " + customerPortalUrl + "<br>";
         asyncEmailService.sendHtmlEmailAsync(emailTo, subject, body);
