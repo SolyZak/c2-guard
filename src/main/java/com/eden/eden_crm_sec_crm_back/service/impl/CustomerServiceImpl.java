@@ -84,12 +84,10 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = repository.findById(id)
                 .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
 
-        keycloakClient.deleteUser(customer.getEmail());
+        if (keycloakClient.userExits(customer.getEmail())) {
+            keycloakClient.deleteUser(customer.getEmail());
+        }
 
-        // TODO: check if customer has active projects or not if yes throw next exception
-        // throw new BusinessException(ExceptionMessages.CUSTOMER_HAS_PROJECT, HttpStatus.BAD_REQUEST);
-
-        // TODO: need to apply soft deletes which will reflect in getting data
         repository.delete(customer);
 
         return new MessageResponse(MessageUtil.getMessage("success.customer.deleted"));
@@ -108,7 +106,6 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = repository.findById(id)
                 .orElseThrow(() -> new BusinessException(MessageUtil.getMessage("exception.customer.not.found"), HttpStatus.NOT_FOUND));
 
-        // validate email
         isEmailExists(dto.email(), id);
         if (keycloakClient.userExitsIgnoreUserId(dto.email(), id)) {
             throw new BusinessException(
@@ -124,8 +121,15 @@ public class CustomerServiceImpl implements CustomerService {
 
         if (customer.isActive()) {
             UserRequest userRequest = new UserRequest(
-                    customer.getId(), UserType.CUSTOMER, customer.getEmail(), customer.getName(), "",
-                    customer.getEmail() + "@123", customer.getEmail(), true
+                    customer.getId(),
+                    customer.getId(),      // customerId = same as userId for CUSTOMER
+                    UserType.CUSTOMER,
+                    customer.getEmail(),
+                    customer.getName(),
+                    "",
+                    customer.getEmail() + "@123",
+                    customer.getEmail(),
+                    true
             );
             if (keycloakClient.userExits(oldUsername)) {
                 keycloakClient.updateUser(oldUsername, userRequest);
@@ -150,6 +154,7 @@ public class CustomerServiceImpl implements CustomerService {
             String password = customer.getEmail() + "@123";
             keycloakClient.createUser(new UserRequest(
                     customer.getId(),
+                    customer.getId(),      // customerId = same as userId for CUSTOMER
                     UserType.CUSTOMER,
                     customer.getEmail(),
                     customer.getName(),
@@ -161,6 +166,12 @@ public class CustomerServiceImpl implements CustomerService {
             customer.setActive(true);
             repository.save(customer);
             sendEmailToEnabledCustomer(customer.getEmail(), customer.getId().toString(), password);
+        } else {
+            // User already exists in Keycloak — still mark as active if not already
+            if (!customer.isActive()) {
+                customer.setActive(true);
+                repository.save(customer);
+            }
         }
     }
 
