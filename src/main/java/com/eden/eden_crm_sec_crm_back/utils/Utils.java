@@ -97,8 +97,7 @@ public class Utils {
                         .name(name)
                         .type(UserType.valueOf(userType.toUpperCase()))
                         .build();
-            }
-            else
+            } else
                 throw new UserNotProvided();
         } catch (UserNotProvided e) {
             throw e;
@@ -114,23 +113,44 @@ public class Utils {
             String id = JwtUtil.getClaimValue(token, "user_id");
             String name = JwtUtil.getClaimValue(token, "name");
             String userType = JwtUtil.getClaimValue(token, "user_type");
+            String customerIdClaim = JwtUtil.getClaimValue(token, "customer_id");
 
-            if (id != null && userType != null) {
-                Long defaultCustomerId = Long.valueOf(id);
-                if (userType.equalsIgnoreCase(UserType.USER_CUSTOMER.name())) {
-                    CustomerUser customerUser = customerUserRepository.findById(defaultCustomerId)
-                            .orElseThrow(UserNotProvided::new);
-                    defaultCustomerId = customerUser.getCustomer().getId();
-                }
-                return UserData.builder()
-                        .id(id)
-                        .name(name)
-                        .type(UserType.valueOf(userType.toUpperCase()))
-                        .customerId(defaultCustomerId)
-                        .build();
-            }
-            else
+            if (id == null || userType == null) {
+                log.error("Token missing user_id or user_type. user_id={}, user_type={}", id, userType);
                 throw new UserNotProvided();
+            }
+
+            Long parsedId = Long.valueOf(id);
+            Long customerId;
+
+            // Priority 1: Use customer_id from token if present (new tokens)
+            if (customerIdClaim != null && !customerIdClaim.isBlank()) {
+                customerId = Long.valueOf(customerIdClaim);
+            }
+            // Priority 2: For CUSTOMER type, user_id IS the customer_id
+            else if (userType.equalsIgnoreCase(UserType.CUSTOMER.name())) {
+                customerId = parsedId;
+            }
+            // Priority 3: For USER_CUSTOMER, look up from DB (legacy tokens without customer_id)
+            else if (userType.equalsIgnoreCase(UserType.USER_CUSTOMER.name())) {
+                CustomerUser customerUser = customerUserRepository.findById(parsedId)
+                        .orElseThrow(() -> {
+                            log.error("USER_CUSTOMER with id={} not found in DB. Token may be stale.", parsedId);
+                            return new UserNotProvided();
+                        });
+                customerId = customerUser.getCustomer().getId();
+            }
+            // Priority 4: Other types (WORKFORCE, SECURITY_COMPANY, EDEN_USER)
+            else {
+                customerId = parsedId;
+            }
+
+            return UserData.builder()
+                    .id(id)
+                    .name(name)
+                    .type(UserType.valueOf(userType.toUpperCase()))
+                    .customerId(customerId)
+                    .build();
         } catch (UserNotProvided e) {
             throw e;
         } catch (Exception e) {
