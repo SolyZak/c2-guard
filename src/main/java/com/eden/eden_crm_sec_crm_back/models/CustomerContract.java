@@ -8,11 +8,20 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDate;
 import java.util.*;
 
 @Entity
-@Table(name = "customer_contract",uniqueConstraints = {@UniqueConstraint(columnNames = {"agreementNumber"})})
+@Table(
+        name = "customer_contract",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_customer_contract_agreement_number_per_customer",
+                        columnNames = {"agreement_number", "customer_id"}
+                )
+        }
+)
 @Setter
 @Getter
 public class CustomerContract extends BaseEntity<Long> {

@@ -31,10 +31,40 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @Param("customerId") Long customerId
     );
 
+    /**
+     * @deprecated Global uniqueness check — does NOT scope by customer (tenant).
+     * Use {@link #findByAgreementNumberAndCustomer_Id(String, Long)} instead.
+     */
+    @Deprecated
     @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
-            "WHERE cc.agreementNumber = :agreementNumber ")
+            "WHERE cc.agreementNumber = :agreementNumber")
     Optional<CustomerContract> findByAgreementNumber(
             @Param("agreementNumber") String agreementNumber
+    );
+
+    /**
+     * Tenant-scoped agreement number uniqueness check.
+     * Two different customers MAY have the same agreement number.
+     */
+    @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
+            "WHERE cc.agreementNumber = :agreementNumber " +
+            "AND cc.customer.id = :customerId")
+    Optional<CustomerContract> findByAgreementNumberAndCustomer_Id(
+            @Param("agreementNumber") String agreementNumber,
+            @Param("customerId") Long customerId
+    );
+
+    @Query("""
+                SELECT DISTINCT cc FROM CustomerContract cc
+                LEFT JOIN FETCH cc.customerAgreement
+                LEFT JOIN FETCH cc.customerContractServices ccs
+                LEFT JOIN FETCH ccs.customerService cs
+                LEFT JOIN FETCH cs.customerService
+                WHERE cc.id = :id AND cc.customer.id = :customerId
+            """)
+    Optional<CustomerContract> findWithServicesByIdAndCustomerId(
+            @Param("id") Long contractId,
+            @Param("customerId") Long customerId
     );
 
     @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
@@ -57,6 +87,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
     List<CustomerContract> listByCustomerIdWithRules(
             @NotNull @Param("customerId") Long customerId
     );
+
 
     @Query(value = """
             SELECT * FROM customer_contract cc
@@ -96,6 +127,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             Pageable pageable
     );
 
+
     @Query("SELECT DISTINCT cc.customer FROM CustomerContract cc " +
             "WHERE cc.securityCompanyId = :securityCompanyId " +
             "AND cc.startAgreementDate <= :today " +
@@ -130,6 +162,7 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @NotNull @Param("today") LocalDate today
     );
 
+
     @Query("""
             SELECT cc.securityCompanyId AS id, cc.securityCompanyName AS name
             FROM CustomerContract cc
@@ -149,12 +182,35 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
             @Param("securityCompanyId") Long securityCompanyId
     );
 
+    /**
+     * Security-company-side dropdown: lists contracts for a given security company,
+     * optionally filtered by a list of customer IDs.
+     */
+    @Query("""
+            SELECT cc.id AS id, cc.agreementName AS name
+            FROM CustomerContract cc
+            WHERE cc.securityCompanyId = :securityCompanyId
+            AND (:customerId IS NULL OR cc.customer.id IN :customerId)
+            """)
+    List<GeneralDropdownProjection> contractsDropdown(
+            @Param("securityCompanyId") Long securityCompanyId,
+            @Param("customerId") List<Long> customerId
+    );
+
+    // ──────────────────────────────────────────────────────────────────────
+    // CONTRACT LISTS WITH DISTRIBUTIONS
+    //
+    // ⚠️  These two overloads allow customerId = NULL, which returns
+    //     contracts across ALL customers. This is acceptable ONLY when
+    //     called from the security-company context.
+    //     If called from a customer-facing endpoint, always pass customerId.
+    // ──────────────────────────────────────────────────────────────────────
+
     @Query("SELECT c FROM CustomerContract c " +
             "WHERE (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId) " +
             "AND (:contractIds IS NULL OR c.id IN :contractIds) " +
-            "AND (c.startAgreementDate <= :to AND c.endAgreementDate >= :from)" +
-            "AND (:customerId IS NULL OR c.customer.id = :customerId) "
-    )
+            "AND (c.startAgreementDate <= :to AND c.endAgreementDate >= :from) " +
+            "AND (:customerId IS NULL OR c.customer.id = :customerId)")
     @EntityGraph(attributePaths = {"customerAgreement", "siteDistributions.operationServices"})
     List<CustomerContract> listContracts(
             @Param("customerId") Long customerId,
@@ -167,38 +223,11 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
     @Query("SELECT c FROM CustomerContract c " +
             "WHERE (:securityCompanyId IS NULL OR c.securityCompanyId = :securityCompanyId) " +
             "AND (:contractIds IS NULL OR c.id IN :contractIds) " +
-            "AND (:customerId IS NULL OR c.customer.id = :customerId) "
-    )
+            "AND (:customerId IS NULL OR c.customer.id = :customerId)")
     @EntityGraph(attributePaths = {"customerAgreement", "siteDistributions.operationServices"})
     List<CustomerContract> listContracts(
             @Param("customerId") Long customerId,
             @Param("securityCompanyId") Long securityCompanyId,
             @Param("contractIds") List<Long> contractIds
     );
-
-    @Query("""
-                SELECT DISTINCT cc FROM CustomerContract cc
-                LEFT JOIN FETCH cc.customerAgreement
-                LEFT JOIN FETCH cc.customerContractServices ccs
-                LEFT JOIN FETCH ccs.customerService cs
-                LEFT JOIN FETCH cs.customerService
-                WHERE cc.id = :id AND cc.customer.id = :customerId
-            """)
-    Optional<CustomerContract> findWithServicesByIdAndCustomerId(
-            @Param("id") Long contractId,
-            @Param("customerId") Long customerId
-    );
-
-
-    @Query("""
-            SELECT cc.id AS id, cc.agreementName AS name
-            FROM CustomerContract cc
-            WHERE cc.securityCompanyId = :securityCompanyId
-            AND (:customerId IS NULL OR cc.customer.id IN :customerId)
-            """)
-    List<GeneralDropdownProjection> contractsDropdown(
-            @Param("securityCompanyId") Long securityCompanyId,
-            @Param("customerId") List<Long> customerId
-    );
-
 }
