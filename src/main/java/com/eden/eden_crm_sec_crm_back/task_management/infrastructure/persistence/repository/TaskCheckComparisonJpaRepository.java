@@ -44,7 +44,7 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
             JOIN task_execution te ON te.id = tce.task_execution_id
             JOIN patrol_detail pd ON pd.task_definition_id = td.id
             JOIN location l ON l.id = pd.location_id
-            LEFT JOIN task_location_checks_image tlci
+            JOIN task_location_checks_image tlci
                 ON tlci.task_check_definition_id = tcd.id
                 AND tlci.location_id = l.id
                 AND tlci.deleted = false
@@ -83,7 +83,7 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
             JOIN task_execution te ON te.id = tce.task_execution_id
             JOIN patrol_detail pd ON pd.task_definition_id = td.id
             JOIN location l ON l.id = pd.location_id
-            LEFT JOIN task_location_checks_image tlci
+            JOIN task_location_checks_image tlci
                 ON tlci.task_check_definition_id = tcd.id
                 AND tlci.location_id = l.id
                 AND tlci.deleted = false
@@ -103,7 +103,7 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
             JOIN task_execution te ON te.id = tce.task_execution_id
             JOIN patrol_detail pd ON pd.task_definition_id = td.id
             JOIN location l ON l.id = pd.location_id
-            LEFT JOIN task_location_checks_image tlci
+            JOIN task_location_checks_image tlci
                 ON tlci.task_check_definition_id = tcd.id
                 AND tlci.location_id = l.id
                 AND tlci.deleted = false
