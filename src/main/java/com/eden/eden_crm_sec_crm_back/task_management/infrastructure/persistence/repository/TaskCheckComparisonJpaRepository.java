@@ -52,6 +52,7 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
+              AND tlci.ref_image IS NOT NULL
             ORDER BY tcc.created_date DESC
             """, nativeQuery = true)
     List<TaskCheckComparisonReportProjection> findComparisonReport(
@@ -91,6 +92,7 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
+              AND tlci.ref_image IS NOT NULL
               AND (:locationId IS NULL OR l.id = :locationId)
               AND (:taskName IS NULL OR LOWER(td.name) LIKE LOWER(CONCAT('%', :taskName, '%')))
             """,
@@ -111,6 +113,7 @@ public interface TaskCheckComparisonJpaRepository extends JpaRepository<TaskChec
               AND tcc.created_date >= :fromDate
               AND tcc.created_date <= :toDate
               AND tcc.matching IS NULL
+              AND tlci.ref_image IS NOT NULL
               AND (:locationId IS NULL OR l.id = :locationId)
               AND (:taskName IS NULL OR LOWER(td.name) LIKE LOWER(CONCAT('%', :taskName, '%')))
             """,
