@@ -85,62 +85,13 @@ public class PatrolReportServiceImpl implements PatrolReportService {
     }
 
     @Override
-    public PatrolReportDetailsResponse getPatrolReportDetails(Long premiseId, Long patrolId) {
-        List<PatrolReportDetailsAggregation> taskDetails = distributionPatrolRepository.findPatrolDetails(premiseId, patrolId);
-        Optional<Patrol> patrolOpt = patrolRepository.findById(patrolId);
-        Optional<Premise> premiseOpt = premiseRepository.findById(premiseId);
-
-        if (patrolOpt.isEmpty() || premiseOpt.isEmpty())
-            throw new BusinessException(MessageUtil.getMessage("validation.security-company.contract-id.not-found"), HttpStatus.BAD_REQUEST);
-
-        Patrol patrol = patrolOpt.get();
-        Premise premise = premiseOpt.get();
-
-        List<Long> locationIds = taskDetails.stream()
-            .map(PatrolReportDetailsAggregation::getLocationId)
-            .toList();
-
-        List<Location> locations = locationRepository.findAllById(locationIds);
-
-        Map<Long, List<PatrolTaskDetailsResponse>> tasksPerLocation = new HashMap<>();
-
-        taskDetails.forEach(taskDetail -> {
-              Long locationId = taskDetail.getLocationId();
-              tasksPerLocation.computeIfAbsent(locationId, k -> new ArrayList<>())
-                .add(
-                    PatrolTaskDetailsResponse.builder()
-                        .id(taskDetail.getTaskId())
-                        .name(taskDetail.getTaskName())
-                        .status(taskDetail.getStatus())
-                        .startDate(taskDetail.getTaskStartDate())
-                        .endDate(taskDetail.getTaskEndDate())
-                        .hasEvidence(taskDetail.getHasEvidence())
-                        .evidenceImage(taskDetail.getEvidenceImage())
-                        .siteId(taskDetail.getSiteId())
-                        .siteName(taskDetail.getSiteName())
-                        .serviceId(taskDetail.getServiceId())
-                        .serviceName(taskDetail.getServiceName())
-                        .locationId(taskDetail.getLocationId())
-                        .commentCheck(taskDetail.getCommentCheck())
-                        .comment(taskDetail.getComment())
-
-                        .build()
-                );
-        });
-
-        List<PatrolLocationDetailsResponse> locationDetails = locations.stream()
-                .map(loc -> PatrolLocationDetailsResponse.builder()
-                    .id(loc.getId())
-                    .name(loc.getName())
-                    .tasks(tasksPerLocation.getOrDefault(loc.getId(), Collections.emptyList()))
-                    .build()
-                )
-                .toList();
-
-        return PatrolReportDetailsResponse.builder()
-                .premiseName(premise.getName())
-                .patrolName(patrol.getName())
-                .locations(locationDetails)
-                .build();
+    public PatrolReportDetailsResponse getPatrolReportDetails(
+            Long premiseId, Long patrolId) {
+        // Migrated to new patrols module:
+        // patrols/services/PatrolServiceImpl.getPatrolReportDetails()
+        // Endpoint: /customer/patrols/report/premise/{id}/patrol/{id}
+        throw new BusinessException(
+                "This endpoint has been migrated to /customer/patrols/report",
+                HttpStatus.GONE);
     }
 }
