@@ -1,6 +1,5 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request;
 
-import com.eden.eden_crm_sec_crm_back.dto.request.task.TaskCheckDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -10,9 +9,9 @@ import java.util.List;
 
 @Builder
 public record ExecuteDistributedTaskRequest(
-    @NotNull
-    Long executionSlotId,
-    @NotEmpty
-    @Valid
-    List<TaskCheckDTO> checks
+        @NotNull
+        Long executionSlotId,
+        @NotEmpty
+        @Valid
+        List<SubmittedCheckDTO> checks
 ) {}
