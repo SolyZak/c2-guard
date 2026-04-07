@@ -22,8 +22,10 @@ import java.time.OffsetTime;
 public class ContractOperationSiteDistributionPatrol {
     @Id
     @SequenceGenerator(name = "contract_operation_site_distribution_patrol_seq",
-            sequenceName = "contract_operation_site_distribution_patrol_seq", initialValue = 1, allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "contract_operation_site_distribution_patrol_seq")
+            sequenceName = "contract_operation_site_distribution_patrol_seq",
+            initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+            generator = "contract_operation_site_distribution_patrol_seq")
     private Long id;
 
     @ManyToOne
@@ -34,16 +36,15 @@ public class ContractOperationSiteDistributionPatrol {
     @JoinColumn(name = "site_id", nullable = false)
     private CustomerSite site;
 
-    LocalDate startDate;
-    LocalDate endDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
 
     @ManyToOne
     @JoinColumn(name = "location_id", nullable = false)
     private Location location;
 
-    @ManyToOne
-    @JoinColumn(name = "task_id", nullable = false)
-    private Task task;
+    @Column(name = "task_definition_id")
+    private Long taskDefinitionId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_contract_service_id", nullable = false)
@@ -58,7 +59,7 @@ public class ContractOperationSiteDistributionPatrol {
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
-    Customer customer;
+    private Customer customer;
 
     private String patrolFrequencyType;
     private String status;
