@@ -90,6 +90,8 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
 
     Optional<Location> findByIdAndCustomerId(Long id, Long customerId);
 
+    Optional<Location> findByIdAndCustomerIdAndDeletedFalse(Long id, Long customerId);
+
     interface LocationNoImageProjection {
         Long getId();
         String getName();
@@ -109,12 +111,10 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
     FROM Location l
     WHERE l.id = :id
       AND l.accessType = :accessType
-      AND l.customer.id = :customerId
       AND l.deleted = false
     """)
-    Optional<LocationNoImageProjection> findLocationByIdAndAccessTypeAndCustomerId(
+    Optional<LocationNoImageProjection> findLocationByIdAndAccessType(
             @Param("id") Long id,
-            @Param("accessType") String accessType,
-            @Param("customerId") Long customerId
+            @Param("accessType") String accessType
     );
 }

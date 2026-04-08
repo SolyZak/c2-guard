@@ -14,17 +14,6 @@ import java.util.Optional;
 @Repository
 public interface CameraRepository extends JpaRepository<Camera, Long> {
 
-    @Query("SELECT c FROM Camera c JOIN FETCH c.vendor JOIN FETCH c.customer")
-    List<Camera> findAllWithVendorAndCustomer();
-
-    @Query(
-            value = "SELECT c FROM Camera c JOIN FETCH c.vendor JOIN FETCH c.customer",
-            countQuery = "SELECT COUNT(c) FROM Camera c"
-    )
-    Page<Camera> findAllPaginatedWithVendorAndCustomer(Pageable pageable);
-
-    List<Camera> findByCustomerId(Long customerId);
-
     @Query("SELECT c FROM Camera c JOIN FETCH c.vendor JOIN FETCH c.customer WHERE c.customer.id = :customerId")
     List<Camera> findByCustomerIdWithDetails(@Param("customerId") Long customerId);
 
