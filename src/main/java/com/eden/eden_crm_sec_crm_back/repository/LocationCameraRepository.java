@@ -11,15 +11,15 @@ import java.util.List;
 @Repository
 public interface LocationCameraRepository extends JpaRepository<LocationCamera, Long> {
 
-    @Query("""
-            SELECT lc FROM LocationCamera lc
-            JOIN FETCH lc.camera c
-            JOIN FETCH c.vendor v
-            JOIN FETCH lc.customer
-            WHERE lc.location.id = :locationId
-            """)
-    List<LocationCamera> findByLocationIdWithCameraAndVendor(@Param("locationId") Long locationId);
+    @Query("SELECT lc FROM LocationCamera lc JOIN FETCH lc.camera JOIN FETCH lc.camera.vendor WHERE lc.location.id = :locationId AND lc.customer.id = :customerId")
+    List<LocationCamera> findByLocationIdAndCustomerIdWithCameraAndVendor(
+            @Param("locationId") Long locationId,
+            @Param("customerId") Long customerId
+    );
 
-    @Query("SELECT lc.camera.id FROM LocationCamera lc WHERE lc.location.id = :locationId")
-    List<Long> findCameraIdsByLocationId(@Param("locationId") Long locationId);
+    @Query("SELECT lc.camera.id FROM LocationCamera lc WHERE lc.location.id = :locationId AND lc.customer.id = :customerId")
+    List<Long> findCameraIdsByLocationIdAndCustomerId(
+            @Param("locationId") Long locationId,
+            @Param("customerId") Long customerId
+    );
 }

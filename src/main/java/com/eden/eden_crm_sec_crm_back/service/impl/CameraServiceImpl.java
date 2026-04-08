@@ -36,12 +36,10 @@ public class CameraServiceImpl implements CameraService {
     @Transactional
     @Override
     public CameraResponseDto create(CreateCameraRequest dto) {
-        // Resolve customer from token
         UserData userData = utils.getLoggedInUser();
         Customer customer = customerRepository.findById(userData.getCustomerId())
                 .orElseThrow(() -> new BusinessException("Customer not found", HttpStatus.NOT_FOUND));
 
-        // Validate vendor exists
         Vendor vendor = vendorRepository.findById(dto.vendorId())
                 .orElseThrow(() -> new BusinessException("Vendor not found", HttpStatus.NOT_FOUND));
 
@@ -55,7 +53,10 @@ public class CameraServiceImpl implements CameraService {
 
     @Override
     public List<CameraResponseDto> getAll() {
-        return repository.findAllWithVendorAndCustomer()
+        UserData userData = utils.getLoggedInUser();
+        Long customerId = userData.getCustomerId();
+
+        return repository.findByCustomerIdWithDetails(customerId)
                 .stream()
                 .map(mapper::cameraToResponse)
                 .toList();
@@ -63,8 +64,11 @@ public class CameraServiceImpl implements CameraService {
 
     @Override
     public PaginateResponse<CameraResponseDto> getPaginated(Integer page, Integer size) {
+        UserData userData = utils.getLoggedInUser();
+        Long customerId = userData.getCustomerId();
+
         Pageable pageable = PageRequest.of(page, size);
-        Page<Camera> cameras = repository.findAllPaginatedWithVendorAndCustomer(pageable);
+        Page<Camera> cameras = repository.findByCustomerIdPaginatedWithDetails(customerId, pageable);
 
         return new PaginateResponse<>(
                 cameras.getContent().stream().map(mapper::cameraToResponse).toList(),

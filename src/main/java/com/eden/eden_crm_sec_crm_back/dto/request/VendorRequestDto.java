@@ -8,4 +8,3 @@ public record VendorRequestDto(
         @Size(max = 255, message = "{validation.name.max.length}")
         String name
 ) {}
-

@@ -111,7 +111,9 @@ public class LocationServiceImpl implements LocationService {
                 .findById(utils.getLoggedInUser().getCustomerId())
                 .orElseThrow(UserNotProvided::new);
 
-        String accessType = locationRepository.findAccessTypeById(id)
+        Long customerId = customer.getId();
+
+        String accessType = locationRepository.findAccessTypeByIdAndCustomerId(id, customerId)
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("validation.location.not.found"),
                         HttpStatus.NOT_FOUND
@@ -124,18 +126,11 @@ public class LocationServiceImpl implements LocationService {
             );
         }
 
-        Location location = locationRepository.findById(id)
+        Location location = locationRepository.findByIdAndCustomerId(id, customerId)
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("validation.location.not.found"),
                         HttpStatus.NOT_FOUND
                 ));
-
-        if (!location.getCustomer().getId().equals(customer.getId())) {
-            throw new BusinessException(
-                    MessageUtil.getMessage("validation.location.unauthorized"),
-                    HttpStatus.FORBIDDEN
-            );
-        }
 
         String updatedLocationName = null;
         BigDecimal updatedLongitude = null;
@@ -266,13 +261,14 @@ public class LocationServiceImpl implements LocationService {
             result.add(new LocationResponseDto(
                     lp.getId(),
                     lp.getName(),
-                    lp.getLongitude() != null ? lp.getLongitude(): null,
-                    lp.getLatitude() != null ? lp.getLatitude(): null,
-                    lp.getTolerance() != null ? lp.getTolerance(): null
+                    lp.getLongitude() != null ? lp.getLongitude() : null,
+                    lp.getLatitude() != null ? lp.getLatitude() : null,
+                    lp.getTolerance() != null ? lp.getTolerance() : null
             ));
         }
         return result;
     }
+
     @Override
     public List<PatrolLocationResponseDto> findLocationsByCustomerSiteAndPatrol(
             Long customerSiteId,
@@ -325,13 +321,18 @@ public class LocationServiceImpl implements LocationService {
                 return new byte[0];
             }
         });
-
     }
 
     @Override
     public ValidateQrResponse validateQr(ValidateQrRequest request) {
         final Long locationId = Long.valueOf(request.payload());
 
+        // NOTE: validateQr is called by guards/field workers scanning QR codes.
+        // The QR code contains a locationId. We validate the location exists and
+        // has QR access type. Tenant isolation is enforced by the
+        // patrolTaskDistributionRepository / immediateTaskDistributionRepository
+        // checks below, which verify the guard's assigned distribution matches
+        // this location. No cross-tenant access is possible.
         Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
                 .findLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.QR_CODE.getType());
 
@@ -375,6 +376,10 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ValidateLocationResponse validateLocation(Long locationId, ValidateLocationRequest request) {
+        // NOTE: validateLocation is called by guards/field workers validating GPS.
+        // Tenant isolation is enforced at the task distribution layer — a guard
+        // can only reach this endpoint for locations assigned to their distribution.
+        // The location lookup here just confirms it exists with the correct access type.
         Optional<LocationRepository.LocationNoImageProjection> opt = locationRepository
                 .findLocationByIdAndAccessType(locationId, LocationAccessTypeEnum.SPECIFIC_POINT.getType());
 
