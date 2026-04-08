@@ -41,10 +41,13 @@ public class LocationCameraServiceImpl implements LocationCameraService {
     @Transactional
     @Override
     public LocationCameraResponseDto assignCameraToLocation(LocationCameraRequestDto dto) {
-        Camera camera = cameraRepository.findById(dto.cameraId())
+        UserData userData = utils.getLoggedInUser();
+        Long customerId = userData.getCustomerId();
+
+        Camera camera = cameraRepository.findByIdAndCustomerId(dto.cameraId(), customerId)
                 .orElseThrow(() -> new BusinessException("Camera not found", HttpStatus.NOT_FOUND));
 
-        Location location = locationRepository.findById(dto.locationId())
+        Location location = locationRepository.findByIdAndCustomerId(dto.locationId(), customerId)
                 .orElseThrow(() -> new BusinessException("Location not found", HttpStatus.NOT_FOUND));
 
         LocationCamera locationCamera = LocationCamera.builder()
@@ -65,10 +68,13 @@ public class LocationCameraServiceImpl implements LocationCameraService {
     @Transactional
     @Override
     public List<LocationCameraResponseDto> bulkAssignCamerasToLocation(BulkLocationCameraRequestDto dto) {
-        Location location = locationRepository.findById(dto.locationId())
+        UserData userData = utils.getLoggedInUser();
+        Long customerId = userData.getCustomerId();
+
+        Location location = locationRepository.findByIdAndCustomerId(dto.locationId(), customerId)
                 .orElseThrow(() -> new BusinessException("Location not found", HttpStatus.NOT_FOUND));
 
-        List<Camera> cameras = cameraRepository.findAllById(dto.cameraIds());
+        List<Camera> cameras = cameraRepository.findAllByIdInAndCustomerId(dto.cameraIds(), customerId);
 
         if (cameras.size() != dto.cameraIds().size()) {
             List<Long> foundIds = cameras.stream().map(Camera::getId).toList();
@@ -107,10 +113,13 @@ public class LocationCameraServiceImpl implements LocationCameraService {
 
     @Override
     public List<LocationCameraResponseDto> getCamerasByLocationId(Long locationId) {
-        locationRepository.findById(locationId)
+        UserData userData = utils.getLoggedInUser();
+        Long customerId = userData.getCustomerId();
+
+        locationRepository.findByIdAndCustomerId(locationId, customerId)
                 .orElseThrow(() -> new BusinessException("Location not found", HttpStatus.NOT_FOUND));
 
-        return repository.findByLocationIdWithCameraAndVendor(locationId)
+        return repository.findByLocationIdAndCustomerIdWithCameraAndVendor(locationId, customerId)
                 .stream()
                 .map(mapper::locationCameraToResponse)
                 .toList();
@@ -118,28 +127,23 @@ public class LocationCameraServiceImpl implements LocationCameraService {
 
     @Override
     public List<CameraAssignmentResponseDto> getAvailableCamerasForLocation(Long locationId) {
-        // Validate location exists
-        locationRepository.findById(locationId)
-                .orElseThrow(() -> new BusinessException("Location not found", HttpStatus.NOT_FOUND));
-
-        // Resolve customer from token
         UserData userData = utils.getLoggedInUser();
         Long customerId = userData.getCustomerId();
 
-        // Get all cameras belonging to this customer
+        locationRepository.findByIdAndCustomerId(locationId, customerId)
+                .orElseThrow(() -> new BusinessException("Location not found", HttpStatus.NOT_FOUND));
+
         List<Camera> allCameras = cameraRepository.findByCustomerIdWithDetails(customerId);
 
-        // Get camera IDs already assigned to this location
         Set<Long> assignedCameraIds = new HashSet<>(
-                repository.findCameraIdsByLocationId(locationId)
+                repository.findCameraIdsByLocationIdAndCustomerId(locationId, customerId)
         );
 
-        // Map with assigned boolean
         return allCameras.stream()
                 .map(camera -> {
-                    CameraAssignmentResponseDto dto = cameraMapper.cameraToAssignmentResponse(camera);
-                    dto.setAssigned(assignedCameraIds.contains(camera.getId()));
-                    return dto;
+                    CameraAssignmentResponseDto responseDto = cameraMapper.cameraToAssignmentResponse(camera);
+                    responseDto.setAssigned(assignedCameraIds.contains(camera.getId()));
+                    return responseDto;
                 })
                 .toList();
     }

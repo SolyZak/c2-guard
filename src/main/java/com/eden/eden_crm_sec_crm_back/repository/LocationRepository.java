@@ -12,7 +12,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-public interface LocationRepository extends JpaRepository<Location,Long> {
+public interface LocationRepository extends JpaRepository<Location, Long> {
+
     @Query("""
     SELECT l.id as id,
            l.premise as premise,
@@ -84,8 +85,10 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
             @Param("customerId") Long customerId
     );
 
-    @Query("SELECT l.accessType FROM Location l WHERE l.id = :id")
-    Optional<String> findAccessTypeById(@Param("id") Long id);
+    @Query("SELECT l.accessType FROM Location l WHERE l.id = :id AND l.customer.id = :customerId")
+    Optional<String> findAccessTypeByIdAndCustomerId(@Param("id") Long id, @Param("customerId") Long customerId);
+
+    Optional<Location> findByIdAndCustomerId(Long id, Long customerId);
 
     interface LocationNoImageProjection {
         Long getId();
@@ -106,10 +109,12 @@ public interface LocationRepository extends JpaRepository<Location,Long> {
     FROM Location l
     WHERE l.id = :id
       AND l.accessType = :accessType
+      AND l.customer.id = :customerId
       AND l.deleted = false
     """)
-    Optional<LocationNoImageProjection> findLocationByIdAndAccessType(
+    Optional<LocationNoImageProjection> findLocationByIdAndAccessTypeAndCustomerId(
             @Param("id") Long id,
-            @Param("accessType") String accessType
+            @Param("accessType") String accessType,
+            @Param("customerId") Long customerId
     );
 }
