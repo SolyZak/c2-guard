@@ -10,10 +10,14 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WorkforceTaskCheckPayload {
+
+    // ── Jackson polymorphic discriminator (matches test env's "type" property) ──
+    private String type;
+
     private Long id;
     private String name;
-    private boolean evidence;
-    private boolean commentCheck;
+    private Boolean evidence;
+    private Boolean commentCheck;
     private String referenceImageUrl;
 
     // TEXT fields

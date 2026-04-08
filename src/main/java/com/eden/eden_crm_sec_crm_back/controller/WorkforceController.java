@@ -145,6 +145,7 @@ public class WorkforceController {
         var builder = WorkforceTaskCheckPayload.builder()
                 .id(checkDef.getId())
                 .name(checkDef.getName())
+                .type(checkDef.getCheckType().toLowerCase())
                 .evidence(checkDef.isHasEvidence())
                 .commentCheck(checkDef.isHasComment())
                 .referenceImageUrl(checkDef.getReferenceImageUrl());
