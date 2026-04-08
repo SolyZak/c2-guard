@@ -89,8 +89,9 @@ class WorkforceControllerDualModeIntegrationTest {
                 response.getPayload().getChecks().get(0);
         assertThat(check.getId()).isEqualTo(CHECK_DEF_ID);
         assertThat(check.getName()).isEqualTo("Describe finding");
-        assertThat(check.isEvidence()).isTrue();
-        assertThat(check.isCommentCheck()).isFalse();
+        assertThat(check.getType()).isEqualTo("text");
+        assertThat(check.getEvidence()).isTrue();
+        assertThat(check.getCommentCheck()).isFalse();
         assertThat(check.getNotes()).isEqualTo("Enter notes here");
         assertThat(check.getReferenceImageUrl()).isNull();
     }
@@ -137,6 +138,7 @@ class WorkforceControllerDualModeIntegrationTest {
         WorkforceTaskCheckPayload check =
                 response.getPayload().getChecks().get(0);
         assertThat(check.getId()).isEqualTo(CHECK_DEF_ID);
+        assertThat(check.getType()).isEqualTo("text");
         assertThat(check.getReferenceImageUrl()).isEqualTo(REF_IMAGE_URL);
     }
 
@@ -190,21 +192,24 @@ class WorkforceControllerDualModeIntegrationTest {
 
         // TEXT
         WorkforceTaskCheckPayload textCheck = checks.get(0);
+        assertThat(textCheck.getType()).isEqualTo("text");
         assertThat(textCheck.getNotes()).isEqualTo("default note");
-        assertThat(textCheck.isEvidence()).isTrue();
-        assertThat(textCheck.isCommentCheck()).isFalse();
+        assertThat(textCheck.getEvidence()).isTrue();
+        assertThat(textCheck.getCommentCheck()).isFalse();
         assertThat(textCheck.getReferenceImageUrl()).isNull();
 
         // NUMBER
         WorkforceTaskCheckPayload numCheck = checks.get(1);
+        assertThat(numCheck.getType()).isEqualTo("number");
         assertThat(numCheck.getUnit()).isEqualTo("kg");
         assertThat(numCheck.getOperator()).isEqualTo("gte");
         assertThat(numCheck.getValue()).isEqualTo(10);
-        assertThat(numCheck.isCommentCheck()).isTrue();
+        assertThat(numCheck.getCommentCheck()).isTrue();
         assertThat(numCheck.getReferenceImageUrl()).isNull();
 
         // DECIMAL
         WorkforceTaskCheckPayload decCheck = checks.get(2);
+        assertThat(decCheck.getType()).isEqualTo("decimal");
         assertThat(decCheck.getUnit()).isEqualTo("m");
         assertThat(decCheck.getOperator()).isEqualTo("lte");
         assertThat(decCheck.getValue()).isEqualTo(5.5);
@@ -212,10 +217,11 @@ class WorkforceControllerDualModeIntegrationTest {
 
         // LIST
         WorkforceTaskCheckPayload listCheck = checks.get(3);
+        assertThat(listCheck.getType()).isEqualTo("list");
         assertThat(listCheck.getListItems())
                 .containsExactly("Pass", "Fail");
-        assertThat(listCheck.isEvidence()).isTrue();
-        assertThat(listCheck.isCommentCheck()).isTrue();
+        assertThat(listCheck.getEvidence()).isTrue();
+        assertThat(listCheck.getCommentCheck()).isTrue();
         assertThat(listCheck.getReferenceImageUrl()).isNull();
     }
 
@@ -279,23 +285,27 @@ class WorkforceControllerDualModeIntegrationTest {
 
         // TEXT
         WorkforceTaskCheckPayload textCheck = checks.get(0);
+        assertThat(textCheck.getType()).isEqualTo("text");
         assertThat(textCheck.getNotes()).isEqualTo("default note");
         assertThat(textCheck.getReferenceImageUrl())
                 .isEqualTo(baseUrl + "images/ref/1.jpg");
 
         // NUMBER
         WorkforceTaskCheckPayload numCheck = checks.get(1);
+        assertThat(numCheck.getType()).isEqualTo("number");
         assertThat(numCheck.getUnit()).isEqualTo("kg");
         assertThat(numCheck.getReferenceImageUrl())
                 .isEqualTo(baseUrl + "images/ref/2.jpg");
 
         // DECIMAL
         WorkforceTaskCheckPayload decCheck = checks.get(2);
+        assertThat(decCheck.getType()).isEqualTo("decimal");
         assertThat(decCheck.getUnit()).isEqualTo("m");
         assertThat(decCheck.getReferenceImageUrl()).isNull();
 
         // LIST
         WorkforceTaskCheckPayload listCheck = checks.get(3);
+        assertThat(listCheck.getType()).isEqualTo("list");
         assertThat(listCheck.getListItems())
                 .containsExactly("Pass", "Fail");
         assertThat(listCheck.getReferenceImageUrl())
