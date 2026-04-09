@@ -7,6 +7,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -24,5 +25,10 @@ public class TaskExecutionRepositoryImpl implements TaskExecutionRepository {
     @Override
     public Optional<TaskExecution> findById(Long id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public long countByWorkforceIdAndCreatedAtBetween(Long workforceId, LocalDateTime startOfDay, LocalDateTime startOfNextDay) {
+        return jpaRepository.countByWorkforceIdAndCreatedAtBetween(workforceId, startOfDay, startOfNextDay);
     }
 }
