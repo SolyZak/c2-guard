@@ -6,6 +6,7 @@ import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.Cr
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.request.SubmitTaskCheckExecutionRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckComparisonResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskCheckExecutionResponse;
+import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskExecutionCountResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.dto.response.TaskExecutionResponse;
 import com.eden.eden_crm_sec_crm_back.task_management.application.mapper.TaskMapper;
 import com.eden.eden_crm_sec_crm_back.task_management.domain.model.TaskCheckComparison;
@@ -26,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Slf4j
@@ -41,6 +44,34 @@ public class TaskExecutionService {
     private final TaskMapper taskMapper;
     private final ImageComparisonService imageComparisonService;
     private final OracleStorageUtil oracleStorageUtil;
+
+    // ======================== NEW: Task Execution Stats ========================
+
+    /**
+     * Counts the number of task executions performed by the given workforce for today.
+     */
+    @Transactional(readOnly = true)
+    public long countPerformedTasksToday(Long workforceId) {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
+        return taskExecutionRepository.countByWorkforceIdAndCreatedAtBetween(
+                workforceId, startOfDay, startOfNextDay
+        );
+    }
+
+    /**
+     * Returns the performed tasks count for today wrapped in a response DTO.
+     */
+    @Transactional(readOnly = true)
+    public TaskExecutionCountResponse getPerformedTasksCountToday(Long workforceId) {
+        long count = countPerformedTasksToday(workforceId);
+        return TaskExecutionCountResponse.builder()
+                .performedTasksToday(count)
+                .build();
+    }
+
+    // ======================== EXISTING METHODS (unchanged) ========================
 
     @Transactional
     public TaskExecutionResponse createTaskExecution(CreateTaskExecutionRequest request) {
