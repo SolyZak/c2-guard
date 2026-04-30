@@ -32,10 +32,10 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
                       )
                       or exists (
                         select 1
-                        from task t
-                        join patrol_detail tpd on t.id = tpd.task_id
+                        from task_definition tdef
+                        join patrol_detail tpd on tdef.id = tpd.task_definition_id
                         where tpd.patrol_id = p.id
-                        and lower(t.name) like lower(concat('%', :search, '%'))
+                        and lower(tdef.name) like lower(concat('%', :search, '%'))
                       )
                     )
             """, nativeQuery = true)
@@ -78,31 +78,63 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
             @Param("locationIds") Set<Long> locationIds
     );
 
-    @Query("""
+    @Query(value = """
         SELECT
-            ptd.location.id AS locationId,
-            ptd.location.name AS locationName,
-            ptd.serviceTime.siteDistribution.site.id AS siteId,
-            ptd.serviceTime.siteDistribution.site.name AS siteName,
-            ptd.service.id AS serviceId,
-            ptd.service.customerService.customerService.serviceName AS serviceName,
-            pd.task.id AS taskId,
-            pd.task.name AS taskName,
-            tes.status AS status,
-            tc.evidence AS hasEvidence,
-            te.image AS evidenceImage,
-            te.commentCheck AS commentCheck,
-            te.comment AS comment,
-            MIN(tes.startDateTime) AS taskStartDateTime,
-            MAX(tes.endDateTime) AS taskEndDateTime
-        FROM PatrolTaskDistribution ptd
-        JOIN ptd.patrolDetail pd
-        LEFT JOIN pd.task.taskChecks tc
-        LEFT JOIN TaskCheckPatrolExecution te ON te.id = tc.id
-        LEFT JOIN TaskExecutionSlot tes ON tes.taskDistribution = ptd.taskDistribution
-        WHERE ptd.location.premise.id = :premiseId
-          AND pd.patrol.id = :patrolId
-        GROUP BY locationId, locationName, siteId, siteName, serviceId, serviceName, taskId, taskName, status, hasEvidence, evidenceImage, commentCheck, comment
-    """)
-    List<PatrolReportDetailsAggregation> findPatrolDetails(@Param("premiseId") Long premiseId, @Param("patrolId") Long patrolId);
+            loc.id                                     AS locationId,
+            loc.name                                   AS locationName,
+            site.id                                    AS siteId,
+            site.name                                  AS siteName,
+            svc.id                                     AS serviceId,
+            cs.service_name                            AS serviceName,
+            pd.task_definition_id                      AS taskId,
+            tdef.name                                  AS taskName,
+            tes.status                                 AS status,
+            (tce.evidence_image_path IS NOT NULL)      AS hasEvidence,
+            tce.evidence_image_path                    AS evidenceImage,
+            NULL                                       AS commentCheck,
+            tce.comment                                AS comment,
+            MIN(tes.start_date_time)                   AS taskStartDateTime,
+            MAX(tes.end_date_time)                     AS taskEndDateTime
+        FROM patrol_task_distribution ptd
+        JOIN patrol_detail pd
+            ON pd.id = ptd.patrol_detail_id
+        JOIN location loc
+            ON loc.id = ptd.location_id
+        JOIN contract_operation_site_distribution_details st
+            ON st.id = ptd.service_time_id
+        JOIN contract_operation_site_distribution cosd
+            ON cosd.id = st.contract_operation_site_distribution_id
+        JOIN customer_site site
+            ON site.id = cosd.operation_site_id
+        JOIN customer_contract_service svc
+            ON svc.id = ptd.service_id
+        JOIN customer_service_details csd
+            ON csd.id = svc.service_details_id
+        JOIN customer_service cs
+            ON cs.id = csd.customer_service_id
+        LEFT JOIN task_execution_slot tes
+            ON tes.task_distribution_id = ptd.task_distribution_id
+        LEFT JOIN task_definition tdef
+            ON tdef.id = pd.task_definition_id
+        LEFT JOIN task_execution te
+            ON te.id = tes.task_execution_id
+        LEFT JOIN task_check_execution tce
+            ON tce.task_execution_id = te.id
+        WHERE loc.premise_id = :premiseId
+          AND pd.patrol_id   = :patrolId
+        GROUP BY
+            loc.id, loc.name,
+            site.id, site.name,
+            svc.id, cs.service_name,
+            pd.task_definition_id,
+            tdef.name,
+            tes.status,
+            (tce.evidence_image_path IS NOT NULL),
+            tce.evidence_image_path,
+            tce.comment
+    """, nativeQuery = true)
+    List<PatrolReportDetailsAggregation> findPatrolDetails(
+        @Param("premiseId") Long premiseId,
+        @Param("patrolId") Long patrolId
+    );
 }

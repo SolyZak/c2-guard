@@ -5,9 +5,11 @@ import com.eden.eden_crm_sec_crm_back.dto.TriggerEventDto;
 import com.eden.eden_crm_sec_crm_back.entity.CrmTriggerLog;
 import com.eden.eden_crm_sec_crm_back.entity.Trigger;
 import com.eden.eden_crm_sec_crm_back.enums.ServicePlatformEnum;
+import com.eden.eden_crm_sec_crm_back.enums.Severity;
 import com.eden.eden_crm_sec_crm_back.enums.TriggerCode;
-import com.eden.eden_crm_sec_crm_back.models.Task;
 import com.eden.eden_crm_sec_crm_back.repository.TriggerRepository;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskDefinitionPayload;
 import com.eden.eden_crm_sec_crm_back.service.impl.C2AlertEventService;
 import com.eden.eden_crm_sec_crm_back.service.impl.CrmTriggerLogService;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.ImmediateTaskDistribution;
@@ -17,7 +19,6 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskExecutionSlo
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskExecutionSlotRepository;
-import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github._0xorigin.flexscheduler.base.factories.tasks.base.ScheduledTaskFactory;
@@ -30,9 +31,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
@@ -44,6 +42,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
     private final CrmTriggerLogService crmTriggerLogService;
     private final C2AlertEventService c2AlertEventService;
     private final TriggerRepository triggerRepository;
+    private final TaskPresenter taskPresenter;
     @Builder
     private record LocationPoints(BigDecimal longitude, BigDecimal latitude) {}
 
@@ -75,20 +74,39 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
         final Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_MISSED.getId())
                 .orElseThrow(() -> new RuntimeException("Trigger not found"));
         final TaskDistribution taskDistribution = executionSlot.getTaskDistribution();
-        final Task task = taskDistribution.getTask();
         final LocationPoints locationPoints = getLocation(taskDistribution);
+
+        TaskDefinitionPayload taskDef = taskPresenter.getTaskDefinition(taskDistribution.getTaskDefinitionId());
+        final String taskName = taskDef.getName();
+        final Severity taskSeverity = Severity.valueOf(taskDef.getSeverity());
+
+        // Build patrol name — used in description to identify which patrol missed the task
+        final String patrolName;
+        if (taskDistribution.getDistributionType() == DistributionType.PATROL
+                && taskDistribution.getPatrolTaskDistribution() != null) {
+            patrolName = taskDistribution.getPatrolTaskDistribution()
+                    .getPatrolDetail().getPatrol().getName();
+        } else {
+            patrolName = "";  // Immediate distributions have no patrol name
+        }
+        // Format: "Evening Patrol - Check Perimeter"; or just task name for immediate distributions
+        String description = patrolName.isBlank() ? taskName : patrolName + " - " + taskName;
+
         Long siteId = 0L;
+        Long locationId = null;
         if (
             taskDistribution.getDistributionType() == DistributionType.PATROL
             && taskDistribution.getPatrolTaskDistribution() != null
         ) {
             siteId = taskDistribution.getPatrolTaskDistribution().getServiceTime().getSiteDistribution().getSite().getId();
+            locationId = taskDistribution.getPatrolTaskDistribution().getLocation().getId();
+        } else if (
+            taskDistribution.getDistributionType() == DistributionType.IMMEDIATE
+            && taskDistribution.getImmediateTaskDistribution() != null
+            && taskDistribution.getImmediateTaskDistribution().getLocation() != null
+        ) {
+            locationId = taskDistribution.getImmediateTaskDistribution().getLocation().getId();
         }
-
-        ZoneId zoneId = DateUtils.getTimeWithTimezone(executionSlot.getCustomer().getTimezone());
-        ZonedDateTime zonedStartTime = executionSlot.getStartDateTime().atZoneSameInstant(zoneId);
-        ZonedDateTime zonedEndTime = executionSlot.getEndDateTime().atZoneSameInstant(zoneId);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
         TriggerEventDto triggerEventDto = TriggerEventDto.builder()
                 .triggerId(trigger.getId())
@@ -102,12 +120,11 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
                 .servicePlatformName(ServicePlatformEnum.CRM.name())
                 .workforceId(0L)
                 .serviceTriggerEventId(0L)
-                .description(
-                    task.getName() + " | " + zonedStartTime.format(formatter) + " - " + zonedEndTime.format(formatter)
-                )
+                .description(description)
+                .locationId(locationId)
                 .build();
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
-        c2AlertEventService.sendNewC2AlertEvent(crmTriggerLog);
+        c2AlertEventService.sendNewC2AlertEventWithOverrideSeverity(crmTriggerLog, taskSeverity, 5L);
     }
 
     private LocationPoints getLocation(final TaskDistribution taskDistribution) {

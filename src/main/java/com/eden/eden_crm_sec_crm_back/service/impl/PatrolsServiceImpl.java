@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.base.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolKeyValueDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolResponseDetail;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolResponseDto;
@@ -14,7 +15,7 @@ import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.LocationRepository;
 import com.eden.eden_crm_sec_crm_back.patrols.repositories.PatrolRepository;
-import com.eden.eden_crm_sec_crm_back.repository.TaskRepository;
+import com.eden.eden_crm_sec_crm_back.repository.PatrolDetailRepository;
 import com.eden.eden_crm_sec_crm_back.service.PatrolsService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
@@ -34,9 +35,10 @@ import java.util.stream.Collectors;
 public class PatrolsServiceImpl implements PatrolsService {
     private final PatrolRepository patrolRepository;
     private final LocationRepository locationRepository;
-    private final TaskRepository taskRepository;
+    private final PatrolDetailRepository patrolDetailRepository;
     private final CustomerRepository customerRepository;
     private final Utils utils;
+    private final TaskPresenter taskPresenter;
 
     private static final Set<String> FREQ_BY_NAME = new HashSet<>();
     private static final Set<String> FREQ_BY_RATE = new HashSet<>();
@@ -49,11 +51,16 @@ public class PatrolsServiceImpl implements PatrolsService {
             FREQ_BY_RATE.add(s.getRate());
         }
     }
+
     @Override
     public void addPatrol(AddPatrolRequest request) {
         Customer customer = customerRepository.findById(utils.getLoggedInUser().getCustomerId()).orElseThrow(UserNotProvided::new);
+        Long customerId = customer.getId();
         List<PatrolDetail> patrolDetails = new ArrayList<>();
         Patrol patrol = new Patrol();
+
+        Set<String> locationCheckImagePairs = new LinkedHashSet<>();
+
         for (AddPatrolDetailRequest detailRequest : request.getDetails()) {
             PatrolDetail patrolDetail = new PatrolDetail();
             List<Location> locations = locationRepository.findAllById(detailRequest.getLocations());
@@ -61,19 +68,16 @@ public class PatrolsServiceImpl implements PatrolsService {
                 throw new BusinessException(MessageUtil.getMessage("validation.patrol.locations.invalid"), HttpStatus.BAD_REQUEST);
             }
 
-            List<Task> tasks = taskRepository.findAllById(detailRequest.getTasks());
-            if (tasks.size() != detailRequest.getTasks().size()) {
-                throw new BusinessException(MessageUtil.getMessage("validation.patrol.tasks.invalid"), HttpStatus.BAD_REQUEST);
-            }
-//            Map<Long, Location> locationsToBeSaved = new HashMap<>();
-//            Map<Long, Task> tasksToBeSaved = new HashMap<>();
+            List<Long> taskDefIds = detailRequest.getTaskDefinitionIds();
+            taskDefIds.forEach(id -> taskPresenter.getTaskDefinition(id));
             for (Location location : locations) {
-                for (Task task : tasks) {
+                for (Long taskDefId : taskDefIds) {
                     patrolDetail.setLocation(location);
-                    patrolDetail.setTask(task);
+                    patrolDetail.setTaskDefinitionId(taskDefId);
                     patrolDetail.setPatrol(patrol);
                     patrolDetails.add(patrolDetail);
                     patrolDetail = new PatrolDetail();
+                    locationCheckImagePairs.add(taskDefId + ":" + location.getId());
                 }
             }
         }
@@ -99,6 +103,13 @@ public class PatrolsServiceImpl implements PatrolsService {
             );
         patrol.setCustomer(customer);
         patrolRepository.save(patrol);
+
+        for (String pair : locationCheckImagePairs) {
+            String[] parts = pair.split(":");
+            Long taskDefId = Long.parseLong(parts[0]);
+            Long locationId = Long.parseLong(parts[1]);
+            taskPresenter.initLocationCheckImages(taskDefId, locationId, customerId);
+        }
     }
 
     @Override
@@ -109,20 +120,20 @@ public class PatrolsServiceImpl implements PatrolsService {
         List<PatrolResponseDto> patrolResponseDtos = new ArrayList<>();
         if (resultPage.getContent() != null) {
             for (Patrol p : resultPage.getContent()) {
-                    PatrolResponseDto dto = new PatrolResponseDto();
-                    dto.setId(p.getId());
-                    dto.setFrequency(p.getFrequency());
-                    dto.setFrequencyRate(p.getFrequencyRate());
-                    dto.setName(p.getName());
-                    List<Long> detailsIds = p.getPatrolDetails().stream()
-                            .map(d -> d.getId()).collect(Collectors.toList());
-                    for(Long id : detailsIds) {
-                        PatrolResponseDetail detail = new PatrolResponseDetail();
-                        detail.setLocations(locationRepository.getLocationNamesByDetailId(id));
-                        detail.setTasks(taskRepository.getTaskNamesByDetailId(id));
-                        dto.getDetails().add(detail);
-                    }
-                    patrolResponseDtos.add(dto);
+                PatrolResponseDto dto = new PatrolResponseDto();
+                dto.setId(p.getId());
+                dto.setFrequency(p.getFrequency());
+                dto.setFrequencyRate(p.getFrequencyRate());
+                dto.setName(p.getName());
+                List<Long> detailsIds = p.getPatrolDetails().stream()
+                        .map(d -> d.getId()).collect(Collectors.toList());
+                for(Long id : detailsIds) {
+                    PatrolResponseDetail detail = new PatrolResponseDetail();
+                    detail.setLocations(locationRepository.getLocationNamesByDetailId(id));
+                    detail.setTaskDefinitions(patrolDetailRepository.getTaskDefinitionNamesByDetailId(id));
+                    dto.getDetails().add(detail);
+                }
+                patrolResponseDtos.add(dto);
             }
         }
 
@@ -156,6 +167,7 @@ public class PatrolsServiceImpl implements PatrolsService {
             return false;
         }
     }
+
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
     }

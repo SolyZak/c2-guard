@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AlertTriggerServiceImpl implements AlertTriggerService {
 
+    private static final Set<ServicePlatformEnum> EXCLUDED_PLATFORMS = Set.of(ServicePlatformEnum.CRM);
+
     private final AlertTriggerRepository alertTriggerRepository;
     private final AlertTriggerSeverityRepository alertTriggerSeverityRepository;
     private final ServicePlatformRepository servicePlatformRepository;
@@ -49,15 +51,22 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
         Long customerId = utils.getLoggedInUser().getCustomerId();
 
         List<ServicePlatform> servicePlatforms = servicePlatformRepository.findAll();
-        Map<ServicePlatformEnum, ServicePlatform> servicePlatformMap = servicePlatforms.stream().collect(Collectors.toMap(ServicePlatform::getCode, Function.identity()));
-        List<AlertTriggerWithSeverityProjection> alertTriggers = alertTriggerRepository.findAllWithSeverityByCustomerId(customerId);
+        Map<ServicePlatformEnum, ServicePlatform> servicePlatformMap = servicePlatforms.stream()
+                .collect(Collectors.toMap(ServicePlatform::getCode, Function.identity()));
+
+        // Fetch alert triggers excluding Patrols (CRM) platform at DB level
+        List<AlertTriggerWithSeverityProjection> alertTriggers =
+                alertTriggerRepository.findAllWithSeverityByCustomerIdExcludingPlatforms(customerId, EXCLUDED_PLATFORMS);
+
         Map<ServicePlatformEnum, List<TriggerWithAlertTriggerResponse>> triggerMap = new EnumMap<>(ServicePlatformEnum.class);
         List<ServicePlatformWithTriggersResponse> servicePlatformWithTriggersResponses = new ArrayList<>();
         if (alertTriggers.isEmpty())
             return servicePlatformWithTriggersResponses;
 
         Map<ServicePlatformEnum, Map<Long, TriggerResponse>> triggers = new EnumMap<>(ServicePlatformEnum.class);
-        Set<ServicePlatformEnum> servicePlatformCodes = alertTriggers.stream().map(AlertTriggerWithSeverityProjection::getServicePlatformCode).collect(Collectors.toSet());
+        Set<ServicePlatformEnum> servicePlatformCodes = alertTriggers.stream()
+                .map(AlertTriggerWithSeverityProjection::getServicePlatformCode)
+                .collect(Collectors.toSet());
 
         servicePlatformCodes.forEach(servicePlatform -> {
             List<TriggerResponse> responses = getTriggers(servicePlatform);
@@ -94,8 +103,8 @@ public class AlertTriggerServiceImpl implements AlertTriggerService {
         AlertTrigger alertTrigger = alertTriggerRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("AlertTrigger not found", HttpStatus.NOT_FOUND));
         AlertTriggerSeverity alertTriggerSeverity = alertTriggerSeverityRepository
-            .findByAlertTrigger_IdAndCustomerId(alertTrigger.getId(), customerId)
-            .orElseGet(AlertTriggerSeverity::new);
+                .findByAlertTrigger_IdAndCustomerId(alertTrigger.getId(), customerId)
+                .orElseGet(AlertTriggerSeverity::new);
 
         alertTriggerSeverity.setAlertTrigger(alertTrigger);
         alertTriggerSeverity.setCustomerId(customerId);

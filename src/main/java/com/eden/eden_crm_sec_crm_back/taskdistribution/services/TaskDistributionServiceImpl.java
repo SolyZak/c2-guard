@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
 import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.dto.ContractIdsRequest;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -56,7 +57,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final SiteDistributionRepository siteDistributionRepository;
     private final LKCustomerContractOperationServiceRepository customerContractOperationServiceRepository;
     private final PatrolDetailRepository patrolDetailRepository;
-    private final TaskRepository taskRepository;
     private final TaskDistributionRepository taskDistributionRepository;
     private final PatrolTaskDistributionRepository patrolTaskDistributionRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
@@ -65,6 +65,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final CreateScheduledTaskForDistributionService createScheduledTaskForDistributionService;
     private final TaskDistributionMapper taskDistributionMapper;
     private final Utils utils;
+    private final TaskPresenter taskPresenter;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
     @Override
@@ -93,12 +94,9 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
               for(PatrolDetail patrolDetail : patrolDetails) {
                   Patrol patrol = validateAndGetPatrol(patrolDetail, customer);
-                  TaskDistribution taskDistribution = buildTaskDistributionBase(
-                      customer,
-                      contract,
-                      patrolDetail.getTask(),
-                      DistributionType.PATROL
-                  );
+
+                  TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, DistributionType.PATROL);
+                  taskDistribution.setTaskDefinitionId(patrolDetail.getTaskDefinitionId());
                   PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(customer, taskDistribution, service, patrolDetail, serviceTime, patrol);
                   taskDistribution.setPatrolTaskDistribution(patrolTaskDistribution);
 
@@ -147,37 +145,11 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             throw new BusinessException("No contracts found or Workforces must belong to the same contract", HttpStatus.BAD_REQUEST);
 
         CustomerContract contract = getContract(contractIds.iterator().next());
-        Task task = getTask(distributeImmediateTaskRequest.taskId());
-        TaskDistribution taskDistribution = buildTaskDistributionBase(
-            customer,
-            contract,
-            task,
-            DistributionType.IMMEDIATE
-        );
-        ImmediateTaskDistribution immediateTaskDistribution = buildImmediateTaskDistribution(
-            customer,
-            taskDistribution,
-            Long.valueOf(loggedInUser.getId()),
-            distributeImmediateTaskRequest
-        );
-        taskDistribution.setImmediateTaskDistribution(immediateTaskDistribution);
 
-        OffsetDateTime assignedAt = OffsetDateTime.now();
-        List<TaskAssignment> taskAssignments = createTaskAssignmentsByWorkforceId(customer, distributeImmediateTaskRequest.workforceIds(), assignedAt);
-        List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(
-            customer,
-            taskDistribution,
-            taskAssignments,
-            distributeImmediateTaskRequest
-        );
-        taskDistribution.setExecutionSlots(executionSlots);
-        taskDistribution = taskDistributionRepository.saveAndFlush(taskDistribution);
-
-        createScheduledTaskForDistributionService.createDistributionScheduledTasks(
-            "ImmediateTaskDistributionId",
-            taskDistribution.getImmediateTaskDistribution().getId(),
-            taskDistribution.getExecutionSlots()
-        );
+        taskPresenter.getTaskDefinition(distributeImmediateTaskRequest.taskDefinitionId());
+        TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, DistributionType.IMMEDIATE);
+        taskDistribution.setTaskDefinitionId(distributeImmediateTaskRequest.taskDefinitionId());
+        completeAndSaveImmediateDistribution(taskDistribution, customer, loggedInUser, distributeImmediateTaskRequest);
     }
 
     @Override
@@ -257,11 +229,6 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .orElseThrow(() -> new BusinessException("invalid contract and service combination", HttpStatus.BAD_REQUEST));
     }
 
-    private Task getTask(Long taskId) {
-        return taskRepository.findById(taskId)
-            .orElseThrow(() -> new BusinessException("invalid task", HttpStatus.BAD_REQUEST));
-    }
-
     private Optional<Location> getOptionalLocation(Long locationId) {
         if (locationId == null)
             return Optional.empty();
@@ -313,15 +280,48 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
         );
     }
 
+    private void completeAndSaveImmediateDistribution(
+            TaskDistribution taskDistribution,
+            Customer customer,
+            UserData loggedInUser,
+            DistributeImmediateTaskRequest request
+    ) {
+        ImmediateTaskDistribution immediateTaskDistribution = buildImmediateTaskDistribution(
+                customer, taskDistribution, Long.valueOf(loggedInUser.getId()), request
+        );
+        taskDistribution.setImmediateTaskDistribution(immediateTaskDistribution);
+
+        OffsetDateTime assignedAt = OffsetDateTime.now();
+        List<TaskAssignment> taskAssignments = createTaskAssignmentsByWorkforceId(
+                customer, request.workforceIds(), assignedAt
+        );
+        List<TaskExecutionSlot> executionSlots = buildExecutionSlotsForImmediateTask(
+                customer, taskDistribution, taskAssignments, request
+        );
+        taskDistribution.setExecutionSlots(executionSlots);
+        taskDistribution = taskDistributionRepository.saveAndFlush(taskDistribution);
+
+        createScheduledTaskForDistributionService.createDistributionScheduledTasks(
+                "ImmediateTaskDistributionId",
+                taskDistribution.getImmediateTaskDistribution().getId(),
+                taskDistribution.getExecutionSlots()
+        );
+
+        if (request.locationId() != null) {
+            taskPresenter.initLocationCheckImages(
+                    request.taskDefinitionId(),
+                    request.locationId(),
+                    customer.getId()
+            );
+        }
+    }
     private static TaskDistribution buildTaskDistributionBase(
         Customer customer,
         CustomerContract contract,
-        Task task,
         DistributionType distributionType
     ) {
         return TaskDistribution.builder()
             .contract(contract)
-            .task(task)
             .customer(customer)
             .distributionType(distributionType)
             .build();

@@ -41,4 +41,5 @@ public class C2AlertEventDto {
     private Severity severity;
     @NonNull
     private String description; // in case of attendance this will be having workforce name
+    private Long locationId; // Location entity ID — set only for patrol task events
 }

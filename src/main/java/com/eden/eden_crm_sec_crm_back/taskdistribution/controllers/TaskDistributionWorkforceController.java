@@ -7,8 +7,11 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.TodayTasksR
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.DistributedTaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -23,9 +26,11 @@ public class TaskDistributionWorkforceController {
         return ApiResponse.ok(distributedTaskService.getTodayTasks(todayTasksRequest));
     }
 
-    @PostMapping("/execute")
-    public ApiResponse<Map<String, Object>> executeTask(@Valid @RequestBody ExecuteDistributedTaskRequest executeDistributedTaskRequest) {
-        distributedTaskService.executeTask(executeDistributedTaskRequest);
+    @PostMapping(value = "/execute", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Map<String, Object>> executeTask(
+            @Valid @RequestPart("request") ExecuteDistributedTaskRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        distributedTaskService.executeTask(request, images);
         return ApiResponse.created(Map.of());
     }
 }

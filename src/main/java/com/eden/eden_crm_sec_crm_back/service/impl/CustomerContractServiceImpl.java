@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CustomerContractServiceImpl implements CustomerContractService {
+
     private final CustomerContractRepository customerContractRepository;
     private final CustomerRepository customerRepository;
     private final CustomerContractMapper contractMapper;
@@ -58,25 +59,47 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Override
     @Transactional
     public String createAgreement(AddContractDto dto) {
-        Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
-        Optional<CustomerContract> agreementNumberExists = customerContractRepository.findByAgreementNumber(dto.getAgreementNumber());
+        Customer customer = customerRepository.findById(getLoggedInCustomerId())
+                .orElseThrow(UserNotProvided::new);
+
+        // ── Uniqueness check scoped to this customer (tenant) ──
+        Optional<CustomerContract> agreementNumberExists =
+                customerContractRepository.findByAgreementNumberAndCustomer_Id(
+                        dto.getAgreementNumber(),
+                        customer.getId()
+                );
         if (agreementNumberExists.isPresent()) {
-            throw new BusinessException(MessageUtil.getMessage("contract.number.already-exists"), HttpStatus.BAD_REQUEST);
+            throw new BusinessException(
+                    MessageUtil.getMessage("contract.number.already-exists"),
+                    HttpStatus.BAD_REQUEST
+            );
         }
+        // ────────────────────────────────────────────────────────
+
         SecurityCompanyData securityCompanyData;
         try {
             securityCompanyData = orgUnitClient.getSecurityCompanyDetails(dto.getSecurityCompanyId());
         } catch (Exception e) {
             log.error("Can`t get security company info from org unit service, error: {}", e.getMessage());
-            throw new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("security-company")}), HttpStatus.NOT_FOUND);
+            throw new BusinessException(
+                    MessageUtil.getMessage("entity.not-found",
+                            new Object[]{MessageUtil.getMessage("security-company")}),
+                    HttpStatus.NOT_FOUND
+            );
         }
+
         Currency currency;
         try {
             currency = orgUnitClient.getCurrencyDetails(dto.getCurrency());
         } catch (Exception e) {
             log.error("Can`t get currency info from org unit service, error: {}", e.getMessage());
-            throw new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("currency")}), HttpStatus.NOT_FOUND);
+            throw new BusinessException(
+                    MessageUtil.getMessage("entity.not-found",
+                            new Object[]{MessageUtil.getMessage("currency")}),
+                    HttpStatus.NOT_FOUND
+            );
         }
+
         CustomerContract contract = contractMapper.toEntity(dto);
         contract.setCustomer(customer);
         contract.setStatus(ContractStatus.SAVED);
@@ -91,6 +114,7 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                         .collect(Collectors.toList()))
                 .stream()
                 .collect(Collectors.toMap(ServiceDetails::getId, Function.identity()));
+
         dto.getServices().forEach(serviceDetailDto -> {
             ServiceDetails serviceDetails = serviceDetailsMap.get(serviceDetailDto.getServiceDetailsId());
             if (serviceDetails != null) {
@@ -107,9 +131,12 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     }
 
     @Override
-    public PaginateResponse<ContractRowDto> paginateMyContracts(String search, LocalDate from, LocalDate to, int page, int size) {
+    public PaginateResponse<ContractRowDto> paginateMyContracts(
+            String search, LocalDate from, LocalDate to, int page, int size
+    ) {
         PageRequest pageable = PageRequest.of(page, size);
-        Page<CustomerContract> contracts = customerContractRepository.paginateByCustomer(getLoggedInCustomerId(), search, from, to, pageable);
+        Page<CustomerContract> contracts = customerContractRepository
+                .paginateByCustomer(getLoggedInCustomerId(), search, from, to, pageable);
         return new PaginateResponse<>(
                 contracts.getContent().stream().map(contractMapper::toContractRowDto).toList(),
                 page,
@@ -122,7 +149,8 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Override
     public List<ContractRowDto> listMyDraftedContracts() {
         return customerContractRepository.listByCustomerIdAndStatus(
-                        getLoggedInCustomerId(), List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
+                        getLoggedInCustomerId(),
+                        List.of(ContractStatus.SAVED, ContractStatus.ON_DISTRIBUTE)
                 )
                 .stream()
                 .map(contractMapper::toContractRowDto)
@@ -132,16 +160,25 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     @Override
     public List<ContractServiceDetailsData> contractServicesList(Long contractId) {
         customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId())
-                .orElseThrow(
-                        () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
-                );
-        List<ContractServiceDetailsData> result = contractServiceRepository.getContractNotFullyDistributedServices(contractId)
-                .stream().map(contractMapper::toContractServiceDetailsData).toList();
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("contract")}),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        List<ContractServiceDetailsData> result = contractServiceRepository
+                .getContractNotFullyDistributedServices(contractId)
+                .stream()
+                .map(contractMapper::toContractServiceDetailsData)
+                .toList();
+
         for (ContractServiceDetailsData contractServiceDetailsData : result) {
-            if (contractServiceDetailsData.getDistributedQuantity() == null || contractServiceDetailsData.getDistributedQuantity().equals(0L))
+            if (contractServiceDetailsData.getDistributedQuantity() == null
+                    || contractServiceDetailsData.getDistributedQuantity().equals(0L)) {
                 contractServiceDetailsData.setDistributed(false);
-            else
+            } else {
                 contractServiceDetailsData.setDistributed(true);
+            }
         }
         return result;
     }
@@ -150,59 +187,79 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     public List<ContractRowDto> listAllMyContracts() {
         return customerContractRepository.listByCustomerId(getLoggedInCustomerId())
                 .stream()
-                .map(contractMapper::toContractRowDto).toList();
+                .map(contractMapper::toContractRowDto)
+                .toList();
     }
 
     @Override
-    public List<GeneralDropdown> availableOperationSitesListWithDistributedContracts(Long contractId, Long serviceId) {
+    public List<GeneralDropdown> availableOperationSitesListWithDistributedContracts(
+            Long contractId, Long serviceId
+    ) {
         customerContractRepository
                 .findByIdAndCustomerId(contractId, getLoggedInCustomerId())
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("entity.not-found",
                                 new Object[]{MessageUtil.getMessage("contract")}),
-                        HttpStatus.NOT_FOUND));
+                        HttpStatus.NOT_FOUND
+                ));
 
         return customerSiteRepository
-                .findOperationSitesForDropdownWithDistributedContracts(contractId, serviceId, getLoggedInCustomerId())
+                .findOperationSitesForDropdownWithDistributedContracts(
+                        contractId, serviceId, getLoggedInCustomerId())
                 .stream()
                 .map(customerSiteMapper::toDropdown)
                 .toList();
     }
 
     @Override
-    public List<GeneralDropdown> availableOperationSitesListForPatrolDistribution(Long contractId, Long serviceId) {
+    public List<GeneralDropdown> availableOperationSitesListForPatrolDistribution(
+            Long contractId, Long serviceId
+    ) {
         customerContractRepository
                 .findByIdAndCustomerId(contractId, getLoggedInCustomerId())
                 .orElseThrow(() -> new BusinessException(
                         MessageUtil.getMessage("entity.not-found",
                                 new Object[]{MessageUtil.getMessage("contract")}),
-                        HttpStatus.NOT_FOUND));
+                        HttpStatus.NOT_FOUND
+                ));
 
         return customerSiteRepository
-                .findOperationSitesForDropdownForPatrolDistribution(contractId, serviceId, getLoggedInCustomerId())
+                .findOperationSitesForDropdownForPatrolDistribution(
+                        contractId, serviceId, getLoggedInCustomerId())
                 .stream()
                 .map(customerSiteMapper::toDropdown)
                 .toList();
     }
 
     @Override
-    public List<DistributedOperationSite> distributedOperationSites(Long contractId, Long lkCustomerContractServiceId) {
-        customerContractRepository.findByIdAndCustomerId(contractId, getLoggedInCustomerId()).orElseThrow(
-                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}), HttpStatus.NOT_FOUND)
-        );
+    public List<DistributedOperationSite> distributedOperationSites(
+            Long contractId, Long lkCustomerContractServiceId
+    ) {
+        customerContractRepository
+                .findByIdAndCustomerId(contractId, getLoggedInCustomerId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("contract")}),
+                        HttpStatus.NOT_FOUND
+                ));
 
-        return siteDistributionRepository.findByContractAndLKCustomerService(contractId, lkCustomerContractServiceId)
-                .stream().map(sd -> {
+        return siteDistributionRepository
+                .findByContractAndLKCustomerService(contractId, lkCustomerContractServiceId)
+                .stream()
+                .map(sd -> {
                     AtomicReference<Long> allQuantities = new AtomicReference<>(0L);
-                    List<DistributedOperationSiteDetail> details = sd.getOperationServices().stream().map(os -> {
-                        allQuantities.updateAndGet(v -> v + os.getQuantity());
-                        return DistributedOperationSiteDetail.builder()
-                                .days(os.getDays())
-                                .quantity(os.getQuantity())
-                                .fromTime(os.getFromTime())
-                                .toTime(os.getToTime())
-                                .build();
-                    }).toList();
+                    List<DistributedOperationSiteDetail> details = sd.getOperationServices()
+                            .stream()
+                            .map(os -> {
+                                allQuantities.updateAndGet(v -> v + os.getQuantity());
+                                return DistributedOperationSiteDetail.builder()
+                                        .days(os.getDays())
+                                        .quantity(os.getQuantity())
+                                        .fromTime(os.getFromTime())
+                                        .toTime(os.getToTime())
+                                        .build();
+                            })
+                            .toList();
                     return DistributedOperationSite.builder()
                             .operationSiteId(sd.getSite().getId())
                             .operationSiteName(sd.getSite().getName())
@@ -221,25 +278,28 @@ public class CustomerContractServiceImpl implements CustomerContractService {
         CustomerContract contract = customerContractRepository
                 .findWithServicesByIdAndCustomerId(contractId, customerId)
                 .orElseThrow(() -> new BusinessException(
-                        MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("contract")}),
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("contract")}),
                         HttpStatus.NOT_FOUND
                 ));
         Customer customer = contract.getCustomer();
 
-        List<SiteDistribution> siteDistributions = siteDistributionRepository.findDistributionsByContractId(contractId);
+        List<SiteDistribution> siteDistributions =
+                siteDistributionRepository.findDistributionsByContractId(contractId);
 
         ContractDetailsData detailsData = contractMapper.fromEntity(contract);
 
-        // Group SiteDistributions by Service ID
         Map<Long, List<SiteDistribution>> distributionsByServiceId = siteDistributions.stream()
                 .collect(Collectors.groupingBy(sd -> sd.getLkCustomerContractService().getId()));
 
         List<ContractDetailsData.ContractServiceDetails> services = contract.getCustomerContractServices()
                 .stream()
                 .map(ccs -> {
-                    ContractDetailsData.ContractServiceDetails serviceDetails = contractMapper.fromEntity(ccs);
+                    ContractDetailsData.ContractServiceDetails serviceDetails =
+                            contractMapper.fromEntity(ccs);
 
-                    List<ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData> distributionDataList = Optional
+                    List<ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData>
+                            distributionDataList = Optional
                             .ofNullable(distributionsByServiceId.get(ccs.getId()))
                             .orElse(Collections.emptyList())
                             .stream()
@@ -248,19 +308,25 @@ public class CustomerContractServiceImpl implements CustomerContractService {
                             .stream()
                             .map(siteGroup -> {
                                 AtomicReference<Long> totalQnt = new AtomicReference<>(0L);
-                                List<ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData.ContractOperationServiceDetails> operationServiceDetails =
+
+                                List<ContractDetailsData.ContractServiceDetails
+                                        .ContractServiceDistributionsData
+                                        .ContractOperationServiceDetails> operationServiceDetails =
                                         siteGroup.stream()
                                                 .flatMap(sd -> sd.getOperationServices().stream())
                                                 .map(os -> {
                                                     totalQnt.updateAndGet(v -> v + os.getQuantity());
-                                                    LocalTime from = DateUtils.toLocalTime(customer.getTimezone(), os.getFromTime());
-                                                    LocalTime to = DateUtils.toLocalTime(customer.getTimezone(), os.getToTime());
+                                                    LocalTime from = DateUtils.toLocalTime(
+                                                            customer.getTimezone(), os.getFromTime());
+                                                    LocalTime to = DateUtils.toLocalTime(
+                                                            customer.getTimezone(), os.getToTime());
                                                     return contractMapper.fromEntity(os, from, to);
                                                 })
                                                 .toList();
 
-                                SiteDistribution representative = siteGroup.getFirst(); // all have same site
-                                return ContractDetailsData.ContractServiceDetails.ContractServiceDistributionsData.builder()
+                                SiteDistribution representative = siteGroup.getFirst();
+                                return ContractDetailsData.ContractServiceDetails
+                                        .ContractServiceDistributionsData.builder()
                                         .activities(representative.getActivities())
                                         .operationSiteName(representative.getSite().getName())
                                         .quantity(totalQnt.get())
@@ -281,5 +347,4 @@ public class CustomerContractServiceImpl implements CustomerContractService {
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
     }
-
 }

@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
 public interface TodayTaskSlotProjection {
     Long getId();
     Long getTaskId();
+    Long getTaskDefinitionId();
     Long getPatrolId();
     Long getPremiseId();
     Long getLocationId();

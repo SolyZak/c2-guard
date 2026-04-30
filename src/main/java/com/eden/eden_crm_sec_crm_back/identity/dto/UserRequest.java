@@ -4,6 +4,7 @@ import com.eden.eden_crm_sec_crm_back.objects.UserType;
 
 public record UserRequest(
         Long userId,
+        Long customerId,
         UserType userType,
         String username,
         String firstName,

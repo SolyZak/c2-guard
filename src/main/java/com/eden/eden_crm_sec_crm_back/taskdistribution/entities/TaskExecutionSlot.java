@@ -1,7 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.entities;
 
 import com.eden.eden_crm_sec_crm_back.models.Customer;
-import com.eden.eden_crm_sec_crm_back.models.patrol_execution.TaskPatrolExecution;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -49,9 +48,8 @@ public class TaskExecutionSlot {
     @Column(name = "status", nullable = false)
     private TaskDistributionStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_execution_id")
-    private TaskPatrolExecution taskExecution;
+    @Column(name = "task_execution_id")
+    private Long taskExecutionId;
 
     @Column(name = "executed_by_workforce_id")
     private Long executedByWorkforceId;

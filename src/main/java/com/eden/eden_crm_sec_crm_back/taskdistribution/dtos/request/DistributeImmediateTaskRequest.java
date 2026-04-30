@@ -11,8 +11,10 @@ import java.util.Set;
 
 @Builder
 public record DistributeImmediateTaskRequest(
+
     @NotNull
-    Long taskId,
+    Long taskDefinitionId,
+
     @NotNull
     OffsetDateTime startDateTime,
     @NotNull

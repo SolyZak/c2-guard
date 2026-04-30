@@ -10,6 +10,11 @@ import java.util.List;
 @Builder
 public record TodayTaskEntryResponse(
     Long taskId,
+    // ─── [TASK-MIGRATION] NEW ─────────────────────────────────────────────────────
+    // Populated for new-path distributions (task_management module).
+    // CLEANUP: rename to taskId after Phase E and drop the old taskId field.
+    Long taskDefinitionId,
+    // ─── [TASK-MIGRATION] END NEW ─────────────────────────────────────────────────
     Long patrolId,
     Long premiseId,
     Long locationId,

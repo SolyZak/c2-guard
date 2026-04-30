@@ -44,7 +44,8 @@ public class CustomerUserServiceImpl implements CustomerUserService {
     @Override
     @Transactional
     public String create(AddCustomerUserDto dto) {
-        Customer customer = customerRepository.findById(getLoggedInCustomerId()).orElseThrow(UserNotProvided::new);
+        Long customerId = getLoggedInCustomerId();
+        Customer customer = customerRepository.findById(customerId).orElseThrow(UserNotProvided::new);
 
         validateCreateUser(dto.getEmail(), dto.getCode());
 
@@ -53,8 +54,15 @@ public class CustomerUserServiceImpl implements CustomerUserService {
         customerUserRepository.save(entity);
 
         keycloakClient.createUser(new UserRequest(
-                entity.getId(), UserType.USER_CUSTOMER, entity.getEmail(), entity.getName(),
-                "", dto.getPassword(), entity.getEmail(), true
+                entity.getId(),
+                customer.getId(),       // customerId for token
+                UserType.USER_CUSTOMER,
+                entity.getEmail(),
+                entity.getName(),
+                "",
+                dto.getPassword(),
+                entity.getEmail(),
+                true
         ));
         customerUserRoleService.assignRole(entity.getId(), dto.getRoleId());
 
@@ -91,8 +99,15 @@ public class CustomerUserServiceImpl implements CustomerUserService {
             keycloakClient.resetPassword(user.getEmail(), dto.password(), false);
         } else {
             keycloakClient.createUser(new UserRequest(
-                    user.getId(), UserType.USER_CUSTOMER, user.getEmail(), user.getName(),
-                    "", dto.password(), user.getEmail(), true
+                    user.getId(),
+                    user.getCustomer().getId(),    // customerId for token
+                    UserType.USER_CUSTOMER,
+                    user.getEmail(),
+                    user.getName(),
+                    "",
+                    dto.password(),
+                    user.getEmail(),
+                    true
             ));
         }
         return MessageUtil.getMessage("password-reset.success");
@@ -106,10 +121,10 @@ public class CustomerUserServiceImpl implements CustomerUserService {
             );
         }
 
-        if(customerUserRepository.existsByEmail(email)) {
+        if (customerUserRepository.existsByEmail(email)) {
             throw new BusinessException(MessageUtil.getMessage("customer-user.email.exists"), HttpStatus.BAD_REQUEST);
         }
-        if(customerUserRepository.existsByCode(code)) {
+        if (customerUserRepository.existsByCode(code)) {
             throw new BusinessException(MessageUtil.getMessage("customer-user.code.exists"), HttpStatus.BAD_REQUEST);
         }
     }

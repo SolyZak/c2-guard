@@ -1,5 +1,6 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
+import com.eden.eden_crm_sec_crm_back.base.util.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
 import com.eden.eden_crm_sec_crm_back.objects.UserData;
@@ -39,6 +40,16 @@ public class ExternalController {
         return externalService.getCustomerOperationSites(customerId);
     }
 
+    @Operation(summary = "Get premise IDs for given operation site IDs",
+            description = "Returns a map of operationSiteId -> premiseId for the given customer")
+    @PostMapping("/operation-sites/premise-ids")
+    public Map<Long, Long> getPremiseIdsByOperationSiteIds(
+            @RequestParam("customerId") Long customerId,
+            @RequestBody List<Long> operationSiteIds
+    ) {
+        return externalService.getPremiseIdsByOperationSiteIds(customerId, operationSiteIds);
+    }
+
     @Operation(summary = "Get customer info", description = "This API will provide information abut customer")
     @GetMapping("/customers/{id}")
     public CustomerInfo getCustomerInfo(@PathVariable(name = "id") Long id) {
@@ -60,8 +71,6 @@ public class ExternalController {
             @Valid AttendanceStatsDto dto
     ) {
         dto.validate();
-
-        // HINT: I have to ignore pagination for now, data is destructed via multiple tables, with aggregation methods needed & loading data.
         dto.setCustomerId(List.of(getLoggedInCustomerId()));
         return externalService.getAttendanceStats(dto);
     }
@@ -72,8 +81,6 @@ public class ExternalController {
             @Valid AttendanceStatsDto dto
     ) {
         dto.validate();
-
-        // HINT: I have to ignore pagination for now, data is destructed via multiple tables, with aggregation methods needed & loading data.
         dto.setCustomerId(null);
         return externalService.getAttendanceStats(dto);
     }
@@ -133,5 +140,12 @@ public class ExternalController {
 
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
+    }
+
+    @GetMapping(path = "/operation-sites/{operationSiteId}/cameras")
+    ApiResponse<List<OperationSiteCameraData>> getCamerasByOperationSite(
+            @PathVariable("operationSiteId") Long operationSiteId
+    ) {
+        return ApiResponse.ok(externalService.getCamerasByOperationSiteId(operationSiteId));
     }
 }

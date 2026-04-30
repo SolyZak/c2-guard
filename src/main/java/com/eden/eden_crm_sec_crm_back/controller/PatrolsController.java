@@ -42,8 +42,8 @@ public class PatrolsController {
         return ApiResponse.ok(patrolReportService.generatePatrolReport(patrolReportRequest));
     }
 
-    @GetMapping("/report/premise/{premiseId}/patrol/{patrolId}")
-    ApiResponse getPatrolReportDetatils(@PathVariable Long premiseId, @PathVariable Long patrolId) {
-        return ApiResponse.ok(patrolReportService.getPatrolReportDetails(premiseId, patrolId));
-    }
+//    @GetMapping("/report/premise/{premiseId}/patrol/{patrolId}")
+//    ApiResponse getPatrolReportDetatils(@PathVariable Long premiseId, @PathVariable Long patrolId) {
+//        return ApiResponse.ok(patrolReportService.getPatrolReportDetails(premiseId, patrolId));
+//    }
 }

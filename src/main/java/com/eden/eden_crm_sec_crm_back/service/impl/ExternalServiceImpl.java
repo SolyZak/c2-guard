@@ -13,6 +13,7 @@ import com.eden.eden_crm_sec_crm_back.models.lookup.LKCustomerContractOperationS
 import com.eden.eden_crm_sec_crm_back.repository.CustomerContractRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerRepository;
 import com.eden.eden_crm_sec_crm_back.repository.CustomerSiteRepository;
+import com.eden.eden_crm_sec_crm_back.repository.OperationSiteCameraRepository;
 import com.eden.eden_crm_sec_crm_back.repository.SiteDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.service.ExternalService;
@@ -40,8 +41,8 @@ public class ExternalServiceImpl implements ExternalService {
     private final ExternalMapper externalMapper;
     private final LKCustomerContractOperationServiceRepository contractOperationServiceRepository;
     private final CustomerContractRepository customerContractRepository;
+    private final OperationSiteCameraRepository operationSiteCameraRepository;
 
-    // This function will provide information abut operation site today status
     @Override
     public OperationSiteInfo getOperationSiteDetails(Long id) {
         CustomerSite operationSite = customerSiteRepository.findById(id).orElseThrow(
@@ -185,7 +186,7 @@ public class ExternalServiceImpl implements ExternalService {
 
         return customerContracts.stream()
                 .map(contract -> buildContractPlannedQntDto(contract, from, to))
-                .toList(); // Use collect(Collectors.toList()) if you're on Java <16
+                .toList();
     }
 
     @Override
@@ -196,6 +197,37 @@ public class ExternalServiceImpl implements ExternalService {
                 .orElseThrow(() -> new BusinessException("Can`t find operation service by id: %d".formatted(request.contractOperationSiteDistributionDetailId()), HttpStatus.NOT_FOUND));
         hasActivity = operationService.getSiteDistribution().getActivities().contains(request.activity());
         return Map.of("hasActivity", hasActivity);
+    }
+
+    @Override
+    public Map<Long, Long> getPremiseIdsByOperationSiteIds(Long customerId, List<Long> operationSiteIds) {
+        if (operationSiteIds == null || operationSiteIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return customerSiteRepository
+                .findPremiseIdsByOperationSiteIdsAndCustomerId(operationSiteIds, customerId)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1],
+                        (existing, duplicate) -> existing
+                ));
+    }
+
+    @Override
+    public List<OperationSiteCameraData> getCamerasByOperationSiteId(Long operationSiteId) {
+        return operationSiteCameraRepository
+                .findByOperationSiteIdWithCameraAndVendor(operationSiteId)
+                .stream()
+                .map(osc -> OperationSiteCameraData.builder()
+                        .cameraId(osc.getCamera().getId())
+                        .cameraName(osc.getCamera().getName())
+                        .cameraIp(osc.getCamera().getIp())
+                        .vendorId(osc.getCamera().getVendor().getId())
+                        .vendorName(osc.getCamera().getVendor().getName())
+                        .build())
+                .toList();
     }
 
     private void validateDateRange(LocalDate from, LocalDate to) {
@@ -236,5 +268,4 @@ public class ExternalServiceImpl implements ExternalService {
 
         return count;
     }
-
 }
