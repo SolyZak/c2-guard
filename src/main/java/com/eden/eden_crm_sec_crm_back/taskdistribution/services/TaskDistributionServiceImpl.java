@@ -14,9 +14,11 @@ import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
+import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportEntryDto;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
@@ -24,13 +26,17 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.mappers.TaskDistributionM
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskAssignmentRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskDistributionRepository;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskExecutionSlotRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.DistributableTaskProjection;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.ImmediateTaskReportProjection;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.CreateScheduledTaskForDistributionService;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.TaskDistributionService;
 import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +45,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -66,6 +73,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final TaskDistributionMapper taskDistributionMapper;
     private final Utils utils;
     private final TaskPresenter taskPresenter;
+    private final TaskExecutionSlotRepository taskExecutionSlotRepository;
+    private final OrgUnitClient orgUnitClient;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
     @Override
@@ -192,6 +201,46 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             distributableTasksRequest.serviceTimeId()
         );
         return taskDistributionMapper.toDistributableTaskResponseList(tasks);
+    }
+
+    @Override
+    public Page<ImmediateTaskReportEntryDto> getImmediateTasksReport(ImmediateTasksReportRequest request, Pageable pageable) {
+        UserData loggedInUser = getLoggedInUser();
+        Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
+
+        OffsetDateTime fromDate = request.fromDate().atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime toDate = request.toDate().plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+
+        Page<ImmediateTaskReportProjection> projections = taskExecutionSlotRepository.findImmediateTasksReport(
+            customer.getId(), fromDate, toDate, pageable
+        );
+
+        Map<Long, String> workforceNames = projections.stream()
+            .map(ImmediateTaskReportProjection::getWorkforceId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet())
+            .stream()
+            .collect(Collectors.toMap(
+                id -> id,
+                id -> {
+                    try {
+                        return orgUnitClient.getWorkforceDetails(id.intValue()).workforce().name();
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }
+            ));
+
+        return projections.map(p -> ImmediateTaskReportEntryDto.builder()
+            .id(p.getId())
+            .startDateTime(p.getStartDateTime())
+            .endDateTime(p.getEndDateTime())
+            .workforceName(p.getWorkforceId() != null ? workforceNames.get(p.getWorkforceId()) : null)
+            .status(p.getStatus())
+            .locationName(p.getLocationName())
+            .taskName(p.getTaskName())
+            .build()
+        );
     }
 
     private static void validatePatrolDistributionStartDate(LocalDate startDate) {

@@ -1,7 +1,10 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.repositories;
 
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskExecutionSlot;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.ImmediateTaskReportProjection;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.TodayTaskSlotProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -107,5 +110,42 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
             @Param("serviceTimeId") Long serviceTimeId,
             @Param("slotNumber") Integer slotNumber,
             @Param("workforceId") Long workforceId
+    );
+
+    @Query(value = """
+        SELECT
+            tes.id AS id,
+            tes.startDateTime AS startDateTime,
+            tes.endDateTime AS endDateTime,
+            ta.workforceId AS workforceId,
+            CAST(tes.status AS string) AS status,
+            COALESCE(l.name, itd.locationName) AS locationName,
+            tdef.name AS taskName
+        FROM TaskExecutionSlot tes
+            JOIN tes.taskDistribution td
+            JOIN td.immediateTaskDistribution itd
+            JOIN tes.taskAssignment ta
+            LEFT JOIN itd.location l
+            LEFT JOIN com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.entity.TaskDefinitionJpaEntity tdef
+                ON tdef.id = td.taskDefinitionId
+        WHERE td.customer.id = :customerId
+            AND tes.startDateTime >= :fromDate
+            AND tes.startDateTime < :toDate
+        ORDER BY tes.startDateTime DESC
+        """,
+        countQuery = """
+        SELECT COUNT(tes)
+        FROM TaskExecutionSlot tes
+            JOIN tes.taskDistribution td
+            JOIN td.immediateTaskDistribution itd
+        WHERE td.customer.id = :customerId
+            AND tes.startDateTime >= :fromDate
+            AND tes.startDateTime < :toDate
+        """)
+    Page<ImmediateTaskReportProjection> findImmediateTasksReport(
+            @Param("customerId") Long customerId,
+            @Param("fromDate") OffsetDateTime fromDate,
+            @Param("toDate") OffsetDateTime toDate,
+            Pageable pageable
     );
 }
