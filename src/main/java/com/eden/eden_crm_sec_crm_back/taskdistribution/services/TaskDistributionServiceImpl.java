@@ -1,7 +1,9 @@
 package com.eden.eden_crm_sec_crm_back.taskdistribution.services;
 
 import com.eden.eden_crm_sec_crm_back.clients.AttendanceFeignClient;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckExecutionDetailPayload;
 import com.eden.eden_crm_sec_crm_back.dto.ContractIdsRequest;
 import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -18,6 +20,8 @@ import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskCheckDetailDto;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportDetailResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportEntryDto;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
@@ -75,6 +79,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final TaskPresenter taskPresenter;
     private final TaskExecutionSlotRepository taskExecutionSlotRepository;
     private final OrgUnitClient orgUnitClient;
+    private final TaskExecutionPresenter taskExecutionPresenter;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
     @Override
@@ -241,6 +246,48 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             .taskName(p.getTaskName())
             .build()
         );
+    }
+
+    @Override
+    public ImmediateTaskReportDetailResponse getImmediateTaskDetails(Long executionSlotId) {
+        UserData loggedInUser = getLoggedInUser();
+        Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());
+
+        TaskExecutionSlot slot = taskExecutionSlotRepository.findById(executionSlotId)
+            .orElseThrow(() -> new BusinessException(
+                MessageUtil.getMessage("task.execution.slot.not.found"),
+                HttpStatus.NOT_FOUND
+            ));
+
+        if (!slot.getCustomer().getId().equals(customer.getId())) {
+            throw new BusinessException(
+                MessageUtil.getMessage("task.execution.slot.not.found"),
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        if (slot.getTaskExecutionId() == null) {
+            throw new BusinessException(
+                MessageUtil.getMessage("task.execution.no.details"),
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        List<TaskCheckExecutionDetailPayload> payloads =
+            taskExecutionPresenter.getCheckExecutionDetails(slot.getTaskExecutionId());
+
+        List<ImmediateTaskCheckDetailDto> checks = payloads.stream()
+            .map(p -> ImmediateTaskCheckDetailDto.builder()
+                .checkName(p.checkName())
+                .checkValue(p.checkValues())
+                .implementationDateTime(p.createdAt())
+                .evidenceImageUrl(p.evidenceImageUrl())
+                .build())
+            .toList();
+
+        return ImmediateTaskReportDetailResponse.builder()
+            .checks(checks)
+            .build();
     }
 
     private static void validatePatrolDistributionStartDate(LocalDate startDate) {

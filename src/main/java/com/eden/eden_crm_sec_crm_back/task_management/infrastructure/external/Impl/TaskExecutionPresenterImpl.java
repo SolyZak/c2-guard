@@ -11,11 +11,16 @@ import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.pa
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.CreateTaskExecutionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.SubmitTaskCheckExecutionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckComparisonPayload;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckExecutionDetailPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskCheckExecutionPayload;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskExecutionPayload;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.persistence.repository.TaskCheckExecutionJpaRepository;
+import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +29,8 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
     private final TaskExecutionService taskExecutionService;
     private final TaskExternalMapper taskExternalMapper;
     private final TaskCheckComparisonService taskCheckComparisonService;
+    private final TaskCheckExecutionJpaRepository taskCheckExecutionJpaRepository;
+    private final OracleStorageUtil oracleStorageUtil;
 
     @Override
     public TaskExecutionPayload createTaskExecution(CreateTaskExecutionPayload payload) {
@@ -64,5 +71,20 @@ public class TaskExecutionPresenterImpl implements TaskExecutionPresenter {
     @Override
     public String uploadCheckExecutionImage(Long checkDefId, MultipartFile image) {
         return taskCheckComparisonService.uploadExecutionImage(checkDefId, image);
+    }
+
+    @Override
+    public List<TaskCheckExecutionDetailPayload> getCheckExecutionDetails(Long taskExecutionId) {
+        String baseUrl = oracleStorageUtil.getStorageUrl();
+        return taskCheckExecutionJpaRepository.findDetailsByTaskExecutionId(taskExecutionId)
+                .stream()
+                .map(p -> TaskCheckExecutionDetailPayload.builder()
+                        .id(p.getId())
+                        .checkName(p.getCheckName())
+                        .checkValues(p.getCheckValues())
+                        .evidenceImageUrl(p.getEvidenceImagePath() != null ? baseUrl + p.getEvidenceImagePath() : null)
+                        .createdAt(p.getCreatedAt())
+                        .build())
+                .toList();
     }
 }
