@@ -5,11 +5,15 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.AvailableSer
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributableTasksRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributeImmediateTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskRequest;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.ImmediateTasksReportRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportEntryDto;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.TaskDistributionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,5 +48,12 @@ public class TaskDistributionCustomerController {
     @PostMapping("/distributable-tasks")
     public ApiResponse<List<DistributableTaskResponse>> getDistributableTasks(@Valid @RequestBody DistributableTasksRequest distributableTasksRequest) {
         return ApiResponse.ok(taskDistributionService.getDistributableTasks(distributableTasksRequest));
+    }
+
+    @PostMapping("/immediate-tasks-report")
+    public ApiResponse<Page<ImmediateTaskReportEntryDto>> getImmediateTasksReport(
+            @Valid @RequestBody ImmediateTasksReportRequest request,
+            Pageable pageable) {
+        return ApiResponse.ok(taskDistributionService.getImmediateTasksReport(request, pageable));
     }
 }
