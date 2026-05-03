@@ -7,6 +7,8 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePa
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.ImmediateTasksReportRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskCheckDetailDto;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportDetailResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportEntryDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,4 +21,5 @@ public interface TaskDistributionService {
     List<AvailableServiceTimeResponse> getAllAvailableServiceTimes(AvailableServiceTimesRequest availableServiceTimesRequest);
     List<DistributableTaskResponse> getDistributableTasks(DistributableTasksRequest distributableTasksRequest);
     Page<ImmediateTaskReportEntryDto> getImmediateTasksReport(ImmediateTasksReportRequest request, Pageable pageable);
+    ImmediateTaskReportDetailResponse getImmediateTaskDetails(Long executionSlotId);
 }

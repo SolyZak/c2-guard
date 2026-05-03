@@ -15,7 +15,9 @@ import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
+import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskEntryRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePatrolTaskRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.TaskDistribution;
@@ -67,6 +69,9 @@ class TaskDistributionPatrolIntegrationTest {
     @Mock private TaskDistributionMapper taskDistributionMapper;
     @Mock private Utils utils;
     @Mock private TaskPresenter taskPresenter;
+    @Mock private TaskExecutionSlotRepository taskExecutionSlotRepository;
+    @Mock private OrgUnitClient orgUnitClient;
+    @Mock private TaskExecutionPresenter taskExecutionPresenter;
 
     @Mock private LKCustomerContractOperationService serviceTime;
     @Mock private SiteDistribution siteDistribution;
@@ -93,7 +98,8 @@ class TaskDistributionPatrolIntegrationTest {
             patrolDetailRepository, taskDistributionRepository,
             patrolTaskDistributionRepository, taskAssignmentRepository, locationRepository,
             attendanceClient, createScheduledTaskForDistributionService,
-            taskDistributionMapper, utils, taskPresenter
+            taskDistributionMapper, utils, taskPresenter,
+            taskExecutionSlotRepository, orgUnitClient, taskExecutionPresenter
         );
 
         UserData loggedInUser = UserData.builder().id("99").customerId(CUSTOMER_ID).build();

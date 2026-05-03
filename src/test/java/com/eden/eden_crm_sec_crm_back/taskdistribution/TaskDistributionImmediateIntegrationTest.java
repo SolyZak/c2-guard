@@ -11,6 +11,8 @@ import com.eden.eden_crm_sec_crm_back.objects.UserData;
 import com.eden.eden_crm_sec_crm_back.repository.*;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractOperationServiceRepository;
 import com.eden.eden_crm_sec_crm_back.repository.lookup.LKCustomerContractServiceRepository;
+import com.eden.eden_crm_sec_crm_back.clients.OrgUnitClient;
+import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskExecutionPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.payloads.TaskDefinitionPayload;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributeImmediateTaskRequest;
@@ -66,6 +68,9 @@ class TaskDistributionImmediateIntegrationTest {
     @Mock private TaskDistributionMapper taskDistributionMapper;
     @Mock private Utils utils;
     @Mock private TaskPresenter taskPresenter;
+    @Mock private TaskExecutionSlotRepository taskExecutionSlotRepository;
+    @Mock private OrgUnitClient orgUnitClient;
+    @Mock private TaskExecutionPresenter taskExecutionPresenter;
 
     private TaskDistributionServiceImpl service;
 
@@ -94,7 +99,10 @@ class TaskDistributionImmediateIntegrationTest {
             createScheduledTaskForDistributionService,
             taskDistributionMapper,
             utils,
-            taskPresenter
+            taskPresenter,
+            taskExecutionSlotRepository,
+            orgUnitClient,
+            taskExecutionPresenter
         );
 
         UserData loggedInUser = UserData.builder().id("99").customerId(CUSTOMER_ID).build();

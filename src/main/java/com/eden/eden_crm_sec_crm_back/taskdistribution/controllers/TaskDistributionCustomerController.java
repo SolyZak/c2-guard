@@ -8,12 +8,15 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.DistributePa
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.request.ImmediateTasksReportRequest;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableServiceTimeResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportDetailResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.ImmediateTaskReportEntryDto;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.TaskDistributionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,5 +58,11 @@ public class TaskDistributionCustomerController {
             @Valid @RequestBody ImmediateTasksReportRequest request,
             Pageable pageable) {
         return ApiResponse.ok(taskDistributionService.getImmediateTasksReport(request, pageable));
+    }
+
+    @GetMapping("/immediate-tasks-report/{executionSlotId}/details")
+    public ApiResponse<ImmediateTaskReportDetailResponse> getImmediateTaskDetails(
+            @PathVariable Long executionSlotId) {
+        return ApiResponse.ok(taskDistributionService.getImmediateTaskDetails(executionSlotId));
     }
 }
