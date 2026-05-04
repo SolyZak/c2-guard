@@ -14,6 +14,7 @@ public interface CustomerMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateCustomerFromDto(UpdateCustomerRequestDto dto, @MappingTarget Customer customer);
 
+    @Mapping(target = "logo", ignore = true)
     CustomerResponseDto customerToResponse(Customer customer);
 
     @Mapping(target = "id", source = "c.id")

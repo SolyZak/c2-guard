@@ -15,6 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
+
 
 import java.util.List;
 
@@ -38,9 +41,12 @@ public class CustomersController {
     }
 
     @Operation(summary = "Create customer")
-    @PostMapping
-    ApiResponse<CustomerResponseDto> createCustomer(@Valid @RequestBody CustomerRequestDto dto) {
-        return ApiResponse.ok(customerService.create(dto));
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ApiResponse<CustomerResponseDto> createCustomer(
+            @Valid @RequestPart("data") CustomerRequestDto dto,
+            @RequestPart(value = "logo", required = false) MultipartFile logo
+    ) {
+        return ApiResponse.ok(customerService.create(dto, logo));
     }
 
     @Operation(summary = "Paginate customers")
@@ -79,12 +85,13 @@ public class CustomersController {
     }
 
     @Operation(summary = "Update a customer")
-    @PutMapping(path = "{id}")
+    @PutMapping(path = "{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ApiResponse<CustomerResponseDto> updateCustomer(
             @PathVariable("id") Long id,
-            @Valid @RequestBody UpdateCustomerRequestDto dto
+            @Valid @RequestPart("data") UpdateCustomerRequestDto dto,
+            @RequestPart(value = "logo", required = false) MultipartFile logo
     ) {
-        return ApiResponse.ok(customerService.update(id, dto));
+        return ApiResponse.ok(customerService.update(id, dto, logo));
     }
 
     @Operation(summary = "Enable customer account via keycloak")

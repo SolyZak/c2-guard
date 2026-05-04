@@ -19,6 +19,7 @@ import com.eden.eden_crm_sec_crm_back.service.AsyncEmailService;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
 import com.eden.eden_crm_sec_crm_back.service.rbac.CustomerUserRoleService;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
+import com.eden.eden_crm_sec_crm_back.utils.OracleStorageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class CustomerUserServiceImpl implements CustomerUserService {
     private final Utils utils;
     private final AsyncEmailService asyncEmailService;
     private final CustomerUserRoleService customerUserRoleService;
+    private final OracleStorageUtil oracleStorageUtil;
 
     @Value("${customer-portal.url}")
     private String customerPortalUrl;
@@ -53,6 +56,8 @@ public class CustomerUserServiceImpl implements CustomerUserService {
         entity.setCustomer(customer);
         customerUserRepository.save(entity);
 
+        String fullLogoUrl = buildFullLogoUrl(customer.getLogo());
+
         keycloakClient.createUser(new UserRequest(
                 entity.getId(),
                 customer.getId(),       // customerId for token
@@ -62,7 +67,9 @@ public class CustomerUserServiceImpl implements CustomerUserService {
                 "",
                 dto.getPassword(),
                 entity.getEmail(),
-                true
+                true,
+                fullLogoUrl,
+                customer.getName()      // customer_name claim — parent's name
         ));
         customerUserRoleService.assignRole(entity.getId(), dto.getRoleId());
 
@@ -93,21 +100,29 @@ public class CustomerUserServiceImpl implements CustomerUserService {
     @Override
     public String resetPassword(Long id, ResetCustomerUserPassword dto) {
         CustomerUser user = customerUserRepository.findByIdAncCustomerId(id, getLoggedInCustomerId()).orElseThrow(
-                () -> new BusinessException(MessageUtil.getMessage("entity.not-found", new Object[]{MessageUtil.getMessage("customer-user")}), HttpStatus.NOT_FOUND)
+                () -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("customer-user")}),
+                        HttpStatus.NOT_FOUND)
         );
         if (keycloakClient.userExits(user.getEmail())) {
             keycloakClient.resetPassword(user.getEmail(), dto.password(), false);
         } else {
+            Customer parent = user.getCustomer();
+            String fullLogoUrl = buildFullLogoUrl(parent.getLogo());
+
             keycloakClient.createUser(new UserRequest(
                     user.getId(),
-                    user.getCustomer().getId(),    // customerId for token
+                    parent.getId(),                // customerId for token
                     UserType.USER_CUSTOMER,
                     user.getEmail(),
                     user.getName(),
                     "",
                     dto.password(),
                     user.getEmail(),
-                    true
+                    true,
+                    fullLogoUrl,
+                    parent.getName()               // customer_name claim — parent's name
             ));
         }
         return MessageUtil.getMessage("password-reset.success");
@@ -131,6 +146,12 @@ public class CustomerUserServiceImpl implements CustomerUserService {
 
     private Long getLoggedInCustomerId() {
         return utils.getLoggedInUser().getCustomerId();
+    }
+
+    /** Builds the full public URL or returns null if no logo is set. */
+    private String buildFullLogoUrl(String storedPath) {
+        if (!StringUtils.hasText(storedPath)) return null;
+        return oracleStorageUtil.getStorageUrl() + storedPath;
     }
 
     private void sendEmailToEnabledCustomer(String name, String emailTo, String password) {

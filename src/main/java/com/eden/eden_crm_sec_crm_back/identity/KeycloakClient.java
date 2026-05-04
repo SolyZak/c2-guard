@@ -9,4 +9,7 @@ public interface KeycloakClient {
     void updateUser(String username, UserRequest updatedRequest);
     void deleteUser(String username);
     void resetPassword(String username, String newPassword, boolean forceChangeOnFirstLogin);
+    void updateCustomerLogo(String username, String newLogoUrl);
+    void updateCustomerName(String username, String newName);
+
 }
