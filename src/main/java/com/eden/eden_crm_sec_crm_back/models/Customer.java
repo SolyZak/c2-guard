@@ -60,4 +60,7 @@ public class Customer extends BaseEntity {
     @Column(name = "timezone")
     @Enumerated(EnumType.STRING)
     private CustomTimezone timezone;
+
+    @Column(name = "logo", length = 1024)
+    private String logo;
 }

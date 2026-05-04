@@ -15,4 +15,6 @@ public class CustomerResponseDto {
     private String registrationNumber;
     private CustomTimezone timezone;
     private boolean active;
+    private String logo;
+
 }

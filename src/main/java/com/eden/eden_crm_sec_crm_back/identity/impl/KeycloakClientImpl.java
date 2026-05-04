@@ -15,6 +15,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.util.*;
@@ -25,9 +26,11 @@ import java.util.*;
 public class KeycloakClientImpl implements KeycloakClient {
 
     private final Keycloak keycloak;
-    private static final String USER_TYPE_ATTRIBUTE = "user_type";
-    private static final String USER_ID_ATTRIBUTE = "user_id";
-    private static final String CUSTOMER_ID_ATTRIBUTE = "customer_id";
+    private static final String USER_TYPE_ATTRIBUTE     = "user_type";
+    private static final String USER_ID_ATTRIBUTE       = "user_id";
+    private static final String CUSTOMER_ID_ATTRIBUTE   = "customer_id";
+    private static final String CUSTOMER_LOGO_ATTRIBUTE = "customer_logo";
+    private static final String CUSTOMER_NAME_ATTRIBUTE = "customer_name";
 
     @Value("${keycloak.realm}")
     private String realm;
@@ -118,9 +121,19 @@ public class KeycloakClientImpl implements KeycloakClient {
                 ? new HashMap<>(existingUser.getAttributes())
                 : new HashMap<>();
         attributes.put(USER_TYPE_ATTRIBUTE, Collections.singletonList(updatedRequest.userType().name()));
-        attributes.put(USER_ID_ATTRIBUTE, Collections.singletonList(updatedRequest.userId().toString()));
+        attributes.put(USER_ID_ATTRIBUTE,   Collections.singletonList(updatedRequest.userId().toString()));
         if (updatedRequest.customerId() != null) {
             attributes.put(CUSTOMER_ID_ATTRIBUTE, Collections.singletonList(updatedRequest.customerId().toString()));
+        }
+        if (StringUtils.hasText(updatedRequest.customerLogo())) {
+            attributes.put(CUSTOMER_LOGO_ATTRIBUTE, Collections.singletonList(updatedRequest.customerLogo()));
+        } else {
+            attributes.remove(CUSTOMER_LOGO_ATTRIBUTE);
+        }
+        if (StringUtils.hasText(updatedRequest.customerName())) {
+            attributes.put(CUSTOMER_NAME_ATTRIBUTE, Collections.singletonList(updatedRequest.customerName()));
+        } else {
+            attributes.remove(CUSTOMER_NAME_ATTRIBUTE);
         }
         existingUser.setAttributes(attributes);
 
@@ -138,8 +151,7 @@ public class KeycloakClientImpl implements KeycloakClient {
         UserRepresentation user = usersResource.searchByUsername(username, true)
                 .stream().findFirst()
                 .orElseThrow(() -> new BusinessException(
-                        MessageUtil.getMessage("identity-manager.user.not.found"), HttpStatus.NOT_FOUND
-                ));
+                        MessageUtil.getMessage("identity-manager.user.not.found"), HttpStatus.NOT_FOUND));
 
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(CredentialRepresentation.PASSWORD);
@@ -152,8 +164,69 @@ public class KeycloakClientImpl implements KeycloakClient {
             log.error("Failed to reset password for user [{}]: {}", username, e.getMessage());
             throw new BusinessException(
                     MessageUtil.getMessage("identity-manager.failed.reset.password"),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public void updateCustomerLogo(String username, String newLogoUrl) {
+        UsersResource usersResource = getRealmResource().users();
+        Optional<UserRepresentation> userOpt = usersResource.searchByUsername(username, true)
+                .stream().findFirst();
+
+        if (userOpt.isEmpty()) {
+            log.debug("Skipping customer_logo update — user [{}] not found in Keycloak", username);
+            return;
+        }
+
+        UserRepresentation existing = userOpt.get();
+        Map<String, List<String>> attributes = existing.getAttributes() != null
+                ? new HashMap<>(existing.getAttributes())
+                : new HashMap<>();
+
+        if (StringUtils.hasText(newLogoUrl)) {
+            attributes.put(CUSTOMER_LOGO_ATTRIBUTE, Collections.singletonList(newLogoUrl));
+        } else {
+            attributes.remove(CUSTOMER_LOGO_ATTRIBUTE);
+        }
+        existing.setAttributes(attributes);
+
+        try {
+            usersResource.get(existing.getId()).update(existing);
+        } catch (Exception e) {
+            log.error("Failed to update customer_logo for user [{}]: {}", username, e.getMessage());
+            // best-effort
+        }
+    }
+
+    @Override
+    public void updateCustomerName(String username, String newName) {
+        UsersResource usersResource = getRealmResource().users();
+        Optional<UserRepresentation> userOpt = usersResource.searchByUsername(username, true)
+                .stream().findFirst();
+
+        if (userOpt.isEmpty()) {
+            log.debug("Skipping customer_name update — user [{}] not found in Keycloak", username);
+            return;
+        }
+
+        UserRepresentation existing = userOpt.get();
+        Map<String, List<String>> attributes = existing.getAttributes() != null
+                ? new HashMap<>(existing.getAttributes())
+                : new HashMap<>();
+
+        if (StringUtils.hasText(newName)) {
+            attributes.put(CUSTOMER_NAME_ATTRIBUTE, Collections.singletonList(newName));
+        } else {
+            attributes.remove(CUSTOMER_NAME_ATTRIBUTE);
+        }
+        existing.setAttributes(attributes);
+
+        try {
+            usersResource.get(existing.getId()).update(existing);
+        } catch (Exception e) {
+            log.error("Failed to update customer_name for user [{}]: {}", username, e.getMessage());
+            // best-effort
         }
     }
 
@@ -177,9 +250,15 @@ public class KeycloakClientImpl implements KeycloakClient {
 
         Map<String, List<String>> attributes = new HashMap<>();
         attributes.put(USER_TYPE_ATTRIBUTE, Collections.singletonList(request.userType().name()));
-        attributes.put(USER_ID_ATTRIBUTE, Collections.singletonList(request.userId().toString()));
+        attributes.put(USER_ID_ATTRIBUTE,   Collections.singletonList(request.userId().toString()));
         if (request.customerId() != null) {
             attributes.put(CUSTOMER_ID_ATTRIBUTE, Collections.singletonList(request.customerId().toString()));
+        }
+        if (StringUtils.hasText(request.customerLogo())) {
+            attributes.put(CUSTOMER_LOGO_ATTRIBUTE, Collections.singletonList(request.customerLogo()));
+        }
+        if (StringUtils.hasText(request.customerName())) {
+            attributes.put(CUSTOMER_NAME_ATTRIBUTE, Collections.singletonList(request.customerName()));
         }
         userRepresentation.setAttributes(attributes);
         return userRepresentation;
