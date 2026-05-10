@@ -11,6 +11,7 @@ import org.hibernate.annotations.Where;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "customers")
@@ -63,4 +64,16 @@ public class Customer extends BaseEntity {
 
     @Column(name = "logo", length = 1024)
     private String logo;
+
+    @Column(name = "cloud_customer_id")
+    private Long cloudCustomerId;
+
+    @Column(name = "sub_cloud_account_id")
+    private Long subCloudAccountId;
+
+    @Column(name = "global_customer_uuid")
+    private UUID globalCustomerUuid;
+
+    @Column(name = "cloud_operator_id")
+    private Long cloudOperatorId;
 }

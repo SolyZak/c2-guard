@@ -9,9 +9,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
+
+    Optional<Customer> findByGlobalCustomerUuid(UUID globalCustomerUuid);
     Optional<Customer> findFirstByEmail(String email);
 
     @Query("SELECT c FROM Customer c WHERE c.email = ?1 AND id != ?2")

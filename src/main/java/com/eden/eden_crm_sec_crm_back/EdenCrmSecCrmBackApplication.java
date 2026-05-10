@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.TimeZone;
 
-@EnableAsync
+@EnableAsync(proxyTargetClass = true)
 @SpringBootApplication
 @EnableJpaAuditing
 @EnableFeignClients
