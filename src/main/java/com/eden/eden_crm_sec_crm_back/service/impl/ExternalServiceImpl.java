@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.external.*;
 import com.eden.eden_crm_sec_crm_back.dto.response.WorkforceSiteDistributionDto;
+import com.eden.eden_crm_sec_crm_back.enums.CustomTimezone;
 import com.eden.eden_crm_sec_crm_back.enums.WeekDaysEnum;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.mapper.ExternalMapper;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -144,10 +146,19 @@ public class ExternalServiceImpl implements ExternalService {
     @Override
     public List<AttendanceWorkingPeriodData> getAttendanceDateWorkingPeriod(Long customerId, Long contractId, Long operationSiteId, LocalDate date) {
         WeekDaysEnum todayWeekday = Utils.getWeekdayEnum(date);
+        boolean isToday = date.isEqual(LocalDate.now());
         return contractOperationServiceRepository.findContractOperationServices(
                         customerId, operationSiteId, contractId
                 ).stream()
                 .filter(os -> os.getDays().contains(todayWeekday))
+                .filter(os -> {
+                    if (!isToday) return true;
+                    CustomTimezone tz = os.getSiteDistribution().getSite().getTimezone();
+                    LocalTime nowLocal = DateUtils.now(tz).toLocalTime();
+                    LocalTime fromLocal = DateUtils.toLocalTime(tz, os.getFromTime());
+                    LocalTime toLocal = DateUtils.toLocalTime(tz, os.getToTime());
+                    return !nowLocal.isBefore(fromLocal) && !nowLocal.isAfter(toLocal);
+                })
                 .map(os -> AttendanceWorkingPeriodData.builder()
                         .id(os.getId())
                         .quantity(os.getQuantity())
