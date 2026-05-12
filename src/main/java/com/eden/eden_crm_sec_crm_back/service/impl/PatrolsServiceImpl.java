@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.base.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.BulkReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolKeyValueDto;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -203,6 +205,36 @@ public class PatrolsServiceImpl implements PatrolsService {
 
         detail.setDisplayOrder(newPos);
         patrolDetailRepository.save(detail);
+    }
+
+    @Override
+    @Transactional
+    public void bulkReorderPatrolDetails(Long patrolId, BulkReorderPatrolDetailRequest request) {
+        List<Long> orderedIds = request.getOrderedDetailIds();
+
+        long totalDetails = patrolDetailRepository.countByPatrol_Id(patrolId);
+        if (orderedIds.size() != totalDetails) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.patrol.detail.bulk.incomplete"), HttpStatus.BAD_REQUEST);
+        }
+
+        List<PatrolDetail> details = patrolDetailRepository.findAllById(orderedIds);
+
+        boolean allBelong = details.stream()
+                .allMatch(d -> d.getPatrol().getId().equals(patrolId));
+        if (!allBelong || details.size() != orderedIds.size()) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.patrol.detail.not_belongs"), HttpStatus.BAD_REQUEST);
+        }
+
+        Map<Long, PatrolDetail> detailMap = details.stream()
+                .collect(Collectors.toMap(PatrolDetail::getId, Function.identity()));
+
+        for (int i = 0; i < orderedIds.size(); i++) {
+            detailMap.get(orderedIds.get(i)).setDisplayOrder(i + 1);
+        }
+
+        patrolDetailRepository.saveAll(details);
     }
 
     private Long getLoggedInCustomerId() {

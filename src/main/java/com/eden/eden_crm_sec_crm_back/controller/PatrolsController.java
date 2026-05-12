@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.BulkReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.PatrolReportRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
@@ -42,6 +43,13 @@ public class PatrolsController {
     ApiResponse reorderPatrolDetail(@PathVariable Long patrolId,
                                     @RequestBody @Valid ReorderPatrolDetailRequest request) {
         patrolService.reorderPatrolDetail(patrolId, request);
+        return ApiResponse.ok(null);
+    }
+
+    @PatchMapping("/{patrolId}/details/reorder-bulk")
+    ApiResponse bulkReorderPatrolDetails(@PathVariable Long patrolId,
+                                         @RequestBody @Valid BulkReorderPatrolDetailRequest request) {
+        patrolService.bulkReorderPatrolDetails(patrolId, request);
         return ApiResponse.ok(null);
     }
 

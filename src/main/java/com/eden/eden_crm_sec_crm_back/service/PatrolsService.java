@@ -1,6 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.service;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.BulkReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.ReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolKeyValueDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolResponseDto;
@@ -14,4 +15,5 @@ public interface PatrolsService {
     PaginateResponse<PatrolResponseDto> listPatrol(Integer page, Integer size, String search);
     List<PatrolKeyValueDto> listAllPatrols();
     void reorderPatrolDetail(Long patrolId, ReorderPatrolDetailRequest request);
+    void bulkReorderPatrolDetails(Long patrolId, BulkReorderPatrolDetailRequest request);
 }
