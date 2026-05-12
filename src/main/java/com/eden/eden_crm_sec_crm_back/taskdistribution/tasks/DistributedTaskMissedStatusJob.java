@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
@@ -70,7 +71,7 @@ public class DistributedTaskMissedStatusJob implements ScheduledTaskFactory {
     }
 
     private void sendAlertEvent(TaskExecutionSlot executionSlot) {
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = DateUtils.nowDateTime(executionSlot.getCustomer().getTimezone());
         final Trigger trigger = triggerRepository.findById(TriggerCode.PATROL_TASK_MISSED.getId())
                 .orElseThrow(() -> new RuntimeException("Trigger not found"));
         final TaskDistribution taskDistribution = executionSlot.getTaskDistribution();

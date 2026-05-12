@@ -52,6 +52,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.mappers.TaskDistributionM
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.TaskExecutionSlotRepository;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.TodayTaskSlotProjection;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.services.base.DistributedTaskService;
+import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
@@ -328,7 +329,7 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
             Customer customer,
             TaskExecutionSlot taskExecutionSlot) {
 
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = DateUtils.nowDateTime(customer.getTimezone());
         Trigger trigger = triggerRepository
                 .findById(TriggerCode.PATROL_TASK_DEVIATION.getId())
                 .orElseThrow(() -> new RuntimeException(
