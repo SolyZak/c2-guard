@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.PatrolReportRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.ReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.service.PatrolReportService;
 import com.eden.eden_crm_sec_crm_back.service.PatrolsService;
@@ -35,6 +36,13 @@ public class PatrolsController {
     @GetMapping("/all")
     ApiResponse listPatrolsNoPagination() throws IOException, WriterException {
         return ApiResponse.ok(patrolService.listAllPatrols());
+    }
+
+    @PatchMapping("/{patrolId}/details/reorder")
+    ApiResponse reorderPatrolDetail(@PathVariable Long patrolId,
+                                    @RequestBody @Valid ReorderPatrolDetailRequest request) {
+        patrolService.reorderPatrolDetail(patrolId, request);
+        return ApiResponse.ok(null);
     }
 
     @PostMapping("/report")

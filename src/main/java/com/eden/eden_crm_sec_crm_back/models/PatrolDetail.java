@@ -30,6 +30,9 @@ public class PatrolDetail {
     @Column(name = "task_definition_id")
     private Long taskDefinitionId;
 
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
+
     @OneToMany(mappedBy = "patrolDetail")
     List<PatrolAssignment> patrolAssignments;
 

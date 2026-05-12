@@ -157,12 +157,17 @@ public class DistributedTaskServiceImpl implements DistributedTaskService {
                                 response.patrolDistributionId())
                         .immediateDistributionId(
                                 response.immediateDistributionId())
+                        .displayOrder(response.displayOrder())
                         .executionSlots(response.executionSlots())
                         .build();
             }
 
             tasks.add(response);
         });
+        tasks.sort(Comparator.comparing(
+                TodayTaskEntryResponse::displayOrder,
+                Comparator.nullsLast(Comparator.naturalOrder())
+        ));
         return TodayTasksResponse.builder().tasks(tasks).build();
     }
 

@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 import com.eden.eden_crm_sec_crm_back.base.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddPatrolRequest;
+import com.eden.eden_crm_sec_crm_back.dto.request.ReorderPatrolDetailRequest;
 import com.eden.eden_crm_sec_crm_back.task_management.infrastructure.external.TaskPresenter;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolKeyValueDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.PatrolResponseDetail;
@@ -26,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,6 +62,7 @@ public class PatrolsServiceImpl implements PatrolsService {
         Patrol patrol = new Patrol();
 
         Set<String> locationCheckImagePairs = new LinkedHashSet<>();
+        int displayOrder = 1;
 
         for (AddPatrolDetailRequest detailRequest : request.getDetails()) {
             PatrolDetail patrolDetail = new PatrolDetail();
@@ -74,6 +77,7 @@ public class PatrolsServiceImpl implements PatrolsService {
                 for (Long taskDefId : taskDefIds) {
                     patrolDetail.setLocation(location);
                     patrolDetail.setTaskDefinitionId(taskDefId);
+                    patrolDetail.setDisplayOrder(displayOrder++);
                     patrolDetail.setPatrol(patrol);
                     patrolDetails.add(patrolDetail);
                     patrolDetail = new PatrolDetail();
@@ -125,12 +129,12 @@ public class PatrolsServiceImpl implements PatrolsService {
                 dto.setFrequency(p.getFrequency());
                 dto.setFrequencyRate(p.getFrequencyRate());
                 dto.setName(p.getName());
-                List<Long> detailsIds = p.getPatrolDetails().stream()
-                        .map(d -> d.getId()).collect(Collectors.toList());
-                for(Long id : detailsIds) {
+                for (PatrolDetail pd : p.getPatrolDetails()) {
                     PatrolResponseDetail detail = new PatrolResponseDetail();
-                    detail.setLocations(locationRepository.getLocationNamesByDetailId(id));
-                    detail.setTaskDefinitions(patrolDetailRepository.getTaskDefinitionNamesByDetailId(id));
+                    detail.setId(pd.getId());
+                    detail.setDisplayOrder(pd.getDisplayOrder());
+                    detail.setLocations(locationRepository.getLocationNamesByDetailId(pd.getId()));
+                    detail.setTaskDefinitions(patrolDetailRepository.getTaskDefinitionNamesByDetailId(pd.getId()));
                     dto.getDetails().add(detail);
                 }
                 patrolResponseDtos.add(dto);
@@ -166,6 +170,39 @@ public class PatrolsServiceImpl implements PatrolsService {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    @Override
+    @Transactional
+    public void reorderPatrolDetail(Long patrolId, ReorderPatrolDetailRequest request) {
+        PatrolDetail detail = patrolDetailRepository.findById(request.getPatrolDetailId())
+                .orElseThrow(() -> new BusinessException(
+                        MessageUtil.getMessage("validation.patrol.detail.not_found"), HttpStatus.NOT_FOUND));
+
+        if (!detail.getPatrol().getId().equals(patrolId)) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.patrol.detail.not_belongs"), HttpStatus.BAD_REQUEST);
+        }
+
+        int oldPos = detail.getDisplayOrder();
+        int newPos = request.getNewPosition();
+
+        if (oldPos == newPos) return;
+
+        long totalDetails = patrolDetailRepository.countByPatrol_Id(patrolId);
+        if (newPos > totalDetails) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("validation.patrol.detail.position.invalid"), HttpStatus.BAD_REQUEST);
+        }
+
+        if (oldPos < newPos) {
+            patrolDetailRepository.shiftOrdersUp(patrolId, oldPos, newPos);
+        } else {
+            patrolDetailRepository.shiftOrdersDown(patrolId, newPos, oldPos);
+        }
+
+        detail.setDisplayOrder(newPos);
+        patrolDetailRepository.save(detail);
     }
 
     private Long getLoggedInCustomerId() {

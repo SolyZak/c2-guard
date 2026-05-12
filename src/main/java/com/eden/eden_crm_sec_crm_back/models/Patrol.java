@@ -24,6 +24,7 @@ public class Patrol extends BaseEntity {
     private String frequencyRate;
 
     @OneToMany(mappedBy = "patrol", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
     private List<PatrolDetail> patrolDetails;
 
     @ManyToOne

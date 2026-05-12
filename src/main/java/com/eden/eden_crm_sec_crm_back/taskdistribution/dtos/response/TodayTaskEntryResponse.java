@@ -37,5 +37,7 @@ public record TodayTaskEntryResponse(
     Long patrolDistributionId,
     Long immediateDistributionId,
 
+    Integer displayOrder,
+
     List<TodayTaskExecutionSlotEntryResponse> executionSlots
 ) {}

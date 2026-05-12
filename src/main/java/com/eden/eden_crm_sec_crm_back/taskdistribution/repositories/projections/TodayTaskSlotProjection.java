@@ -34,4 +34,5 @@ public interface TodayTaskSlotProjection {
     DistributionType getDistributionType();
     Long getPatrolDistributionId();
     Long getImmediateDistributionId();
+    Integer getDisplayOrder();
 }
