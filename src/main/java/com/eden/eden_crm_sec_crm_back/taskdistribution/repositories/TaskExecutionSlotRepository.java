@@ -67,7 +67,8 @@ public interface TaskExecutionSlotRepository extends JpaRepository<TaskExecution
             td.id AS taskDistributionId,
             td.distributionType AS distributionType,
             ptd.id AS patrolDistributionId,
-            itd.id AS immediateDistributionId
+            itd.id AS immediateDistributionId,
+            pd.displayOrder AS displayOrder
         FROM
             TaskExecutionSlot tes
             JOIN tes.taskAssignment ta

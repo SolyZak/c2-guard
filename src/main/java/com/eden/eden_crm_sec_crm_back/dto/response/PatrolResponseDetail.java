@@ -7,6 +7,7 @@ import java.util.List;
 @Data
 public class PatrolResponseDetail {
     Long id;
+    Integer displayOrder;
     List<String> locations;
     List<String> tasks;
     List<String> taskDefinitions;

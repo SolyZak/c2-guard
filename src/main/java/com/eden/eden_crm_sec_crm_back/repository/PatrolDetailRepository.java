@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.repository;
 import com.eden.eden_crm_sec_crm_back.models.PatrolDetail;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.projections.DistributableTaskProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -41,4 +42,14 @@ public interface PatrolDetailRepository extends JpaRepository<PatrolDetail,Long>
     List<String> getTaskDefinitionNamesByDetailId(@Param("detailId") Long detailId);
 
     long countByPatrol_Id(Long patrolId);
+
+    @Modifying
+    @Query("UPDATE PatrolDetail pd SET pd.displayOrder = pd.displayOrder - 1 " +
+           "WHERE pd.patrol.id = :patrolId AND pd.displayOrder > :oldPos AND pd.displayOrder <= :newPos")
+    void shiftOrdersUp(@Param("patrolId") Long patrolId, @Param("oldPos") int oldPos, @Param("newPos") int newPos);
+
+    @Modifying
+    @Query("UPDATE PatrolDetail pd SET pd.displayOrder = pd.displayOrder + 1 " +
+           "WHERE pd.patrol.id = :patrolId AND pd.displayOrder >= :newPos AND pd.displayOrder < :oldPos")
+    void shiftOrdersDown(@Param("patrolId") Long patrolId, @Param("newPos") int newPos, @Param("oldPos") int oldPos);
 }
