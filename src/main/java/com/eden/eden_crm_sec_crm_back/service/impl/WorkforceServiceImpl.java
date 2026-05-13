@@ -35,7 +35,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZoneOffset;
@@ -190,10 +189,22 @@ public class WorkforceServiceImpl implements WorkforceService {
                                             d.getOperationServices().stream()
                                                     .filter(os -> os.getDays().contains(weekDaysEnum))
                                                     .filter(os -> {
-                                                        LocalTime nowLocal = DateUtils.now(site.getTimezone()).toLocalTime();
-                                                        LocalTime fromLocal = DateUtils.toLocalTime(site.getTimezone(), getFromTime(contractOperationRule, os));
-                                                        LocalTime toLocal = DateUtils.toLocalTime(site.getTimezone(), getToTime(os));
-                                                        return !nowLocal.isBefore(fromLocal) && !nowLocal.isAfter(toLocal);
+                                                        OffsetDateTime now = DateUtils.nowDateTime(site.getTimezone());
+                                                        OffsetTime fromTime = getFromTime(contractOperationRule, os);
+                                                        OffsetTime toTime = getToTime(os);
+
+                                                        OffsetDateTime from = now.with(fromTime);
+                                                        OffsetDateTime to = now.with(toTime);
+
+                                                        if (to.isBefore(from)) {
+                                                            if (now.isBefore(to)) {
+                                                                from = from.minusDays(1);
+                                                            } else {
+                                                                to = to.plusDays(1);
+                                                            }
+                                                        }
+
+                                                        return !now.isBefore(from) && !now.isAfter(to);
                                                     })
                                                     .flatMap(os ->
                                                             IntStream.range(0, os.getQuantity().intValue())
