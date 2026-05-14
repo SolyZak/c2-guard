@@ -8,11 +8,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TriggerEventConsumer {
     private final CrmTriggerLogService crmTriggerLogService;
@@ -21,10 +23,22 @@ public class TriggerEventConsumer {
 
     @KafkaListener(topics = "crm_topic", groupId = "crm-group")
     public void consume(ConsumerRecord<String, String> triggerEvent) throws JsonProcessingException {
+        log.info("[TriggerConsumer] RAW KAFKA PAYLOAD topic={} partition={} offset={} value={}",
+                triggerEvent.topic(), triggerEvent.partition(), triggerEvent.offset(), triggerEvent.value());
         TriggerEventDto triggerEventDto = objectMapper.readValue(triggerEvent.value(), TriggerEventDto.class);
-        // save log to db
+        log.info("[TriggerConsumer] DESERIALIZED triggerId={} eventDate={} eventTime={} (offset={}) operationSiteId={} customerId={}",
+                triggerEventDto.getTriggerId(),
+                triggerEventDto.getEventDate(),
+                triggerEventDto.getEventTime(),
+                triggerEventDto.getEventTime() != null ? triggerEventDto.getEventTime().getOffset() : null,
+                triggerEventDto.getOperationSiteId(),
+                triggerEventDto.getCustomerId());
         final CrmTriggerLog crmTriggerLog = crmTriggerLogService.addNewCrmTriggerLog(triggerEventDto);
-        // send new c2 alert event
+        log.info("[TriggerConsumer] SAVED CrmTriggerLog id={} eventDate={} eventTime={} (offset={}) -> publishing C2 alert event",
+                crmTriggerLog.getId(),
+                crmTriggerLog.getEventDate(),
+                crmTriggerLog.getEventTime(),
+                crmTriggerLog.getEventTime() != null ? crmTriggerLog.getEventTime().getOffset() : null);
         c2AlertEventService.sendNewC2AlertEvent(crmTriggerLog);
     }
 }
