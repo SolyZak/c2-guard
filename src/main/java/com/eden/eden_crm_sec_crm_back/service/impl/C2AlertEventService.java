@@ -22,15 +22,31 @@ public class C2AlertEventService {
     private final AlertTriggerRepository alertTriggerRepository;
 
     public void sendNewC2AlertEvent(final CrmTriggerLog crmTriggerLog) {
+        log.info("[C2AlertEventService][sendNew] CrmTriggerLog id={} eventDate={} eventTime={} (offset={}) triggerId={} servicePlatformId={} customerId={}",
+                crmTriggerLog.getId(),
+                crmTriggerLog.getEventDate(),
+                crmTriggerLog.getEventTime(),
+                crmTriggerLog.getEventTime() != null ? crmTriggerLog.getEventTime().getOffset() : null,
+                crmTriggerLog.getTriggerId(),
+                crmTriggerLog.getServicePlatform().getId(),
+                crmTriggerLog.getCustomerId());
         List<AlertTriggerSeverity> alertTriggerSeverities =
                 alertTriggerSeverityService.findByTriggerIdAndServicePlatformIdAndCustomerId(
                         crmTriggerLog.getTriggerId(),
                         crmTriggerLog.getServicePlatform().getId(),
                         crmTriggerLog.getCustomerId()
                 );
+        log.info("[C2AlertEventService][sendNew] resolved {} severity rows for CrmTriggerLog id={}",
+                alertTriggerSeverities.size(), crmTriggerLog.getId());
         alertTriggerSeverities.stream()
                 .map(s -> buildC2AlertEvent(crmTriggerLog, s))
-                .forEach(c2EventProducer::publishC2Events);
+                .forEach(event -> {
+                    log.info("[C2AlertEventService][publish] eventDate={} eventTime={} (offset={}) severity={} alertId={} triggerName={}",
+                            event.getEventDate(), event.getEventTime(),
+                            event.getEventTime() != null ? event.getEventTime().getOffset() : null,
+                            event.getSeverity(), event.getAlertId(), event.getTriggerName());
+                    c2EventProducer.publishC2Events(event);
+                });
     }
 
 
