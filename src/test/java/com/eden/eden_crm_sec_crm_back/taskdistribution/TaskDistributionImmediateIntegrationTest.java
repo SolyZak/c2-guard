@@ -66,6 +66,7 @@ class TaskDistributionImmediateIntegrationTest {
     @Mock private TaskDistributionMapper taskDistributionMapper;
     @Mock private Utils utils;
     @Mock private TaskPresenter taskPresenter;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private TaskDistributionServiceImpl service;
 
@@ -94,7 +95,8 @@ class TaskDistributionImmediateIntegrationTest {
             createScheduledTaskForDistributionService,
             taskDistributionMapper,
             utils,
-            taskPresenter
+            taskPresenter,
+            eventPublisher
         );
 
         UserData loggedInUser = UserData.builder().id("99").customerId(CUSTOMER_ID).build();

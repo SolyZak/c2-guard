@@ -67,6 +67,7 @@ class TaskDistributionPatrolIntegrationTest {
     @Mock private TaskDistributionMapper taskDistributionMapper;
     @Mock private Utils utils;
     @Mock private TaskPresenter taskPresenter;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Mock private LKCustomerContractOperationService serviceTime;
     @Mock private SiteDistribution siteDistribution;
@@ -93,7 +94,8 @@ class TaskDistributionPatrolIntegrationTest {
             patrolDetailRepository, taskDistributionRepository,
             patrolTaskDistributionRepository, taskAssignmentRepository, locationRepository,
             attendanceClient, createScheduledTaskForDistributionService,
-            taskDistributionMapper, utils, taskPresenter
+            taskDistributionMapper, utils, taskPresenter,
+            eventPublisher
         );
 
         UserData loggedInUser = UserData.builder().id("99").customerId(CUSTOMER_ID).build();
