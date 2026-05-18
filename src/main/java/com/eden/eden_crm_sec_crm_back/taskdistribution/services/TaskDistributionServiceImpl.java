@@ -19,6 +19,7 @@ import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.AvailableSe
 import com.eden.eden_crm_sec_crm_back.taskdistribution.dtos.response.DistributableTaskResponse;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.entities.*;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.DistributionType;
+import com.eden.eden_crm_sec_crm_back.taskdistribution.events.ImmediateTaskAssignedEvent;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.enums.TaskDistributionStatus;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.mappers.TaskDistributionMapper;
 import com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.PatrolTaskDistributionRepository;
@@ -31,6 +32,7 @@ import com.eden.eden_crm_sec_crm_back.utils.DateUtils;
 import com.eden.eden_crm_sec_crm_back.utils.MessageUtil;
 import com.eden.eden_crm_sec_crm_back.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +68,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final TaskDistributionMapper taskDistributionMapper;
     private final Utils utils;
     private final TaskPresenter taskPresenter;
+    private final ApplicationEventPublisher eventPublisher;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
     @Override
@@ -314,6 +317,12 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
                     customer.getId()
             );
         }
+
+        eventPublisher.publishEvent(new ImmediateTaskAssignedEvent(
+            request.workforceIds(),
+            immediateTaskDistribution.getLocationName(),
+            immediateTaskDistribution.getId()
+        ));
     }
     private static TaskDistribution buildTaskDistributionBase(
         Customer customer,
