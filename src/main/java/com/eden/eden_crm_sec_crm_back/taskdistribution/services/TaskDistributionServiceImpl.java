@@ -149,10 +149,10 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
         CustomerContract contract = getContract(contractIds.iterator().next());
 
-        taskPresenter.getTaskDefinition(distributeImmediateTaskRequest.taskDefinitionId());
+        String taskName = taskPresenter.getTaskDefinition(distributeImmediateTaskRequest.taskDefinitionId()).getName();
         TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, DistributionType.IMMEDIATE);
         taskDistribution.setTaskDefinitionId(distributeImmediateTaskRequest.taskDefinitionId());
-        completeAndSaveImmediateDistribution(taskDistribution, customer, loggedInUser, distributeImmediateTaskRequest);
+        completeAndSaveImmediateDistribution(taskDistribution, customer, loggedInUser, distributeImmediateTaskRequest, taskName);
     }
 
     @Override
@@ -287,7 +287,8 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
             TaskDistribution taskDistribution,
             Customer customer,
             UserData loggedInUser,
-            DistributeImmediateTaskRequest request
+            DistributeImmediateTaskRequest request,
+            String taskName
     ) {
         ImmediateTaskDistribution immediateTaskDistribution = buildImmediateTaskDistribution(
                 customer, taskDistribution, Long.valueOf(loggedInUser.getId()), request
@@ -320,7 +321,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
         eventPublisher.publishEvent(new ImmediateTaskAssignedEvent(
             request.workforceIds(),
-            immediateTaskDistribution.getLocationName(),
+            taskName,
             immediateTaskDistribution.getId()
         ));
     }
