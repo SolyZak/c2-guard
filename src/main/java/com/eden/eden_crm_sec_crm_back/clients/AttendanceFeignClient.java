@@ -5,6 +5,7 @@ import com.eden.eden_crm_sec_crm_back.dto.TriggerResponse;
 import com.eden.eden_crm_sec_crm_back.dto.external.CheckInData;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,4 +26,7 @@ public interface AttendanceFeignClient {
 
     @GetMapping(value = "/external/workforce/check-in-data")
     CheckInData checkInData();
+
+    @GetMapping(value = "/external/push-token/{workforceId}")
+    String getPushToken(@PathVariable("workforceId") String workforceId);
 }
