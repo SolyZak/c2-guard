@@ -71,6 +71,7 @@ class TaskDistributionImmediateIntegrationTest {
     @Mock private TaskExecutionSlotRepository taskExecutionSlotRepository;
     @Mock private OrgUnitClient orgUnitClient;
     @Mock private TaskExecutionPresenter taskExecutionPresenter;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private TaskDistributionServiceImpl service;
 
@@ -102,7 +103,8 @@ class TaskDistributionImmediateIntegrationTest {
             taskPresenter,
             taskExecutionSlotRepository,
             orgUnitClient,
-            taskExecutionPresenter
+            taskExecutionPresenter,
+            eventPublisher
         );
 
         UserData loggedInUser = UserData.builder().id("99").customerId(CUSTOMER_ID).build();
