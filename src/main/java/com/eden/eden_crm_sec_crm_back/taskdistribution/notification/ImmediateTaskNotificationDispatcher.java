@@ -26,7 +26,7 @@ public class ImmediateTaskNotificationDispatcher {
     @Async
     @EventListener
     public void onImmediateTaskAssigned(ImmediateTaskAssignedEvent event) {
-        String body = "You have been assigned an immediate task on " + event.locationName();
+        String body = "You have been assigned an immediate task : \"" + event.taskName() + "\"";
         String distributionId = String.valueOf(event.immediateTaskDistributionId());
 
         for (Long workforceId : event.workforceIds()) {
