@@ -36,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.time.OffsetTime;
@@ -72,6 +73,7 @@ class TaskDistributionPatrolIntegrationTest {
     @Mock private TaskExecutionSlotRepository taskExecutionSlotRepository;
     @Mock private OrgUnitClient orgUnitClient;
     @Mock private TaskExecutionPresenter taskExecutionPresenter;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @Mock private LKCustomerContractOperationService serviceTime;
     @Mock private SiteDistribution siteDistribution;
@@ -99,7 +101,8 @@ class TaskDistributionPatrolIntegrationTest {
             patrolTaskDistributionRepository, taskAssignmentRepository, locationRepository,
             attendanceClient, createScheduledTaskForDistributionService,
             taskDistributionMapper, utils, taskPresenter,
-            taskExecutionSlotRepository, orgUnitClient, taskExecutionPresenter
+            taskExecutionSlotRepository, orgUnitClient, taskExecutionPresenter,
+            eventPublisher
         );
 
         UserData loggedInUser = UserData.builder().id("99").customerId(CUSTOMER_ID).build();
