@@ -14,6 +14,9 @@ public class DateUtils {
                 CustomTimezone.EMIRATES, ZoneId.of("Asia/Dubai"),
                 CustomTimezone.UTC, ZoneId.of("UTC")
         );
+        if (timezone == null) {
+            return ZoneId.of("UTC");
+        }
         return ZONE_MAP.get(timezone);
     }
 
