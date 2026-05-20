@@ -30,6 +30,8 @@ public class ContractOperationRule {
 
     private Integer checkOutBeforeMinutes;
 
+    private Integer checkOutAfterMinutes;
+
     @Enumerated(EnumType.STRING)
     private PresenceMode presenceMode;
 

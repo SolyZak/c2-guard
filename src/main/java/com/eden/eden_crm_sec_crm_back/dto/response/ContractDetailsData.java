@@ -30,6 +30,7 @@ public class ContractDetailsData {
     private Integer checkInBeforeMinutes;
     private Integer checkInAfterMinutes;
     private Integer checkOutBeforeMinutes;
+    private Integer checkOutAfterMinutes;
     private PresenceMode presenceMode;
     private List<ContractServiceDetails> services;
 

@@ -192,7 +192,8 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                     .filter(os -> {
                                                         OffsetDateTime now = DateUtils.nowDateTime(site.getTimezone());
                                                         OffsetTime fromTime = getFromTime(contractOperationRule, os);
-                                                        OffsetTime toTime = getToTime(os);
+                                                        int checkOutAfter = getSafe(contractOperationRule != null ? contractOperationRule.getCheckOutAfterMinutes() : null);
+                                                        OffsetTime toTime = getToTime(os).plusMinutes(checkOutAfter);
 
                                                         OffsetDateTime from = now.with(fromTime);
                                                         OffsetDateTime to = now.with(toTime);
@@ -258,8 +259,9 @@ public class WorkforceServiceImpl implements WorkforceService {
         OffsetTime fromTime = getFromTime(rule, service);
         OffsetDateTime from = now.with(fromTime);
 
-        // Build "to" datetime
-        OffsetTime toTime = service.getToTime();
+        // Build "to" datetime — extend by checkOutAfterMinutes so workforce can still check out within tolerance after period end.
+        int checkOutAfter = getSafe(rule != null ? rule.getCheckOutAfterMinutes() : null);
+        OffsetTime toTime = service.getToTime().plusMinutes(checkOutAfter);
         OffsetDateTime to = now.with(toTime);
 
         // Handle "from" possibly on previous day
@@ -314,14 +316,22 @@ public class WorkforceServiceImpl implements WorkforceService {
 
         int checkInBefore = getSafe(rule != null ? rule.getCheckInBeforeMinutes() : null);
         int checkOutBefore = getSafe(rule != null ? rule.getCheckOutBeforeMinutes() : null);
+        int checkOutAfter = getSafe(rule != null ? rule.getCheckOutAfterMinutes() : null);
 
         OffsetTime withdrawnFrom = fromTime.minusMinutes(checkInBefore);
         OffsetTime withdrawnTo = toTime.minusMinutes(checkOutBefore);
+        OffsetTime inTimeTo = toTime.plusMinutes(checkOutAfter);
 
         if (!now.isBefore(withdrawnFrom) && now.isBefore(withdrawnTo)) {
             return AttendStatus.CHECK_OUT_WITHDRAWN;
         }
 
+        if (!now.isBefore(withdrawnTo) && !now.isAfter(inTimeTo)) {
+            return AttendStatus.CHECK_OUT_IN_TIME;
+        }
+
+        // TODO: workforce checked out after the after-tolerance window —
+        // assign the dedicated "late checkout" attendance status once it's defined.
         return AttendStatus.CHECK_OUT_IN_TIME;
     }
 
