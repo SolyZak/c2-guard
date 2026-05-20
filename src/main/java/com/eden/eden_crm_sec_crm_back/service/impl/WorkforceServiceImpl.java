@@ -191,7 +191,7 @@ public class WorkforceServiceImpl implements WorkforceService {
                                                     .filter(os -> {
                                                         OffsetDateTime now = DateUtils.nowDateTime(site.getTimezone());
                                                         OffsetTime fromTime = getFromTime(contractOperationRule, os);
-                                                        int checkOutAfter = getSafe(contractOperationRule != null ? contractOperationRule.getCheckOutAfterMinutes() : null);
+                                                        int checkOutAfter = getCheckOutAfter(contractOperationRule);
                                                         OffsetTime toTime = getToTime(os).plusMinutes(checkOutAfter);
 
                                                         OffsetDateTime from = now.with(fromTime);
@@ -259,7 +259,7 @@ public class WorkforceServiceImpl implements WorkforceService {
         OffsetDateTime from = now.with(fromTime);
 
         // Build "to" datetime — extend by checkOutAfterMinutes so workforce can still check out within tolerance after period end.
-        int checkOutAfter = getSafe(rule != null ? rule.getCheckOutAfterMinutes() : null);
+        int checkOutAfter = getCheckOutAfter(rule);
         OffsetTime toTime = service.getToTime().plusMinutes(checkOutAfter);
         OffsetDateTime to = now.with(toTime);
 
@@ -315,7 +315,7 @@ public class WorkforceServiceImpl implements WorkforceService {
 
         int checkInBefore = getSafe(rule != null ? rule.getCheckInBeforeMinutes() : null);
         int checkOutBefore = getSafe(rule != null ? rule.getCheckOutBeforeMinutes() : null);
-        int checkOutAfter = getSafe(rule != null ? rule.getCheckOutAfterMinutes() : null);
+        int checkOutAfter = getCheckOutAfter(rule);
 
         OffsetTime withdrawnFrom = fromTime.minusMinutes(checkInBefore);
         OffsetTime withdrawnTo = toTime.minusMinutes(checkOutBefore);
@@ -352,4 +352,17 @@ public class WorkforceServiceImpl implements WorkforceService {
     private int getSafe(Integer minutes) {
         return minutes != null ? minutes : 0;
     }
+
+    /**
+     * Returns the configured after-checkout tolerance in minutes, falling back to
+     * {@value #DEFAULT_CHECK_OUT_AFTER_MINUTES} if the rule or value is unset.
+     */
+    private int getCheckOutAfter(ContractOperationRule rule) {
+        if (rule == null || rule.getCheckOutAfterMinutes() == null) {
+            return DEFAULT_CHECK_OUT_AFTER_MINUTES;
+        }
+        return rule.getCheckOutAfterMinutes();
+    }
+
+    private static final int DEFAULT_CHECK_OUT_AFTER_MINUTES = 10;
 }
