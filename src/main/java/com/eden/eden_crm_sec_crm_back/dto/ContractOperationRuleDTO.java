@@ -28,6 +28,8 @@ public class ContractOperationRuleDTO {
 
     private Integer checkOutBeforeMinutes;
 
+    private Integer checkOutAfterMinutes;
+
     @NotNull(message = "{validation.contract-operation-rule.presenceMode.required")
     @Enumerated(EnumType.STRING)
     private PresenceMode presenceMode;
@@ -51,5 +53,7 @@ public class ContractOperationRuleDTO {
                     HttpStatus.UNPROCESSABLE_ENTITY
             );
         }
+        // checkOutAfterMinutes is accepted by the API but not enforced as required yet —
+        // FE integration is still pending. Re-enable the required-check once the FE ships.
     }
 }

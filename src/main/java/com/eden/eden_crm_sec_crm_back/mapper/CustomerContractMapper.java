@@ -37,6 +37,7 @@ public interface CustomerContractMapper {
     @Mapping(target = "checkInBeforeMinutes", source = "c.customerAgreement.checkInBeforeMinutes")
     @Mapping(target = "checkInAfterMinutes", source = "c.customerAgreement.checkInAfterMinutes")
     @Mapping(target = "checkOutBeforeMinutes", source = "c.customerAgreement.checkOutBeforeMinutes")
+    @Mapping(target = "checkOutAfterMinutes", source = "c.customerAgreement.checkOutAfterMinutes")
     @Mapping(target = "presenceMode", source = "c.customerAgreement.presenceMode")
     ContractWithRules toContractWithRules(CustomerContract c);
 
@@ -49,6 +50,7 @@ public interface CustomerContractMapper {
     @Mapping(target = "checkInBeforeMinutes", source = "e.customerAgreement.checkInBeforeMinutes")
     @Mapping(target = "checkInAfterMinutes", source = "e.customerAgreement.checkInAfterMinutes")
     @Mapping(target = "checkOutBeforeMinutes", source = "e.customerAgreement.checkOutBeforeMinutes")
+    @Mapping(target = "checkOutAfterMinutes", source = "e.customerAgreement.checkOutAfterMinutes")
     @Mapping(target = "presenceMode", source = "e.customerAgreement.presenceMode")
     ContractDetailsData fromEntity(CustomerContract e);
 
