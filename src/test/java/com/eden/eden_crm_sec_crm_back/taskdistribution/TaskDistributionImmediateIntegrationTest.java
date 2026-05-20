@@ -34,6 +34,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
 import java.time.OffsetDateTime;
@@ -71,7 +72,7 @@ class TaskDistributionImmediateIntegrationTest {
     @Mock private TaskExecutionSlotRepository taskExecutionSlotRepository;
     @Mock private OrgUnitClient orgUnitClient;
     @Mock private TaskExecutionPresenter taskExecutionPresenter;
-    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     private TaskDistributionServiceImpl service;
 
