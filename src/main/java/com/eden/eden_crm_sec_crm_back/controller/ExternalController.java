@@ -148,4 +148,11 @@ public class ExternalController {
     ) {
         return ApiResponse.ok(externalService.getCamerasByOperationSiteId(operationSiteId));
     }
+
+    @Operation(summary = "Get operation sites with overdue attendances for enforced checkout",
+            description = "Returns operation sites where service period end time + checkout tolerance has passed")
+    @GetMapping("/enforced-checkout/overdue-sites")
+    public List<OverdueSiteData> getOverdueOperationSites() {
+        return externalService.getOverdueOperationSites();
+    }
 }

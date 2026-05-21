@@ -20,6 +20,9 @@ import java.util.Optional;
 
 @Repository
 public interface CustomerContractRepository extends JpaRepository<CustomerContract, Long> {
+
+    Optional<CustomerContract> findByCloudContractId(Long cloudContractId);
+
     @EntityGraph(attributePaths = {"customerAgreement", "customerContractServices", "siteDistributions"})
     Optional<CustomerContract> findWithDetailsByIdAndCustomerId(Long contractId, Long customerId);
 

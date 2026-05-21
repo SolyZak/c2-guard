@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.repository;
 import com.eden.eden_crm_sec_crm_back.models.CustomerSite;
 import com.eden.eden_crm_sec_crm_back.models.SiteDistribution;
 import com.eden.eden_crm_sec_crm_back.models.projections.GeneralDropdownProjection;
+import com.eden.eden_crm_sec_crm_back.models.projections.OverdueOperationSiteProjection;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -134,5 +135,27 @@ public interface SiteDistributionRepository extends JpaRepository<SiteDistributi
             @Param("contractId") Long contractId,
             @Param("serviceId") Long serviceId
     );
+
+    @Query(value = """
+            SELECT DISTINCT
+                cosd.operation_site_id AS operationSiteId,
+                cor.presence_mode AS presenceMode,
+                COALESCE(cor.check_out_after_minutes, 10) AS checkOutAfterMinutes,
+                cosdd.to_time AS toTime,
+                (cosdd.to_time + (COALESCE(cor.check_out_after_minutes, 10) || ' minutes')::INTERVAL)
+                    AS enforcedCheckoutDeadline
+            FROM contract_operation_site_distribution_details cosdd
+            JOIN contract_operation_site_distribution cosd
+                ON cosdd.contract_operation_site_distribution_id = cosd.id
+            JOIN customer_contract cc
+                ON cosd.customer_contract_id = cc.id
+            LEFT JOIN contract_operation_rules cor
+                ON cor.customer_contract_id = cc.id
+            WHERE cc.start_agreement_date <= CURRENT_DATE
+              AND cc.end_agreement_date >= CURRENT_DATE
+              AND (cosdd.to_time + (COALESCE(cor.check_out_after_minutes, 10) || ' minutes')::INTERVAL)
+                  < CURRENT_TIME
+            """, nativeQuery = true)
+    List<OverdueOperationSiteProjection> findOverdueOperationSites();
 
 }
