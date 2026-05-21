@@ -4,6 +4,6 @@ import java.util.Set;
 
 public record ImmediateTaskAssignedEvent(
     Set<Long> workforceIds,
-    String locationName,
+    String taskName,
     Long immediateTaskDistributionId
 ) {}
