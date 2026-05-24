@@ -268,4 +268,18 @@ public class ExternalServiceImpl implements ExternalService {
 
         return count;
     }
+
+    @Override
+    public List<OverdueSiteData> getOverdueOperationSites() {
+        return siteDistributionRepository.findOverdueOperationSites()
+                .stream()
+                .map(p -> new OverdueSiteData(
+                        p.getOperationSiteId(),
+                        p.getPresenceMode(),
+                        p.getCheckOutAfterMinutes(),
+                        p.getToTime(),
+                        p.getEnforcedCheckoutDeadline()
+                ))
+                .toList();
+    }
 }

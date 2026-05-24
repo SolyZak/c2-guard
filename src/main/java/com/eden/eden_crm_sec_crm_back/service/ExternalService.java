@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+
 public interface ExternalService {
     OperationSiteInfo getOperationSiteDetails(Long id);
     List<OperationSiteData> getCustomerOperationSites(Long customerId);
@@ -19,4 +20,5 @@ public interface ExternalService {
     Map<String, Object> workforceHasActivity(WorkforceHasActivityRequest request);
     Map<Long, Long> getPremiseIdsByOperationSiteIds(Long customerId, List<Long> operationSiteIds);
     List<OperationSiteCameraData> getCamerasByOperationSiteId(Long operationSiteId);
+    List<OverdueSiteData> getOverdueOperationSites();
 }
