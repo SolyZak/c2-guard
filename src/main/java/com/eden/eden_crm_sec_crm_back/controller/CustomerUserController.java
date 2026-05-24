@@ -3,6 +3,7 @@ package com.eden.eden_crm_sec_crm_back.controller;
 import com.eden.eden_crm_sec_crm_back.dto.rbac.AssignCustomerUserRoleRequest;
 import com.eden.eden_crm_sec_crm_back.dto.request.AddCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
+import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
@@ -55,6 +56,15 @@ public class CustomerUserController {
     @GetMapping("/info")
     ApiResponse<CustomerUserInfoResponse> getLoggedInCustomerUser() {
         return ApiResponse.ok(customerUserService.getLoggedInUserInfo());
+    }
+
+    @PutMapping("/{id}/profile")
+    @Operation(summary = "Update customer user (partial update allowed)")
+    ApiResponse<String> update(
+            @PathVariable("id") Long id,
+            @RequestBody @Valid UpdateCustomerUserDto dto
+    ) {
+        return ApiResponse.ok(customerUserService.update(id, dto));
     }
 
     @PutMapping("/{id}/role")

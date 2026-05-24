@@ -15,6 +15,8 @@ public interface CustomerUserRepository extends JpaRepository<CustomerUser, Long
 
     boolean existsByCode(String code);
 
+    boolean existsByCodeAndIdNot(String code, Long id);
+
     @Query("""
             SELECT u FROM CustomerUser u
             WHERE u.customer.id = :customerId AND u.id = :id

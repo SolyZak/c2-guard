@@ -2,6 +2,7 @@ package com.eden.eden_crm_sec_crm_back.service.impl;
 
 import com.eden.eden_crm_sec_crm_back.dto.request.AddCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
+import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
@@ -126,6 +127,36 @@ public class CustomerUserServiceImpl implements CustomerUserService {
             ));
         }
         return MessageUtil.getMessage("password-reset.success");
+    }
+
+    @Override
+    @Transactional
+    public String update(Long id, UpdateCustomerUserDto dto) {
+        CustomerUser user = customerUserRepository.findByIdAncCustomerId(id, getLoggedInCustomerId()).orElseThrow(
+                () -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("customer-user")}),
+                        HttpStatus.NOT_FOUND)
+        );
+
+        if (dto.getCode() != null && !dto.getCode().equals(user.getCode())
+                && customerUserRepository.existsByCodeAndIdNot(dto.getCode(), id)) {
+            throw new BusinessException(
+                    MessageUtil.getMessage("customer-user.code.exists"),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        Integer newRoleId = dto.getRoleId();
+        Integer currentRoleId = user.getRole() != null ? user.getRole().getId() : null;
+
+        mapper.updateEntity(dto, user);
+        customerUserRepository.save(user);
+
+        if (newRoleId != null && !newRoleId.equals(currentRoleId)) {
+            customerUserRoleService.assignRole(user.getId(), newRoleId);
+        }
+
+        return MessageUtil.getMessage("customer-user.updated");
     }
 
     private void validateCreateUser(String email, String code) {
