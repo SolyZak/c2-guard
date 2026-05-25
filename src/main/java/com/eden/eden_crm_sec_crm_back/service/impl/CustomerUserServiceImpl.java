@@ -5,6 +5,8 @@ import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
+import com.eden.eden_crm_sec_crm_back.dto.response.RoleLifecycleData;
+import com.eden.eden_crm_sec_crm_back.repository.RoleLifecycleRepository;
 import com.eden.eden_crm_sec_crm_back.exception.BusinessException;
 import com.eden.eden_crm_sec_crm_back.exception.UserNotProvided;
 import com.eden.eden_crm_sec_crm_back.identity.KeycloakClient;
@@ -41,6 +43,7 @@ public class CustomerUserServiceImpl implements CustomerUserService {
     private final AsyncEmailService asyncEmailService;
     private final CustomerUserRoleService customerUserRoleService;
     private final OracleStorageUtil oracleStorageUtil;
+    private final RoleLifecycleRepository roleLifecycleRepository;
 
     @Value("${customer-portal.url}")
     private String customerPortalUrl;
@@ -157,6 +160,20 @@ public class CustomerUserServiceImpl implements CustomerUserService {
         }
 
         return MessageUtil.getMessage("customer-user.updated");
+    }
+
+    @Override
+    public java.util.List<RoleLifecycleData> roleHistory(Long id) {
+        CustomerUser user = customerUserRepository.findByIdAncCustomerId(id, getLoggedInCustomerId()).orElseThrow(
+                () -> new BusinessException(
+                        MessageUtil.getMessage("entity.not-found",
+                                new Object[]{MessageUtil.getMessage("customer-user")}),
+                        HttpStatus.NOT_FOUND)
+        );
+        return roleLifecycleRepository.findByUserIdOrderByStartDateDesc(user.getId())
+                .stream()
+                .map(mapper::toLifecycleData)
+                .toList();
     }
 
     private void validateCreateUser(String email, String code) {

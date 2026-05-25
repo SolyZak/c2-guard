@@ -6,6 +6,7 @@ import com.eden.eden_crm_sec_crm_back.dto.request.ResetCustomerUserPassword;
 import com.eden.eden_crm_sec_crm_back.dto.request.UpdateCustomerUserDto;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserData;
 import com.eden.eden_crm_sec_crm_back.dto.response.CustomerUserInfoResponse;
+import com.eden.eden_crm_sec_crm_back.dto.response.RoleLifecycleData;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import com.eden.eden_crm_sec_crm_back.payload.PaginateResponse;
 import com.eden.eden_crm_sec_crm_back.service.CustomerUserService;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 @RestController
 @RequestMapping(path = "/customer/users")
@@ -65,6 +67,12 @@ public class CustomerUserController {
             @RequestBody @Valid UpdateCustomerUserDto dto
     ) {
         return ApiResponse.ok(customerUserService.update(id, dto));
+    }
+
+    @GetMapping("/{id}/role-history")
+    @Operation(summary = "Get role history for a customer user")
+    ApiResponse<List<RoleLifecycleData>> roleHistory(@PathVariable("id") Long id) {
+        return ApiResponse.ok(customerUserService.roleHistory(id));
     }
 
     @PutMapping("/{id}/role")
