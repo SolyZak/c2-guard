@@ -70,7 +70,8 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
 
     @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
             "WHERE cc.status IN :statuses " +
-            "AND cc.customer.id = :customerId")
+            "AND cc.customer.id = :customerId " +
+            "AND (cc.endAgreementDate IS NULL OR cc.endAgreementDate >= CURRENT_DATE)")
     List<CustomerContract> listByCustomerIdAndStatus(
             @NotNull @Param("customerId") Long customerId,
             @NotEmpty @Param("statuses") List<ContractStatus> statuses
@@ -84,7 +85,8 @@ public interface CustomerContractRepository extends JpaRepository<CustomerContra
 
     @Query("SELECT DISTINCT cc FROM CustomerContract cc " +
             "LEFT JOIN FETCH cc.customerAgreement " +
-            "WHERE cc.customer.id = :customerId")
+            "WHERE cc.customer.id = :customerId " +
+            "AND (cc.endAgreementDate IS NULL OR cc.endAgreementDate >= CURRENT_DATE)")
     List<CustomerContract> listByCustomerIdWithRules(
             @NotNull @Param("customerId") Long customerId
     );
