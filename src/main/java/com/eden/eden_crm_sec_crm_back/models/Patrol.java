@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -32,4 +33,16 @@ public class Patrol extends BaseEntity {
     @JsonBackReference
     private Customer customer;
 
+    /** Inclusive start date of this Patrol version. */
+    @Column(name = "valid_from", nullable = false)
+    private LocalDate validFrom;
+
+    /** Inclusive end date of this Patrol version; {@code null} means current. */
+    @Column(name = "valid_to")
+    private LocalDate validTo;
+
+    /** Self-reference to the prior Patrol version this one supersedes. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "previous_patrol_id")
+    private Patrol previousPatrol;
 }

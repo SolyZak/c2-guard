@@ -1,5 +1,7 @@
 package com.eden.eden_crm_sec_crm_back.exception;
 
+import com.eden.eden_crm_sec_crm_back.locks.exception.LockedByOtherUserException;
+import com.eden.eden_crm_sec_crm_back.locks.dtos.LockConflictDetails;
 import com.eden.eden_crm_sec_crm_back.payload.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,17 @@ public class GlobalException {
     public ResponseEntity<ApiResponse<String>> handleBusinessException(BusinessException ex) {
         ApiResponse<String> errorResponse = ApiResponse.error(ex.getMessage());
         return new ResponseEntity<>(errorResponse, ex.getHttpStatus());
+    }
+
+    /**
+     * Maps the customer-edit-lock conflict to a 423 LOCKED with a structured
+     * details payload so the FE can render "locked by X until T" without an
+     * extra status call.
+     */
+    @ExceptionHandler(LockedByOtherUserException.class)
+    public ResponseEntity<ApiResponse<LockConflictDetails>> handleLockedByOtherUser(LockedByOtherUserException ex) {
+        ApiResponse<LockConflictDetails> body = ApiResponse.error(ex.getDetails(), HttpStatus.LOCKED);
+        return new ResponseEntity<>(body, HttpStatus.LOCKED);
     }
 
     @ExceptionHandler(RuntimeException.class)

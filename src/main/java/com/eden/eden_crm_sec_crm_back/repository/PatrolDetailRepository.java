@@ -8,8 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PatrolDetailRepository extends JpaRepository<PatrolDetail,Long> {
+
+    /** Find the PatrolDetail at a given location within a patrol. Used by assignment-edit ADD. */
+    Optional<PatrolDetail> findByPatrolIdAndLocationId(Long patrolId, Long locationId);
     @Query(value = """
         SELECT
             pd.id                           AS patrolDetailId,
