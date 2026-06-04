@@ -33,6 +33,16 @@ public class PatrolDetail {
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
+    /**
+     * Soft-delete flag. When a task/location is removed from a patrol that still
+     * has past/in-progress execution history (which references this row), the
+     * row is flagged deleted instead of being physically removed so the history
+     * stays intact. Active definition reads filter on {@code deleted = false}.
+     */
+    @Builder.Default
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
+
     @OneToMany(mappedBy = "patrolDetail")
     List<PatrolAssignment> patrolAssignments;
 

@@ -14,6 +14,24 @@ public interface PatrolTaskDistributionRepository extends JpaRepository<PatrolTa
     boolean existsByServiceTime_IdAndPatrolDetail_Id(Long serviceTimeId, Long patrolDetailId);
     boolean existsByIdAndLocation_IdAndTaskDistribution_TaskDefinitionId(Long id, Long locationId, Long taskDefinitionId);
 
+    /** True if any distribution still references the given patrol_detail (e.g. via historical slots). */
+    boolean existsByPatrolDetail_Id(Long patrolDetailId);
+
+    /**
+     * Every distribution row that belongs to a patrol, across ALL services,
+     * service times and sites. Used by the US1 in-place patrol edit to fan
+     * changes (frequency / add / remove) out to all services using the patrol.
+     */
+    @Query("""
+            SELECT p FROM PatrolTaskDistribution p
+              JOIN FETCH p.taskDistribution td
+              JOIN FETCH p.patrolDetail pd
+              JOIN FETCH p.service svc
+              JOIN FETCH p.serviceTime st
+            WHERE pd.patrol.id = :patrolId
+            """)
+    List<PatrolTaskDistribution> findByPatrolId(@Param("patrolId") Long patrolId);
+
     /**
      * All rows belonging to a single (service, patrol, serviceTime, site)
      * assignment, regardless of location. Used by the US2 GET endpoint to

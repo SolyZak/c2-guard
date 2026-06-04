@@ -176,12 +176,18 @@ public class AssignmentEditServiceImpl implements AssignmentEditService {
 
             for (AssignmentDeltaRequest.PerLocation pl : req.getPerLocation()) {
                 for (Long taskDefId : pl.getAddTaskIds()) {
-                    // Find the PatrolDetail at this location.
+                    // Resolve the PatrolDetail for THIS specific task at this location.
+                    // PatrolDetail is per-task, so (patrol, location) is not unique — we must
+                    // match on taskDefinitionId. List + findFirst stays crash-safe even if the
+                    // route repeats a task at the same location.
                     PatrolDetail detail = patrolDetailRepository
-                            .findByPatrolIdAndLocationId(patrol.getId(), pl.getLocationId())
+                            .findByPatrolIdAndLocationIdAndTaskDefinitionIdAndDeletedFalseOrderByDisplayOrderAscIdAsc(
+                                    patrol.getId(), pl.getLocationId(), taskDefId)
+                            .stream().findFirst()
                             .orElseThrow(() -> new BusinessException(
-                                    "LOCATION_NOT_PATROL_DETAIL: locationId " + pl.getLocationId()
-                                            + " is not a PatrolDetail of patrolId " + patrol.getId(),
+                                    "TASK_NOT_PATROL_DETAIL: taskDefinitionId " + taskDefId
+                                            + " is not an active task at locationId " + pl.getLocationId()
+                                            + " of patrolId " + patrol.getId(),
                                     HttpStatus.CONFLICT));
 
                     taskDistributionService.createSinglePatrolDistribution(
