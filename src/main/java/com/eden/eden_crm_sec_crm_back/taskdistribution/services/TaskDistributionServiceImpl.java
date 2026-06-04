@@ -152,6 +152,49 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
 
     @Override
     @Transactional
+    public TaskDistribution createSinglePatrolDistribution(
+            Customer customer,
+            CustomerContract contract,
+            LKCustomerContractService service,
+            LKCustomerContractOperationService serviceTime,
+            PatrolDetail patrolDetail,
+            Patrol patrol,
+            Long taskDefinitionId,
+            LocalDate startDate
+    ) {
+        Set<DayOfWeek> targetDays = extractTargetDays(serviceTime);
+
+        TaskDistribution taskDistribution = buildTaskDistributionBase(customer, contract, DistributionType.PATROL);
+        taskDistribution.setTaskDefinitionId(taskDefinitionId);
+        PatrolTaskDistribution patrolTaskDistribution = buildPatrolTaskDistribution(
+                customer, taskDistribution, service, patrolDetail, serviceTime, patrol);
+        taskDistribution.setPatrolTaskDistribution(patrolTaskDistribution);
+
+        Map<String, List<TaskTimeWindow>> cache = new HashMap<>();
+        List<TaskTimeWindow> timeWindows = getOrBuildPatrolTimeWindows(
+                cache, customer, patrol, startDate, contract.getEndAgreementDate(),
+                serviceTime, targetDays);
+
+        OffsetDateTime assignedAt = OffsetDateTime.now();
+        List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(
+                customer, serviceTime.getQuantity().intValue(), assignedAt);
+
+        List<TaskExecutionSlot> executionSlots = buildExecutionSlotsFromTimeWindows(
+                customer, taskDistribution, taskAssignments, timeWindows);
+        patrolTaskDistribution.setDistributedQuantity(executionSlots.size());
+        taskDistribution.setExecutionSlots(executionSlots);
+
+        taskDistribution = taskDistributionRepository.saveAndFlush(taskDistribution);
+        createScheduledTaskForDistributionService.createDistributionScheduledTasks(
+                "patrolTaskDistributionId",
+                taskDistribution.getPatrolTaskDistribution().getId(),
+                taskDistribution.getExecutionSlots()
+        );
+        return taskDistribution;
+    }
+
+    @Override
+    @Transactional
     public void distributeImmediateTasks(DistributeImmediateTaskRequest distributeImmediateTaskRequest) {
         UserData loggedInUser = getLoggedInUser();
         Customer customer = getLoggedInCustomer(loggedInUser.getCustomerId());

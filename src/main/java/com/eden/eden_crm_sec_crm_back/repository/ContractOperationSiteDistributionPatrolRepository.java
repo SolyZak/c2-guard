@@ -50,4 +50,15 @@ public interface ContractOperationSiteDistributionPatrolRepository
     // REMOVED: findPatrolDetails — referenced deleted Task/TaskCheck/
     // TaskCheckPatrolExecution entities.
     // Replaced by patrols module: PatrolRepository.findPatrolDetails()
+
+    /** All active bindings (endDate IS NULL or in the future) for a given patrol. */
+    @Query("""
+            SELECT b FROM ContractOperationSiteDistributionPatrol b
+            WHERE b.patrol.id = :patrolId
+              AND (b.endDate IS NULL OR b.endDate >= :asOfDate)
+            """)
+    List<ContractOperationSiteDistributionPatrol> findActiveBindingsByPatrolId(
+            @Param("patrolId") Long patrolId,
+            @Param("asOfDate") LocalDate asOfDate
+    );
 }
