@@ -148,9 +148,12 @@ class PatrolEditServiceTest {
         when(bindingRepository.findActiveBindingsByPatrolId(eq(75L), any())).thenReturn(List.of());
         when(patrolRepository.saveAndFlush(any(Patrol.class))).thenAnswer(inv -> {
             Patrol p = inv.getArgument(0);
-            p.setId(76L); // simulate ID generation
-            // Stub findById for the new patrol so getForEdit(76) works in the audit step.
-            lenient().when(patrolRepository.findById(76L)).thenReturn(Optional.of(p));
+            if (p.getPreviousPatrol() != null) {
+                // This is the NEW patrol being inserted — assign a new ID.
+                p.setId(76L);
+                lenient().when(patrolRepository.findById(76L)).thenReturn(Optional.of(p));
+            }
+            // Old patrol (closing valid_to) keeps its original ID.
             return p;
         });
         lenient().when(auditService.record(any(), any(), any(), any(), any(), any(), any(), any(), any()))

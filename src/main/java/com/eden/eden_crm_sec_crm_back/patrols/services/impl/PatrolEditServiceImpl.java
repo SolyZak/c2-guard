@@ -182,7 +182,12 @@ public class PatrolEditServiceImpl implements PatrolEditService {
 
         Patrol newPatrol;
         if (needsNewVersion) {
-            // --- 5. Copy-on-edit: create new Patrol version ---
+            // --- 5. Copy-on-edit: close old version FIRST to satisfy the
+            // unique index (only one row per chain may have valid_to IS NULL).
+            oldPatrol.setValidTo(globalCutoff.minusDays(1));
+            patrolRepository.saveAndFlush(oldPatrol);
+
+            // Now create the new version.
             newPatrol = new Patrol();
             newPatrol.setName(request.getName());
             newPatrol.setFrequency(request.getFrequency());
@@ -197,10 +202,6 @@ public class PatrolEditServiceImpl implements PatrolEditService {
             newPatrol.setPatrolDetails(newDetails);
 
             newPatrol = patrolRepository.saveAndFlush(newPatrol);
-
-            // Close old version.
-            oldPatrol.setValidTo(globalCutoff.minusDays(1));
-            patrolRepository.save(oldPatrol);
 
             // --- 6. Per-binding: close old, open new, regenerate slots ---
             for (ContractOperationSiteDistributionPatrol binding : activeBindings) {
