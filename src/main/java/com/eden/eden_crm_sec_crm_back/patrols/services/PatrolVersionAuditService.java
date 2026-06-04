@@ -20,21 +20,25 @@ public class PatrolVersionAuditService {
     private final PatrolVersionAuditRepository repository;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Records one in-place patrol edit. {@code changes} is the field-level delta
+     * (name/frequency changed, tasks/locations added/removed); {@code before} /
+     * {@code after} are the full definition snapshots.
+     */
     public PatrolVersionAudit record(
             UUID editSessionId,
-            Long previousPatrolId,
-            Long newPatrolId,
+            Long patrolId,
             Long customerId,
             UserData actor,
             LocalDate cutoffDate,
             Object before,
             Object after,
+            Object changes,
             List<?> affectedServices
     ) {
         PatrolVersionAudit row = PatrolVersionAudit.builder()
                 .editSessionId(editSessionId)
-                .previousPatrolId(previousPatrolId)
-                .newPatrolId(newPatrolId)
+                .patrolId(patrolId)
                 .customerId(customerId)
                 .actorUserId(Long.valueOf(actor.getId()))
                 .actorUserName(actor.getName())
@@ -42,6 +46,7 @@ public class PatrolVersionAuditService {
                 .cutoffDate(cutoffDate)
                 .beforeSnapshot(writeJson(before))
                 .afterSnapshot(writeJson(after))
+                .changes(writeJson(changes))
                 .affectedServices(writeJson(affectedServices))
                 .build();
         return repository.save(row);

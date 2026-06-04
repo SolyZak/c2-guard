@@ -11,8 +11,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Response for PATCH /customer/patrols/{patrolId}. Contains the new patrol
- * version info and per-service impact summary.
+ * Response for PATCH /customer/patrols/{patrolId}. The patrol is edited in
+ * place, so {@code newPatrolId} and {@code previousPatrolId} both carry the
+ * edited patrol's id (kept for backward compatibility); {@code validFrom} is the
+ * effective cutoff date of the change. Also includes the per-service impact
+ * summary.
  */
 @Getter
 @Setter

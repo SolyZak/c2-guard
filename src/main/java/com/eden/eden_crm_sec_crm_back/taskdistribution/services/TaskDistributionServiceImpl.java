@@ -83,6 +83,7 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
     private final OrgUnitClient orgUnitClient;
     private final TaskExecutionPresenter taskExecutionPresenter;
     private final ApplicationEventPublisher eventPublisher;
+    private final com.eden.eden_crm_sec_crm_back.taskdistribution.repositories.FlexSchedulerCleanupRepository flexSchedulerCleanupRepository;
     private record TaskTimeWindow(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {}
 
     @Override
@@ -191,6 +192,54 @@ public class TaskDistributionServiceImpl implements TaskDistributionService {
                 taskDistribution.getExecutionSlots()
         );
         return taskDistribution;
+    }
+
+    @Override
+    @Transactional
+    public void regenerateFutureSlots(PatrolTaskDistribution patrolTaskDistribution, LocalDate fromDate) {
+        TaskDistribution taskDistribution = patrolTaskDistribution.getTaskDistribution();
+        Patrol patrol = patrolTaskDistribution.getPatrolDetail().getPatrol();
+        LKCustomerContractOperationService serviceTime = patrolTaskDistribution.getServiceTime();
+        CustomerContract contract = taskDistribution.getContract();
+        Customer customer = patrolTaskDistribution.getCustomer();
+
+        // 1. Remove future CREATED slots (and their flex-scheduler jobs), keeping
+        //    past / in-progress slots so history survives the edit.
+        OffsetDateTime cutoffInstant = fromDate.atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+        List<TaskExecutionSlot> currentSlots = taskDistribution.getExecutionSlots() == null
+                ? List.of() : taskDistribution.getExecutionSlots();
+        List<Long> futureSlotIds = currentSlots.stream()
+                .filter(s -> s.getStartDateTime() != null
+                        && !s.getStartDateTime().isBefore(cutoffInstant)
+                        && s.getStatus() == TaskDistributionStatus.CREATED)
+                .map(TaskExecutionSlot::getId)
+                .toList();
+        if (!futureSlotIds.isEmpty()) {
+            flexSchedulerCleanupRepository.deleteJobsForSlotIds(futureSlotIds);
+            taskExecutionSlotRepository.deleteAllByIdInBatch(futureSlotIds);
+        }
+
+        // 2. Rebuild future slots from fromDate using the patrol's current cadence.
+        Set<DayOfWeek> targetDays = extractTargetDays(serviceTime);
+        Map<String, List<TaskTimeWindow>> cache = new HashMap<>();
+        List<TaskTimeWindow> timeWindows = getOrBuildPatrolTimeWindows(
+                cache, customer, patrol, fromDate, contract.getEndAgreementDate(), serviceTime, targetDays);
+        if (timeWindows.isEmpty()) {
+            return;
+        }
+
+        List<TaskAssignment> taskAssignments = createTaskAssignmentsByQuantity(
+                customer, serviceTime.getQuantity().intValue(), OffsetDateTime.now());
+        List<TaskExecutionSlot> newSlots = buildExecutionSlotsFromTimeWindows(
+                customer, taskDistribution, taskAssignments, timeWindows);
+        newSlots = taskExecutionSlotRepository.saveAll(newSlots);
+
+        // 3. Schedule the freshly created slots.
+        createScheduledTaskForDistributionService.createDistributionScheduledTasks(
+                "patrolTaskDistributionId",
+                patrolTaskDistribution.getId(),
+                newSlots
+        );
     }
 
     @Override

@@ -19,9 +19,13 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * One row per save on the US1 patrol-edit endpoint. Records the copy-on-edit
- * (previous version -> new version) and the list of services whose schedules
- * were regenerated as a side effect.
+ * One row per save on the US1 patrol-edit endpoint. The patrol is edited in
+ * place (no versioning), so each row records which patrol was edited, the
+ * before/after definition snapshots, the field-level {@code changes} delta, and
+ * the list of services whose schedules were regenerated as a side effect.
+ *
+ * <p>{@code previousPatrolId}/{@code newPatrolId} are retained (nullable) only
+ * for legacy copy-on-edit rows written before the in-place migration.
  */
 @Entity
 @Table(name = "patrol_version_audit")
@@ -39,10 +43,15 @@ public class PatrolVersionAudit {
     @Column(name = "edit_session_id", nullable = false)
     private UUID editSessionId;
 
-    @Column(name = "previous_patrol_id", nullable = false)
+    /** The patrol that was edited (in place). */
+    @Column(name = "patrol_id")
+    private Long patrolId;
+
+    /** Legacy copy-on-edit columns; null for in-place edits. */
+    @Column(name = "previous_patrol_id")
     private Long previousPatrolId;
 
-    @Column(name = "new_patrol_id", nullable = false)
+    @Column(name = "new_patrol_id")
     private Long newPatrolId;
 
     @Column(name = "customer_id", nullable = false)
@@ -71,4 +80,9 @@ public class PatrolVersionAudit {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "affected_services", nullable = false, columnDefinition = "jsonb")
     private String affectedServices;
+
+    /** Human-readable field-level delta of the edit (name/frequency/tasks/locations). */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "changes", nullable = false, columnDefinition = "jsonb")
+    private String changes;
 }

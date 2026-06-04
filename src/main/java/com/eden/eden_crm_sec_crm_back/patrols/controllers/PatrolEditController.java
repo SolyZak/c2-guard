@@ -17,13 +17,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * US1: edit patrol definition. Lock-guarded per patrol. Copy-on-edit creates a
- * new patrol version on save and propagates to all services using the patrol.
+ * US1: edit patrol definition. Lock-guarded per patrol. The patrol is edited in
+ * place (no versioning); on save the change propagates to all services using the
+ * patrol and the edit is recorded for audit.
  */
 @RestController
 @RequestMapping("/customer/patrols")
 @RequiredArgsConstructor
-@Tag(name = "Patrol edit (US1)", description = "Edit patrol definition with versioning")
+@Tag(name = "Patrol edit (US1)", description = "Edit patrol definition in place (audited)")
 public class PatrolEditController {
 
     private final PatrolEditService patrolEditService;
@@ -34,7 +35,7 @@ public class PatrolEditController {
         return ApiResponse.ok(patrolEditService.getForEdit(patrolId));
     }
 
-    @Operation(summary = "Save edited patrol (creates a new version if tasks/frequency/locations changed)")
+    @Operation(summary = "Save edited patrol in place; regenerates future slots and records an audit entry")
     @PatchMapping("/{patrolId}")
     public ApiResponse<PatrolEditSaveResponse> save(
             @PathVariable Long patrolId,

@@ -43,6 +43,17 @@ public interface TaskDistributionService {
             Long taskDefinitionId,
             LocalDate startDate
     );
+
+    /**
+     * Replaces the future ({@code >= fromDate}) execution slots of an existing
+     * PatrolTaskDistribution with freshly generated ones using the patrol's
+     * current frequency/rate, preserving past/in-progress slots. Used by the
+     * US1 in-place patrol edit when the frequency changes.
+     */
+    void regenerateFutureSlots(
+            com.eden.eden_crm_sec_crm_back.taskdistribution.entities.PatrolTaskDistribution patrolTaskDistribution,
+            LocalDate fromDate
+    );
     void distributeImmediateTasks(DistributeImmediateTaskRequest distributeImmediateTaskRequest);
     List<AvailableServiceTimeResponse> getAllAvailableServiceTimes(AvailableServiceTimesRequest availableServiceTimesRequest);
     List<DistributableTaskResponse> getDistributableTasks(DistributableTasksRequest distributableTasksRequest);
