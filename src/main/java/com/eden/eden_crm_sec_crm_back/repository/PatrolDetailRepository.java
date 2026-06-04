@@ -8,12 +8,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface PatrolDetailRepository extends JpaRepository<PatrolDetail,Long> {
 
-    /** Find the PatrolDetail at a given location within a patrol. Used by assignment-edit ADD. */
-    Optional<PatrolDetail> findByPatrolIdAndLocationId(Long patrolId, Long locationId);
+    /**
+     * Active PatrolDetail rows for a specific (patrol, location, taskDefinition).
+     * <p>A PatrolDetail is per-task, so (patrol, location) alone is NOT unique — it
+     * matches one row per task at that location. The assignment-edit ADD path must
+     * resolve the row for the <em>specific</em> task being added; matching on
+     * taskDefinitionId narrows it to that task. Returns a List (not Optional) and is
+     * ordered so the first element is deterministic — this stays crash-safe even if
+     * the route legitimately repeats the same task at the same location.
+     */
+    List<PatrolDetail> findByPatrolIdAndLocationIdAndTaskDefinitionIdAndDeletedFalseOrderByDisplayOrderAscIdAsc(
+            Long patrolId, Long locationId, Long taskDefinitionId);
     @Query(value = """
         SELECT
             pd.id                           AS patrolDetailId,
